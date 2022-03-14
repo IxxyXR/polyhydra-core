@@ -1,5 +1,9 @@
 # Polyhydra
 
+<a href="https://openupm.com/packages/com.littlebigfun.addressable-importer/">
+  <img src="https://img.shields.io/npm/v/com.ixxy.polyhydra.core?label=openupm&amp;registry_uri=https://package.openupm.com" />
+</a>
+
 ![Screenshot](https://pro2-bar-s3-cdn-cf1.myportfolio.com/1e3b6316-da77-4fd2-a111-e12070c11b10/2977d391-d8a0-4759-8f3b-fe112b8957b8_rwc_0x22x975x549x975.png?h=f2ff1682c51247d1bc76e926872686e2)
 
 Polyhydra is a toolkit for the procedural generation of geometric forms in Unity. The above image is from a VR piece I made using it called "Gossamer" that is currently exhibited in the Museum of Other Realities: https://andybak.net/gossamer
