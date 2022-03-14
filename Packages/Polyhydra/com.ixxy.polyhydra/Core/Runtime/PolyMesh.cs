@@ -224,9 +224,9 @@ namespace Polyhydra.Core
                 if (faceString.Length > sides + 3)
                 {
                     var faceColor = new Color(
-                        float.Parse(faceString[sides]),
                         float.Parse(faceString[sides + 1]),
-                        float.Parse(faceString[sides + 2])
+                        float.Parse(faceString[sides + 2]),
+                        float.Parse(faceString[sides + 3])
                     );
                     var tags = new HashSet<Tuple<string, TagType>>();
                     tags.Add(new Tuple<string, TagType>(
