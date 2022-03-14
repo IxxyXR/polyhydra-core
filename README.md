@@ -1,41 +1,37 @@
-## upm-template
-A template project for making UPM packages for Unity
+# Polyhydra
 
-## How to use
+![Screenshot](https://pro2-bar-s3-cdn-cf1.myportfolio.com/1e3b6316-da77-4fd2-a111-e12070c11b10/2977d391-d8a0-4759-8f3b-fe112b8957b8_rwc_0x22x975x549x975.png?h=f2ff1682c51247d1bc76e926872686e2)
 
-First use this repository as the base of your UPM project repository by forking it.
+Polyhydra is a toolkit for the procedural generation of geometric forms in Unity. The above image is from a VR piece I made using it called "Gossamer" that is currently exhibited in the Museum of Other Realities: https://andybak.net/gossamer
 
-### __Project Structure__ 
-Let's say the name of your package directory is `ABC`. Your UPM project directory will usually be `Packages/ABC` or `Assets/ABC` (let's assume it's `Packages/ABC` for this guide). A sample directory is included in the repo.
+* YouTube playlist: https://youtube.com/playlist?list=PL94EgLgEIJyJQh_nB-CvSKbXjNU0ojNqC
+* Gallery: https://andybak.net/polyhydra
 
-Inside which you'd have your `package.json`, `CHANGELOG.md`, `LICENSE`, `README.md`.
+# Getting Started
 
-To know more about `package.json` (called the UPM Manifest) go [here](https://docs.unity3d.com/Manual/upm-manifestPkg.html)
+This repo is a cleanup and an attempt to extract the core functionality for reuse in other apps.
 
-### __Configure Github Actions (only works when hosting on github.com)__
-Go to `.github/workflows/ci.yml` and change the value of `XYZ` to `Packages/ABC`. 
+Right now you are better off using the repo here instead: https://github.com/IxxyXR/polyhydra-upm
 
-Every time you commit to `master`, this YML file is used to release your UPM package and automatically use a separate upm branch for releases as well as autogenerate tag for release. If you see the upm branch commits, you'll notice that your project directory is the root instead of the Unity project directory. Github Actions is used to automate this bit.
+# Credits
 
-### __Configure Semantic Release__
-Semantic releases is used to automate changelog updates as well as incrementing the version field inside `package.json` (the UPM Manifest). 
+As far as possible I'd like to licence this under the MIT licence or similar but the code has a complex heritage.
 
-Go to `.releaserc.json` do make the following changes:
+Obviously the original work by Willem Wythoff and John Conway. And also countless other mathematicians who have formed a base for, contributed to and extended the work in this area. A special shout out to George Hart who is often co-credited with Conway due to the large amount of work he did exploring and extending Conway's original operators.
 
-* `XYZ1` to `Packages/ABC`
-* `XYZ2` to `Packages/ABC/package.json`
-* `XYZ3` to `Packages/ABC/CHANGELOG.md`
+The actual Wythoff code was based on https://github.com/kaonasi (which in turn is based on the work of Zvi Har’El: http://www.math.technion.ac.il/S/rl/kaleido/ Zvi Har'El has sadly passed away. I've tried to contact all potential copyright holders to see if it's OK to make use of their work as a basis for this but I've had no luck in getting a response. Please get in touch if you're an interested party)
 
-When using `git commit`, follow the [Angular Standard](https://github.com/angular/angular/blob/master/CONTRIBUTING.md#commit)
+Conway operator code and the core halfedge mesh is based on work by Will Pearson @mcneel which can be found here: https://github.com/pearswj/buckminster
 
-### __Publishing to package registries__
-Use `npm publish` inside `Packages/ABC` or check out [OpenUPM](https://openupm.com/docs/#how-it-works)  
+Multigrids is ported from work by Wolthera van Hövell tot Westerflier for https://github.com/kde/krita - they generously agreed that my version could be MIT licenced.
 
-## Further Resources
-[Favo Yang's Medium Articles](https://medium.com/@favoyang)  
-[OpenUPM Docs](https://openupm.com/docs/)  
-[Having a Docker Container As Your Private NPM Registry — The Easy Way by Sibeesh Venu](https://medium.com/better-programming/having-a-docker-container-as-your-private-npm-registry-the-easy-way-68159fa94cc4)  
+Portions of grids.cs is from Antiprism and is MIT but should be attributed to Adrian Rossiter and Roger Kaufman: https://github.com/antiprism/antiprism/blob/master/COPYING
 
-## Contact
-[@github](https://www.github.com/adrenak)  
-[@www](http://www.vatsalambastha.com)
+Isohedral tilings are from tactile.js https://github.com/isohedral/tactile-js Thanks to Craig Kaplan @TriggerLoop
+
+Triangulation code is from https://github.com/gpvigano/AsImpL
+
+My original inspiration was 3DS Max's Hedra plugin which kept me entertained for quite a while nearly 2 decades ago. I think credit for that is due to Tom Hudson :-)
+
+![Screenshot](https://github.com/Ixxy-Open-Source/wythoff-polyhedra/blob/master/0.png)
+
