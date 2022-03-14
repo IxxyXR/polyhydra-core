@@ -3,16 +3,16 @@
   "plugins": [
     ["@semantic-release/commit-analyzer", { "preset": "angular" }],
     "@semantic-release/release-notes-generator",
-    ["@semantic-release/changelog", { 
+    ["@semantic-release/changelog", {
       "preset": "angular",
       "changelogFile":"PATH_TO_YOUR_CHANGELOG.MD"
     }],
-    ["@semantic-release/npm", { 
+    ["@semantic-release/npm", {
       "npmPublish": false,
-      "pkgRoot":"XYZ1"
+      "pkgRoot":"Packages/Polyhydra"
     }],
     ["@semantic-release/git", {
-      "assets": ["XYZ2", "XYZ3"],
+      "assets": ["Packages/Polyhydra/package.json", "Packages/Polyhydra/CHANGELOG.md"],
       "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
     }],
     "@semantic-release/github"
