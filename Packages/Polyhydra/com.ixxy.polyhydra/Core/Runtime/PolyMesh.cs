@@ -199,7 +199,6 @@ namespace Polyhydra.Core
             {
                 line = reader.ReadLine()?.Trim();
                 string[] vertex = System.Text.RegularExpressions.Regex.Split(line, "\\s+");
-                Debug.Log($"[{vertex[0]}] - [{vertex[1]}] - [{vertex[2]}]");
                 var v = new Vector3(
                     float.Parse(vertex[0]),
                     float.Parse(vertex[1]),
