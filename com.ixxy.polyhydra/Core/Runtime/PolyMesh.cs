@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using AsImpL;
 using UnityEngine;
@@ -174,6 +175,80 @@ namespace Polyhydra.Core
         ) : this(verticesByPoints, facesByVertexIndices, faceRoles, vertexRoles)
         {
             FaceTags = newFaceTags;
+        }
+
+        public PolyMesh(TextReader reader) : this()
+        {
+            var faceIndices = new List<int[]>();
+            var vertexPoints = new List<Vector3>();
+
+            string line = reader.ReadLine(); // OFF header
+			
+            // Header comments
+            do
+            {
+                line = reader.ReadLine();
+            }
+            while (line!=null && line.StartsWith("#"));
+
+            var metrics = System.Text.RegularExpressions.Regex.Split(line, "\\s+");
+            int NVertices = int.Parse(metrics[0]);
+            int NFaces = int.Parse(metrics[1]);
+
+            for (int i = 0; i < NVertices; i++)
+            {
+                line = reader.ReadLine()?.Trim();
+                string[] vertex = System.Text.RegularExpressions.Regex.Split(line, "\\s+");
+                Debug.Log($"[{vertex[0]}] - [{vertex[1]}] - [{vertex[2]}]");
+                var v = new Vector3(
+                    float.Parse(vertex[0]),
+                    float.Parse(vertex[1]),
+                    float.Parse(vertex[2])
+                );
+                vertexPoints.Add(v);
+            }
+            
+            FaceTags = new List<HashSet<Tuple<string, TagType>>>();
+
+            for (int i = 0; i < NFaces; i++)
+            {
+                line = reader.ReadLine()?.Trim();
+                var faceString = System.Text.RegularExpressions.Regex.Split(line, "\\s+");
+                int sides = int.Parse(faceString[0]);
+                if (sides < 3) continue;
+                var face = new int[sides];
+                for (int j = 0; j < sides; j++)
+                {
+                    face[j] = int.Parse(faceString[j + 1]);
+                }
+
+                if (faceString.Length > sides + 3)
+                {
+                    var faceColor = new Color(
+                        float.Parse(faceString[sides]),
+                        float.Parse(faceString[sides + 1]),
+                        float.Parse(faceString[sides + 2])
+                    );
+                    var tags = new HashSet<Tuple<string, TagType>>();
+                    tags.Add(new Tuple<string, TagType>(
+                        $"#{ColorUtility.ToHtmlStringRGB(faceColor)}",
+                        TagType.Extrovert)
+                    );
+                    FaceTags.Add(tags);
+                }
+
+                face = face.ToArray();
+                faceIndices.Add(face);
+            }
+            var faceRoles = Enumerable.Repeat(Roles.Existing, faceIndices.Count);
+            var vertexRoles = Enumerable.Repeat(Roles.Existing, NVertices);
+            
+            FaceRoles = faceRoles.ToList();
+            VertexRoles = vertexRoles.ToList();
+            InitIndexed(vertexPoints, faceIndices);
+
+            CullUnusedVertices();
+
         }
 
         /// <summary>
