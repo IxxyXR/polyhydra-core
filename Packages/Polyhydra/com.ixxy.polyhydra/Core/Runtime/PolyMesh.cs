@@ -10,9 +10,11 @@ using Random = UnityEngine.Random;
 
 namespace Polyhydra.Core
 {
+    
     public partial class PolyMesh
     {
         private const float TOLERANCE = 0.02f;
+        private PointOctree<Vertex> octree;
 
         public static Color[] DefaultFaceColors =
         {
@@ -29,7 +31,11 @@ namespace Polyhydra.Core
             new Color(0.5f, 1.0f, 1.0f),
             new Color(1.0f, 0.5f, 1.0f),
         };
-
+        
+        public static int ActualMod(int x, int m) // Fuck C# deciding that mod isn't actually mod
+        {
+            return (x % m + m) % m;
+        }
         public enum TagType
         {
             Introvert,
@@ -69,6 +75,16 @@ namespace Polyhydra.Core
             New,
             NewAlt,
             ExistingAlt,
+        }
+        
+        public void SetFaceRoles(Roles role)
+        {
+            FaceRoles = Enumerable.Repeat(role, Faces.Count).ToList();
+        }
+		
+        public void SetVertexRoles(Roles role)
+        {
+            VertexRoles = Enumerable.Repeat(role, Vertices.Count).ToList();
         }
 
         public bool IsValid
@@ -344,6 +360,21 @@ namespace Polyhydra.Core
             }
 
             return loops;
+        }
+        
+        public void InitOctree()
+        {
+            octree = new PointOctree<Vertex>(1, Vector3.zero, 1);
+            for (var i = 0; i < Vertices.Count; i++)
+            {
+                var v = Vertices[i];
+                octree.Add(v, v.Position);
+            }
+        }
+        
+        public Vertex[] FindNeighbours(Vertex v, float distance)
+        {
+            return octree.GetNearby(v.Position, distance);
         }
 
         /// <summary>
@@ -718,25 +749,16 @@ namespace Polyhydra.Core
                     color = colors[CalcDirectionIndex(face, colors.Length - 1)];
                     break;
                 case ColorMethods.ByTags:
-                    var c = new Color();
-                    if (FaceTags[i].Count > 0)
+                    var c = Color.white;
+                    if (i < FaceTags.Count && FaceTags[i].Count > 0)
                     {
                         string htmlColor = FaceTags[i].First(t => t.Item1.StartsWith("#")).Item1;
                         if (!(ColorUtility.TryParseHtmlString(htmlColor, out c)))
                         {
-                            if (!ColorUtility.TryParseHtmlString(htmlColor.Replace("#", ""), out c))
-                            {
-                                c = Color.white;
-                            }
+                            ColorUtility.TryParseHtmlString(htmlColor.Replace("#", ""), out c);
                         }
-
-                        color = c;
                     }
-                    else
-                    {
-                        color = Color.white;
-                    }
-
+                    color = c;
                     break;
                 default:
                     color = Color.white;
