@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements.Experimental;
 
@@ -8,22 +9,27 @@ namespace Polyhydra.Core
 {
     public partial class PolyMesh
     {
-        
+
         public bool IncludeFace(int faceIndex, IEnumerable<Tuple<string, TagType>> tagList = null, Filter filter = null)
         {
             bool include = true;
             if (tagList != null && tagList.Any())
-            {  // Return true if any tag strings match
-                include = tagList.Select(x=>x.Item1).Intersect(FaceTags[faceIndex].Select(x=>x.Item1)).Any();
+            {
+                // Return true if any tag strings match
+                include = tagList.Select(x => x.Item1).Intersect(FaceTags[faceIndex].Select(x => x.Item1)).Any();
             }
-            return include && filter.eval(new FilterParams(this, faceIndex));
+
+            bool filterResult = filter == null || filter.eval(new FilterParams(this, faceIndex));
+            return include && filterResult;
         }
-        
-        public bool IncludeVertex(int vertexIndex, IEnumerable<Tuple<string, TagType>> tagList = null, Filter filter = null)
+
+        public bool IncludeVertex(int vertexIndex, IEnumerable<Tuple<string, TagType>> tagList = null,
+            Filter filter = null)
         {
             bool include = true;
             if (tagList != null && tagList.Any())
-            {  // Return true if any tags match
+            {
+                // Return true if any tags match
                 var vert = Vertices[vertexIndex];
                 foreach (var face in vert.GetVertexFaces())
                 {
@@ -31,6 +37,7 @@ namespace Polyhydra.Core
                     include = include & tagList.Intersect(FaceTags[Faces.IndexOf(face)]).Any();
                 }
             }
+
             return include && filter.eval(new FilterParams(this, vertexIndex));
         }
 
@@ -72,7 +79,8 @@ namespace Polyhydra.Core
             return original;
         }
 
-        public PolyMesh Stack(Vector3 axis, float offset, float scale, Filter filter = default, float limit = 0.1f, string tags = "")
+        public PolyMesh Stack(Vector3 axis, float offset, float scale, Filter filter = default, float limit = 0.1f,
+            string tags = "")
         {
             scale = Mathf.Abs(scale);
             scale = Mathf.Clamp(scale, 0.0001f, 0.99f);
@@ -545,12 +553,12 @@ namespace Polyhydra.Core
 
         public PolyMesh FaceRemove(Filter filter, string tags)
         {
-            return _FaceRemove(new OpParams{ filter = filter, tags = tags }, false);
+            return _FaceRemove(new OpParams { filter = filter, tags = tags }, false);
         }
 
         public PolyMesh FaceKeep(Filter filter, string tags)
         {
-            return _FaceRemove(new OpParams{ filter = filter, tags = tags }, true);
+            return _FaceRemove(new OpParams { filter = filter, tags = tags }, true);
         }
 
         public PolyMesh FaceRemove(bool invertLogic, List<int> faceIndices)
@@ -800,7 +808,7 @@ namespace Polyhydra.Core
             if (symmetric)
             {
                 result = Offset(new OpParams(new OpFunc(x => -0.5f * o.funcA.eval(x))));
-                top = Offset(new OpParams (new OpFunc(x => 0.5f * o.funcA.eval(x))));
+                top = Offset(new OpParams(new OpFunc(x => 0.5f * o.funcA.eval(x))));
             }
             else
             {
@@ -889,8 +897,9 @@ namespace Polyhydra.Core
             float yMin = Vertices.Min(v => v.Position[axis]);
             lower = Mathf.Lerp(yMin, yMax, lower);
             upper = Mathf.Lerp(yMin, yMax, upper);
-            var slice = new Filter(x => x.poly.Faces[x.index].Centroid[axis] > lower && x.poly.Faces[x.index].Centroid[axis] < upper);
-            return _FaceRemove(new OpParams{tags = tags, filter = slice }, true);
+            var slice = new Filter(x =>
+                x.poly.Faces[x.index].Centroid[axis] > lower && x.poly.Faces[x.index].Centroid[axis] < upper);
+            return _FaceRemove(new OpParams { tags = tags, filter = slice }, true);
         }
 
         public PolyMesh FaceRemoveDistance(float lower, float upper, string tags = "")
@@ -1396,7 +1405,7 @@ namespace Polyhydra.Core
 
             return result;
         }
-        
+
         /// <summary>
         /// Appends a copy of another mesh to this one.
         /// </summary>
@@ -1405,7 +1414,7 @@ namespace Polyhydra.Core
         {
             Append(other, Vector3.zero, Quaternion.identity, 1.0f);
         }
-        
+
         private void Append(PolyMesh other, Vector3 position, Quaternion rotation, Vector3 scale)
         {
             Append(other, Matrix4x4.TRS(position, rotation, scale));
@@ -1467,7 +1476,7 @@ namespace Polyhydra.Core
         {
             IEnumerable<Vector3> verts;
 
-            if (matrix==Matrix4x4.identity)
+            if (matrix == Matrix4x4.identity)
             {
                 // Fast path
                 verts = ListVerticesByPoints();
@@ -1479,17 +1488,17 @@ namespace Polyhydra.Core
 
             return new PolyMesh(verts, ListFacesByVertexIndices(), FaceRoles, VertexRoles, FaceTags);
         }
-        
+
         public PolyMesh Duplicate(Vector3 transform, Quaternion rotation)
         {
             return Duplicate(Matrix4x4.TRS(transform, rotation, Vector3.one));
         }
-        
+
         public PolyMesh Duplicate(Vector3 transform, float scale)
         {
             return Duplicate(Matrix4x4.TRS(transform, Quaternion.identity, Vector3.one * scale));
         }
-        
+
         public PolyMesh Duplicate(Vector3 transform)
         {
             return Duplicate(Matrix4x4.TRS(transform, Quaternion.identity, Vector3.one));
@@ -1499,7 +1508,7 @@ namespace Polyhydra.Core
         {
             return Duplicate(Matrix4x4.TRS(transform, Quaternion.Euler(rotation), scale));
         }
-        
+
         public PolyMesh Duplicate(Vector3 transform, Quaternion rotation, Vector3 scale)
         {
             return Duplicate(Matrix4x4.TRS(transform, rotation, scale));
@@ -2584,7 +2593,7 @@ namespace Polyhydra.Core
             poly.FaceRemove(new OpParams(Filter.Existing));
             return poly;
         }
-        
+
         // ConnectFaces uses the Loft method from the Conway ops so probably should move there.
 
         // public PolyMesh ConnectFaces(OpParams o)
@@ -2697,8 +2706,6 @@ namespace Polyhydra.Core
                 {
                     edgesToCollapse.Add(edge);
                 }
-
-                ;
             }
 
             CollapseEdges(edgesToCollapse);
@@ -2707,6 +2714,7 @@ namespace Polyhydra.Core
 
         private void CollapseEdges(List<Halfedge> edgesToCollapse)
         {
+
             foreach (var edge in edgesToCollapse)
             {
                 CollapseEdge(edge);
@@ -3025,7 +3033,7 @@ namespace Polyhydra.Core
 
             List<Halfedge> face1edges = face1.GetHalfedges();
             List<Halfedge> face2edges = face2?.GetHalfedges();
-            
+
             Faces.Remove(face1);
             if (face2 != null)
             {
@@ -3042,7 +3050,7 @@ namespace Polyhydra.Core
                 {
                     Vertices.Add(currentEdge.Vertex);
                 }
-                
+
                 if (currentEdge != edgeToSplit)
                 {
                     face1verts.Add(currentEdge.Vertex);
@@ -3063,7 +3071,7 @@ namespace Polyhydra.Core
                     {
                         Vertices.Add(currentEdge.Vertex);
                     }
-                
+
                     if (currentEdge != edgeToSplit.Pair)
                     {
                         face2verts.Add(currentEdge.Vertex);
@@ -3078,8 +3086,38 @@ namespace Polyhydra.Core
 
             Faces.Add(face1verts);
             Faces?.Add(face2verts);
-            
+
             Halfedges.MatchPairs();
+
+        }
+
+        public void MergeCoplanarFaces(float threshold)
+        {
+            var skipEdges = new HashSet<(Guid, Guid)?>();
+            var edgesToCollapse = new List<Halfedge>();
+            int failsafe = 0;
+            int edgesRemaining;
+
+            // CollapseEdges can't handle collapsing multiple edges in the same face
+            // in a single pass so we have to loop until everything is merged
+            do
+            {
+                foreach (var edge in Halfedges)
+                {
+                    if (edge.Pair == null || skipEdges.Contains(edge.PairedName)) continue;
+                    skipEdges.Add(edge.PairedName);
+
+                    if (Vector3.Angle(edge.Face.Normal, edge.Pair.Face.Normal) <= threshold)
+                    {
+                        edgesToCollapse.Add(edge);
+                    }
+                }
+
+                edgesRemaining = edgesToCollapse.Count;
+                CollapseEdges(edgesToCollapse);
+                skipEdges.Clear();
+                edgesToCollapse.Clear();
+            } while (edgesRemaining > 0 && failsafe++ < 100);
 
         }
     }
