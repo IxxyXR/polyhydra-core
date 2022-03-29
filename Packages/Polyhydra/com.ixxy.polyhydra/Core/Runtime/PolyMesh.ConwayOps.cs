@@ -7,6 +7,161 @@ namespace Polyhydra.Core
 {
     public partial class PolyMesh
     {
+        
+        public enum ConwayOperator
+        {
+            Identity = 0,
+            Kis = 1,
+            Ambo = 2,
+            Zip = 3,
+            Expand = 4,
+            Bevel = 5,
+            Join = 6,
+            Needle = 7,
+            Ortho = 8,
+            Meta = 9,
+            Truncate = 10,
+            Dual = 11,
+            Gyro = 12,
+            Snub = 13,
+            Subdivide = 14,
+            Loft = 15,
+            Chamfer = 16,
+            Quinto = 17,
+            Lace = 18,
+            JoinedLace = 19,
+            OppositeLace = 20,
+            JoinKisKis = 21,
+            Stake = 22,
+            JoinStake = 23,
+            Medial = 24,
+            EdgeMedial = 25,
+            Propeller = 26,
+            Whirl = 27,
+            Volute = 28,
+            Exalt = 29,
+            Yank = 30,
+            Squall = 31,
+            JoinSquall = 32,
+            Cross = 33   
+        }
+
+        public PolyMesh ApplyConwayOp(ConwayOperator op, OpParams p)
+        {
+
+            PolyMesh polyMesh = this;
+            
+            switch (op)
+            {
+                case ConwayOperator.Identity:
+                    polyMesh = Duplicate();
+                    break;
+                case ConwayOperator.Kis:
+                    polyMesh = polyMesh.Kis(p);
+                    break;
+                case ConwayOperator.Ambo:
+                    polyMesh = polyMesh.Ambo();
+                    break;
+                case ConwayOperator.Zip:
+                    polyMesh = polyMesh.Zip(p);
+                    break;
+                case ConwayOperator.Expand:
+                    polyMesh = polyMesh.Expand(p);
+                    break;
+                case ConwayOperator.Bevel:
+                    polyMesh = polyMesh.Bevel(p);
+                    break;
+                case ConwayOperator.Join:
+                    polyMesh = polyMesh.Join(p);
+                    break;
+                case ConwayOperator.Needle:
+                    polyMesh = polyMesh.Needle(p);
+                    break;
+                case ConwayOperator.Ortho:
+                    polyMesh = polyMesh.Ortho(p);
+                    break;
+                case ConwayOperator.Meta:
+                    polyMesh = polyMesh.Meta(p);
+                    break;
+                case ConwayOperator.Truncate:
+                    polyMesh = polyMesh.Truncate(p);
+                    break;
+                case ConwayOperator.Dual:
+                    polyMesh = polyMesh.Dual();
+                    break;
+                case ConwayOperator.Gyro:
+                    polyMesh = polyMesh.Gyro(p);
+                    break;
+                case ConwayOperator.Snub:
+                    polyMesh = polyMesh.Gyro(p);
+                    polyMesh = polyMesh.Dual();
+                    break;
+                case ConwayOperator.Subdivide:
+                    polyMesh = polyMesh.Subdivide(p);
+                    break;
+                case ConwayOperator.Loft:
+                    polyMesh = polyMesh.Loft(p);
+                    break;
+                case ConwayOperator.Chamfer:
+                    polyMesh = polyMesh.Chamfer(p);
+                    break;
+                case ConwayOperator.Quinto:
+                    polyMesh = polyMesh.Quinto(p);
+                    break;
+                case ConwayOperator.Lace:
+                    polyMesh = polyMesh.Lace(p);
+                    break;
+                case ConwayOperator.JoinedLace:
+                    polyMesh = polyMesh.JoinedLace(p);
+                    break;
+                case ConwayOperator.OppositeLace:
+                    polyMesh = polyMesh.OppositeLace(p);
+                    break;
+                case ConwayOperator.JoinKisKis:
+                    polyMesh = polyMesh.JoinKisKis(p);
+                    break;
+                case ConwayOperator.Stake:
+                    polyMesh = polyMesh.Stake(p);
+                    break;
+                case ConwayOperator.JoinStake:
+                    polyMesh = polyMesh.Stake(p, join: true);
+                    break;
+                case ConwayOperator.Medial:
+                    polyMesh = polyMesh.Medial(p);
+                    break;
+                case ConwayOperator.EdgeMedial:
+                    polyMesh = polyMesh.EdgeMedial(p);
+                    break;
+                case ConwayOperator.Propeller:
+                    polyMesh = polyMesh.Propeller(p);
+                    break;
+                case ConwayOperator.Whirl:
+                    polyMesh = polyMesh.Whirl(p);
+                    break;
+                case ConwayOperator.Volute:
+                    polyMesh = polyMesh.Volute(p);
+                    break;
+                case ConwayOperator.Exalt:
+                    polyMesh = polyMesh.Exalt(p);
+                    break;
+                case ConwayOperator.Yank:
+                    polyMesh = polyMesh.Yank(p);
+                    break;
+                case ConwayOperator.Squall:
+                    polyMesh = polyMesh.Squall(p);
+                    break;
+                case ConwayOperator.JoinSquall:
+                    polyMesh = polyMesh.Squall(p, join: true);
+                    break;
+                case ConwayOperator.Cross:
+                    polyMesh = polyMesh.Cross(p);
+                    break;
+            }
+
+            return polyMesh;
+
+        }
+        
         #region conway methods
 
         public PolyMesh Dual()
@@ -2717,7 +2872,7 @@ namespace Polyhydra.Core
             return new PolyMesh(vertexPoints, faceIndices, faceRoles, vertexRoles, newFaceTags);
         }
 
-        private PolyMesh Yank(OpParams o)
+        public PolyMesh Yank(OpParams o)
         {
             var result = Kis(o);
             result = result.Dual();
@@ -2726,7 +2881,7 @@ namespace Polyhydra.Core
             return result;
         }
 
-        private PolyMesh Exalt(OpParams o)
+        public PolyMesh Exalt(OpParams o)
         {
             // TODO return a correct VertexRole array
             // I suspect the last vertices map to the original shape verts
