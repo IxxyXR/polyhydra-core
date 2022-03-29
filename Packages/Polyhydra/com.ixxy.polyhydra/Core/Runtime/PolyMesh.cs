@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using AsImpL;
 using UnityEngine;
+using UnityEngine.Assertions;
 using UnityEngine.Rendering;
 using Random = UnityEngine.Random;
 
@@ -198,23 +199,29 @@ namespace Polyhydra.Core
             var faceIndices = new List<int[]>();
             var vertexPoints = new List<Vector3>();
 
-            string line = reader.ReadLine(); // OFF header
-			
-            // Header comments
-            do
-            {
-                line = reader.ReadLine();
-            }
-            while (line!=null && line.StartsWith("#"));
+            // Read all non-empty, non-comment lines into a list
+            var lines = reader
+                .ReadToEnd()
+                .Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None)
+                .Select(line => line.Trim())
+                .Where(line => !(string.IsNullOrWhiteSpace(line) || line.StartsWith("#")))
+                .ToList();
 
-            var metrics = System.Text.RegularExpressions.Regex.Split(line, "\\s+");
+            for (var i = 0; i < 5; i++)
+            {
+                Debug.Log($"{i}: {lines[i]}");
+            }
+            
+            var metrics = System.Text.RegularExpressions.Regex.Split(lines[1], "\\s+");
             int NVertices = int.Parse(metrics[0]);
             int NFaces = int.Parse(metrics[1]);
 
-            for (int i = 0; i < NVertices; i++)
+            // Vertices should start after header and metrics lines
+            for (int i = 2; i < NVertices + 2; i++)
             {
-                line = reader.ReadLine()?.Trim();
-                string[] vertex = System.Text.RegularExpressions.Regex.Split(line, "\\s+");
+                // Split on any whitespace
+                string[] vertex = System.Text.RegularExpressions.Regex.Split(lines[i], "\\s+");
+                
                 var v = new Vector3(
                     float.Parse(vertex[0]),
                     float.Parse(vertex[1]),
@@ -225,10 +232,13 @@ namespace Polyhydra.Core
             
             FaceTags = new List<HashSet<Tuple<string, TagType>>>();
 
-            for (int i = 0; i < NFaces; i++)
+            // Faces should immediately follow all vertices
+            int firstFaceLine = NVertices + 2;
+            for (int i = firstFaceLine; i < firstFaceLine + NFaces; i++)
             {
-                line = reader.ReadLine()?.Trim();
-                var faceString = System.Text.RegularExpressions.Regex.Split(line, "\\s+");
+                // Split on any whitespace
+                var faceString = System.Text.RegularExpressions.Regex.Split(lines[i], "\\s+");
+                
                 int sides = int.Parse(faceString[0]);
                 if (sides < 3) continue;
                 var face = new int[sides];
@@ -237,8 +247,10 @@ namespace Polyhydra.Core
                     face[j] = int.Parse(faceString[j + 1]);
                 }
 
+                // Assume any line with more than 3 values also has colours
                 if (faceString.Length > sides + 3)
                 {
+                    // Read the colour (we ignore alpha)
                     var faceColor = new Color(
                         float.Parse(faceString[sides + 1]),
                         float.Parse(faceString[sides + 2]),
@@ -255,6 +267,7 @@ namespace Polyhydra.Core
                 face = face.ToArray();
                 faceIndices.Add(face);
             }
+            
             var faceRoles = Enumerable.Repeat(Roles.Existing, faceIndices.Count);
             var vertexRoles = Enumerable.Repeat(Roles.Existing, NVertices);
             
