@@ -36,7 +36,6 @@ public class Antiprism : MonoBehaviour
     public void Go()
     {
         var parts = command.Split(new []{' '}, 2);
-        int exitCode = -1;
         string output = "";
         Process process = new Process();
         process.StartInfo.UseShellExecute = false;
