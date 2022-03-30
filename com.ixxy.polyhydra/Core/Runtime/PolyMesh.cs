@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using AsImpL;
 using UnityEngine;
-using UnityEngine.Assertions;
 using UnityEngine.Rendering;
 using Random = UnityEngine.Random;
 
