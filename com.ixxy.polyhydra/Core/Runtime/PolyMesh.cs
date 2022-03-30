@@ -207,11 +207,6 @@ namespace Polyhydra.Core
                 .Where(line => !(string.IsNullOrWhiteSpace(line) || line.StartsWith("#")))
                 .ToList();
 
-            for (var i = 0; i < 5; i++)
-            {
-                Debug.Log($"{i}: {lines[i]}");
-            }
-            
             var metrics = System.Text.RegularExpressions.Regex.Split(lines[1], "\\s+");
             int NVertices = int.Parse(metrics[0]);
             int NFaces = int.Parse(metrics[1]);
@@ -786,6 +781,16 @@ namespace Polyhydra.Core
             // Used to reduce Z fighting for coincident faces
             float jitter = 0.0002f;
             return val + new Vector3(Random.value * jitter, Random.value * jitter, Random.value * jitter);
+        }
+
+        public void InitTags(string tag=null)
+        {
+            var tagset = new HashSet<Tuple<string, TagType>>();
+            if (!string.IsNullOrEmpty(tag))
+            {
+                tagset.Add(new Tuple<string, TagType>(tag, TagType.Extrovert));
+            }
+            FaceTags = Enumerable.Repeat(tagset, Faces.Count).ToList();
         }
     }
 }
