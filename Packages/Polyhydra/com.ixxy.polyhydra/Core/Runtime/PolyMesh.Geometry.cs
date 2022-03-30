@@ -1326,7 +1326,7 @@ namespace Polyhydra.Core
             }
 
             FaceRoles = FaceRoles.GetRange(0, faceIndices.Count);
-            FaceTags = FaceTags.GetRange(0, faceIndices.Count);
+            FaceTags = FaceTags?.GetRange(0, faceIndices.Count);
             vertexRoles = Vertices.Select(x => FaceRoles[Faces.IndexOf(x.Halfedge.Face)]).ToList();
             return new PolyMesh(vertexPoints, faceIndices, FaceRoles, vertexRoles, FaceTags);
         }
@@ -1463,7 +1463,7 @@ namespace Polyhydra.Core
 
             FaceRoles.AddRange(dup.FaceRoles);
             VertexRoles.AddRange(dup.VertexRoles);
-            FaceTags.AddRange(dup.FaceTags);
+            FaceTags?.AddRange(dup.FaceTags);
         }
 
         public PolyMesh Duplicate()
