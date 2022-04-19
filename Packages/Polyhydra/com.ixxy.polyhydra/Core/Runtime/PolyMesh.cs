@@ -159,27 +159,39 @@ namespace Polyhydra.Core
             VertexRoles = new List<Roles>();
         }
 
+        public PolyMesh(
+            IEnumerable<Vector3> verts,
+            IEnumerable<IEnumerable<int>> faceIndices
+        ) : this()
+        {
+            var faceRoles = Enumerable.Repeat(Roles.New, faceIndices.Count());
+            var vertexRoles = Enumerable.Repeat(Roles.New, verts.Count());
+            FaceRoles = faceRoles.ToList();
+            VertexRoles = vertexRoles.ToList();
+            InitIndexed(verts, faceIndices);
+            CullUnusedVertices();
+
+        }
 
         public PolyMesh(
-            IEnumerable<Vector3> verticesByPoints,
-            IEnumerable<IEnumerable<int>> facesByVertexIndices,
+            IEnumerable<Vector3> verts,
+            IEnumerable<IEnumerable<int>> faceIndices,
             IEnumerable<Roles> faceRoles,
             IEnumerable<Roles> vertexRoles
         ) : this()
         {
-            if (faceRoles.Count() != facesByVertexIndices.Count())
+            if (faceRoles.Count() != faceIndices.Count())
             {
                 throw new ArgumentException(
-                    $"Incorrect FaceRole array: {faceRoles.Count()} instead of {facesByVertexIndices.Count()}",
+                    $"Incorrect FaceRole array: {faceRoles.Count()} instead of {faceIndices.Count()}",
                     "faceRoles"
                 );
             }
-
             FaceRoles = faceRoles.ToList();
             VertexRoles = vertexRoles.ToList();
-            InitIndexed(verticesByPoints, facesByVertexIndices);
-
+            InitIndexed(verts, faceIndices);
             CullUnusedVertices();
+            InitTags();
         }
 
         private PolyMesh(
@@ -333,32 +345,8 @@ namespace Polyhydra.Core
                 // If it's not a bare edge or we've already checked it
                 if (startHalfedge.Pair != null || looped.Contains(startHalfedge)) continue;
 
-                var loop = new List<Halfedge>();
-                var currLoopEdge = startHalfedge;
-                int escapeClause = 0;
-                do
-                {
-                    loop.Add(currLoopEdge);
-                    looped.Add(currLoopEdge);
-                    Halfedge nextLoopEdge = null;
-                    var possibleEdges = currLoopEdge.Prev.Vertex.Halfedges;
-                    //possibleEdges.Reverse();
-                    foreach (var edgeToTest in possibleEdges)
-                    {
-                        if (currLoopEdge != edgeToTest && edgeToTest.Pair == null)
-                        {
-                            nextLoopEdge = edgeToTest;
-                            break;
-                        }
-                    }
-
-                    if (nextLoopEdge != null)
-                    {
-                        currLoopEdge = nextLoopEdge;
-                    }
-
-                    escapeClause++;
-                } while (currLoopEdge != startHalfedge && escapeClause < 1000);
+                var loop = GetBoundaryLoop(startHalfedge);
+                looped.UnionWith(loop);
 
                 if (loop.Count >= 3)
                 {
@@ -368,7 +356,27 @@ namespace Polyhydra.Core
 
             return loops;
         }
-        
+
+        public List<Halfedge> GetBoundaryLoop(Halfedge startHalfedge)
+        {
+            var loop = new List<Halfedge>();
+            var currLoopEdge = startHalfedge;
+            int failsafe = 0;
+            do
+            {
+                loop.Add(currLoopEdge);
+                Halfedge nextLoopEdge = null;
+                currLoopEdge = currLoopEdge.Prev.Vertex.Halfedges.First(e=>e.Pair==null && e!=currLoopEdge);
+            } while (currLoopEdge != startHalfedge && failsafe++ < 1000);
+
+            if (failsafe >= 1000)
+            {
+                Debug.LogError($"Failed to close boundary loop");
+                loop.Clear();
+            }
+            return loop;
+        }
+
         public void InitOctree()
         {
             octree = new PointOctree<Vertex>(1, Vector3.zero, 1);
@@ -474,7 +482,8 @@ namespace Polyhydra.Core
             Color[] colors = null,
             ColorMethods colorMethod = ColorMethods.ByRole,
             UVMethods uvMethod = UVMethods.FirstEdge,
-            bool largeMeshFormat = true
+            bool largeMeshFormat = true,
+            bool earClipping = true  // Default is fan triangulation from centroid
         )
         {
             Vector2 calcUV(Vector3 point, Vector3 xAxis, Vector3 yAxis)
@@ -504,10 +513,11 @@ namespace Polyhydra.Core
             var miscUVs1 = new List<Vector4>();
             var miscUVs2 = new List<Vector4>();
 
-            List<PolyMesh.Roles> uniqueRoles = null;
+            List<Roles> uniqueRoles = null;
             List<string> uniqueTags = null;
 
             var submeshTriangles = new List<List<int>>();
+
 
             // TODO
             // var hasNaked = conway.HasNaked();
@@ -605,33 +615,73 @@ namespace Polyhydra.Core
 
                 if (face.Sides > 3)
                 {
-                    var newTris = Triangulator.Triangulate(face);
 
-                    for (int t = 0; t < newTris.Count; t++)
+                    if (face.IsConvex)
                     {
-                        meshVertices.Add(newTris[t].v1.Position);
-                        meshUVs.Add(calcUV(meshVertices[index], xAxis, yAxis));
-                        faceTris.Add(index++);
-                        edgeUVs.Add(new Vector2(0, 0));
-                        barycentricUVs.Add(new Vector3(0, 0, 1));
+                        for (var edgeIndex = 0; edgeIndex < faceIndex.Count; edgeIndex++)
+                        {
+                            // Convex faces can use fan triangulation
+                            // It's fast at the cost of an extra triangle per face
+                            // TOD We could also use fan triangulation for concave faces where
+                            // every vertex can be seen from the centroid
+                            meshVertices.Add(faceCentroid);
+                            meshUVs.Add(calcUV(meshVertices[index], xAxis, yAxis));
+                            faceTris.Add(index++);
+                            edgeUVs.Add(new Vector2(0, 0));
+                            barycentricUVs.Add(new Vector3(0, 0, 1));
 
-                        meshVertices.Add(newTris[t].v2.Position);
-                        meshUVs.Add(calcUV(meshVertices[index], xAxis, yAxis));
-                        faceTris.Add(index++);
-                        edgeUVs.Add(new Vector2(1, 1));
-                        barycentricUVs.Add(new Vector3(0, 1, 0));
+                            meshVertices.Add(points[faceIndex[edgeIndex]]);
+                            meshUVs.Add(calcUV(meshVertices[index], xAxis, yAxis));
+                            faceTris.Add(index++);
+                            edgeUVs.Add(new Vector2(1, 1));
+                            barycentricUVs.Add(new Vector3(0, 1, 0));
 
-                        meshVertices.Add(newTris[t].v3.Position);
-                        meshUVs.Add(calcUV(meshVertices[index], xAxis, yAxis));
-                        faceTris.Add(index++);
-                        edgeUVs.Add(new Vector2(1, 1));
-                        barycentricUVs.Add(new Vector3(1, 0, 0));
+                            meshVertices.Add(points[faceIndex[(edgeIndex + 1) % face.Sides]]);
+                            meshUVs.Add(calcUV(meshVertices[index], xAxis, yAxis));
+                            faceTris.Add(index++);
+                            edgeUVs.Add(new Vector2(1, 1));
+                            barycentricUVs.Add(new Vector3(1, 0, 0));
 
-                        meshNormals.AddRange(Enumerable.Repeat(faceNormal, 3));
-                        meshColors.AddRange(Enumerable.Repeat(color, 3));
-                        miscUVs1.AddRange(Enumerable.Repeat(miscUV1, 3));
-                        miscUVs2.AddRange(Enumerable.Repeat(miscUV2, 3));
+                            meshNormals.AddRange(Enumerable.Repeat(faceNormal, 3));
+                            meshColors.AddRange(Enumerable.Repeat(color, 3));
+                            miscUVs1.AddRange(Enumerable.Repeat(miscUV1, 3));
+                            miscUVs2.AddRange(Enumerable.Repeat(miscUV2, 3));
+                        }
                     }
+                    else
+                    {
+                        // Concave faces need ear clipping triangluation
+                        // This doesn't work well for complex (self-intersecting) faces
+                        // but those are mostly Wythoff Uniform polyhedra
+                        // and therefore have convex faces
+                        var newTris = Triangulator.Triangulate(face);
+                        
+                        for (int t = 0; t < newTris.Count; t++)
+                        {
+                            meshVertices.Add(newTris[t].v1.Position);
+                            meshUVs.Add(calcUV(meshVertices[index], xAxis, yAxis));
+                            faceTris.Add(index++);
+                            edgeUVs.Add(new Vector2(0, 0));
+                            barycentricUVs.Add(new Vector3(0, 0, 1));
+                        
+                            meshVertices.Add(newTris[t].v2.Position);
+                            meshUVs.Add(calcUV(meshVertices[index], xAxis, yAxis));
+                            faceTris.Add(index++);
+                            edgeUVs.Add(new Vector2(1, 1));
+                            barycentricUVs.Add(new Vector3(0, 1, 0));
+                        
+                            meshVertices.Add(newTris[t].v3.Position);
+                            meshUVs.Add(calcUV(meshVertices[index], xAxis, yAxis));
+                            faceTris.Add(index++);
+                            edgeUVs.Add(new Vector2(1, 1));
+                            barycentricUVs.Add(new Vector3(1, 0, 0));
+                        
+                            meshNormals.AddRange(Enumerable.Repeat(faceNormal, 3));
+                            meshColors.AddRange(Enumerable.Repeat(color, 3));
+                            miscUVs1.AddRange(Enumerable.Repeat(miscUV1, 3));
+                            miscUVs2.AddRange(Enumerable.Repeat(miscUV2, 3));
+                        }
+                    } 
                 }
                 else
                 {
@@ -782,6 +832,11 @@ namespace Polyhydra.Core
             return val + new Vector3(Random.value * jitter, Random.value * jitter, Random.value * jitter);
         }
 
+        public void InitTags(Color color)
+        {
+            InitTags($"#{ColorUtility.ToHtmlStringRGB(color)}");
+        }
+
         public void InitTags(string tag=null)
         {
             var tagset = new HashSet<Tuple<string, TagType>>();
@@ -790,6 +845,21 @@ namespace Polyhydra.Core
                 tagset.Add(new Tuple<string, TagType>(tag, TagType.Extrovert));
             }
             FaceTags = Enumerable.Repeat(tagset, Faces.Count).ToList();
+        }
+
+        // For a given number of vertices, returns the face index data structure
+        // to connect it as a strip of quad faces
+        public static List<List<int>> GenerateQuadStripIndices(int vertexCount)
+        {
+            var faceIndices = new List<List<int>>();
+            for (int i = 0; i < vertexCount - 2; i += 2)
+            {
+                faceIndices.Add(new List<int>
+                {
+                    i, i+2, i+3, i+1
+                });
+            }
+            return faceIndices;
         }
     }
 }

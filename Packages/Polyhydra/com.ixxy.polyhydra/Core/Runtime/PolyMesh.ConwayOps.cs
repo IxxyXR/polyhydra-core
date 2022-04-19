@@ -1035,9 +1035,6 @@ namespace Polyhydra.Core
             var faceRoles = new List<Roles>();
             var vertexRoles = new List<Roles>();
             
-            // Hacky. Only for backwards compatibility
-            float offsetifNotPlanar = Faces[0].Normal==Faces[Faces.Count/2].Normal ? 0 :.5f;
-
             for (var i = 0; i < Vertices.Count; i++)
             {
                 vertexPoints.Add(Vertices[i].Position);
@@ -1049,7 +1046,9 @@ namespace Polyhydra.Core
 
             for (var faceIndex = 0; faceIndex < Faces.Count; faceIndex++)
             {
-                float offset = o.GetValueA(this, faceIndex) + offsetifNotPlanar;
+                // This doesn't really work
+                // Join shouldn't really accept an offset in any case
+                float offset = o.GetValueA(this, faceIndex) * (faceIndex%2==0 ? 1 : -1);
                 var face = Faces[faceIndex];
                 vertexPoints.Add(face.Centroid + face.Normal * offset);
                 newCentroidVertices[face.Name] = vertexIndex++;
@@ -3059,5 +3058,30 @@ namespace Polyhydra.Core
         }
         
         #endregion
+
+        public enum Axes {X,Y,Z}
+
+        public void ApplyNoise(Axes axis, float strength=1, float xscale=1, float yscale=1)
+        {
+            foreach (var v in Vertices)
+            {
+                float offset;
+                switch (axis)
+                {
+                    case Axes.X:
+                        offset = Mathf.PerlinNoise(v.Position.y*xscale, v.Position.z*yscale);
+                        v.Position += new Vector3(offset * strength, 0, 0);
+                        break;
+                    case Axes.Y:
+                        offset = Mathf.PerlinNoise(v.Position.x*xscale, v.Position.z*yscale);
+                        v.Position += new Vector3(0, offset * strength, 0);
+                        break;
+                    case Axes.Z:
+                        offset = Mathf.PerlinNoise(v.Position.x*xscale, v.Position.y*yscale);
+                        v.Position += new Vector3(0, 0, offset * strength);
+                        break;
+                }
+            }
+        }
     }
 }

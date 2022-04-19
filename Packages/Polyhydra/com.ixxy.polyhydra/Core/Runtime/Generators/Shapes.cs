@@ -22,15 +22,15 @@ namespace Polyhydra.Core
 
             if (flip)
             {
-                start = sides - 1;
-                end = -1;
-                inc = -1;
-            }
-            else
-            {
                 start = 0;
                 end = sides;
                 inc = 1;
+            }
+            else
+            {
+                start = sides - 1;
+                end = -1;
+                inc = -1;
             }
 
             for (int i = start; i != end; i += inc)
@@ -39,7 +39,6 @@ namespace Polyhydra.Core
                 vertexPoints.Add(new Vector3(Mathf.Cos(angle) * radius, heightOffset, Mathf.Sin(angle) * radius));
                 faceIndices[0][i] = i;
             }
-
             return new PolyMesh(vertexPoints, faceIndices, faceRoles, vertexRoles);
         }
     }
