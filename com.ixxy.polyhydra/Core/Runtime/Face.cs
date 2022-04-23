@@ -161,6 +161,24 @@ namespace Polyhydra.Core
             }
             return tangent;
         }
+        
+        public static Vector2 Vector3toVector2(Vector3 v, Vector3 plane)
+        {
+            return new Vector2(
+                Vector3.Dot(v, plane),
+                Vector3.Dot(v, Quaternion.Euler(0, 90, 0) * plane)
+            );
+        }
+
+        public Vector2 PositionOnFace(Vertex v, Vector3 offset)
+        {
+            return Vector3toVector2(v.Position - offset, GetTangent(Normal));
+        }
+        
+        public Vector2 PositionOnFace(Vector3 p)
+        {
+            return Vector3toVector2(p, GetTangent(Normal));
+        }
 
         // Gets the vertices of this face as a list of Vector2s
         // in the plane of the face relative to it's centroid
@@ -168,12 +186,8 @@ namespace Polyhydra.Core
         {
             var centroid = Centroid;
             var verts = GetVertices();
-            var planeX = GetTangent(Normal);
-            var planeY = Quaternion.Euler(0, 90, 0) * planeX;
-            return verts.Select(v => new Vector2(
-                Vector3.Dot(v.Position - centroid, planeX),
-                Vector3.Dot(v.Position - centroid, planeY)
-            )).ToList();
+            return verts.Select(v=>PositionOnFace(v, centroid))
+            .ToList();
         }
         
         public bool IsClockwise
@@ -211,13 +225,33 @@ namespace Polyhydra.Core
                     if (i == 0) sign = zcrossproduct > 0;
                     else if (sign != zcrossproduct > 0)
                     {
-                        Debug.Log($"break loop. not convex");
                         return false;
                     }
                 }
-                Debug.Log($"end loop. is convex");
                 return true;
             }
+        }
+        
+        public bool AreAllVertsVisibleFromCentroid()
+        {
+            // Is every vertex reachable from the given point
+            // Cycles through vertices and returns false if the
+            // angle between vertex and center changes direction
+            
+            var centroid = Centroid;
+            var normal = Normal;
+            var verts = GetHalfedges().Select(e => e.Vertex.Position).ToList();
+            if (verts.Count < 4) return true;
+            float lastSign = 0;
+            int n = verts.Count;
+            for(int i = 1; i <= n; i++)
+            {
+                float angle = Vector3.SignedAngle(verts[i % n] - centroid, verts[i - 1] - centroid, normal);
+                var sign = Mathf.Sign(angle);
+                if (lastSign != 0 && sign != lastSign) return false;
+                lastSign = sign;
+            }
+            return true;
         }
 
         #endregion
@@ -298,9 +332,7 @@ namespace Polyhydra.Core
             IEnumerable<Vector3> verts = GetVertices().Select(i => i.Position);
             IEnumerable<IEnumerable<int>> faces = new List<List<int>>
             {Enumerable.Range(0, verts.Count()).ToList()};
-            IEnumerable<PolyMesh.Roles> faceRoles = new List<PolyMesh.Roles> {PolyMesh.Roles.New};
-            IEnumerable<PolyMesh.Roles> vertexRoles = new List<PolyMesh.Roles> {PolyMesh.Roles.New};
-            return new PolyMesh(verts, faces, faceRoles, vertexRoles);
+            return new PolyMesh(verts, faces);
         }
 
         public Halfedge GetBestEdge()

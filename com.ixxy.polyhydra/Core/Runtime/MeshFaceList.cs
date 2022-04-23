@@ -55,7 +55,7 @@ namespace Polyhydra.Core {
             Face newFace = new Face(newEdges[0]); // create new face
 
             // link halfedges to face, next and prev
-            // stop if a similiar halfedge is found in the mesh (avoid duplicates)
+            // stop if a similar halfedge is found in the mesh (avoid duplicates)
             for (int i = 0; i < n; i++) {
                 newEdges[i].Face = newFace;
                 newEdges[i].Next = newEdges[(i + 1) % n];
@@ -77,6 +77,10 @@ namespace Polyhydra.Core {
                     Debug.LogWarning(e.Message);
                     return false;
                 }
+                // TODO Can we do something like the following
+                // to remove the need to run MatchPairs after adding faces?
+                // var rname = (newEdges[j].Prev.Vertex.Name, newEdges[j].Vertex.Name);
+                // newEdges[j].Pair = _mPolyMesh.Halfedges.Contains(rname) ? _mPolyMesh.Halfedges[rname] : null;
             }
 
             // add face to mesh

@@ -11,8 +11,6 @@ namespace Polyhydra.Core
         {
             var faceIndices = new List<int[]>();
             var vertexPoints = new List<Vector3>();
-            var faceRoles = Enumerable.Repeat(PolyMesh.Roles.Existing, 1);
-            var vertexRoles = Enumerable.Repeat(PolyMesh.Roles.Existing, sides);
 
             faceIndices.Add(new int[sides]);
 
@@ -39,7 +37,7 @@ namespace Polyhydra.Core
                 vertexPoints.Add(new Vector3(Mathf.Cos(angle) * radius, heightOffset, Mathf.Sin(angle) * radius));
                 faceIndices[0][i] = i;
             }
-            return new PolyMesh(vertexPoints, faceIndices, faceRoles, vertexRoles);
+            return new PolyMesh(vertexPoints, faceIndices);
         }
     }
 }

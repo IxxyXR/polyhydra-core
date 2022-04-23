@@ -797,6 +797,19 @@ namespace Polyhydra.Core
             return Shell(new OpParams(new OpFunc(x => offsetList[x.index])));
         }
 
+        /// <summary>
+        ///  
+        /// </summary>
+        /// <param name="o"></param>
+        /// <param name="symmetric"></param>
+        /// <returns></returns>
+        public PolyMesh Extrude(OpParams o)
+        {
+            o.funcB = o.funcA;
+            o.funcA = new OpFunc(0);
+            return Loft(o);
+        }
+
         public PolyMesh Shell(OpParams o, bool symmetric = true)
         {
             var newFaceTags = new List<HashSet<Tuple<string, TagType>>>();
@@ -1169,12 +1182,10 @@ namespace Polyhydra.Core
             {
                 foreach (var cap in capVerts)
                 {
-                    capPoly = new PolyMesh(
-                        cap,
-                        new List<List<int>> { Enumerable.Range(0, cap.Count).ToList() },
-                        new List<Roles> { Roles.New },
-                        Enumerable.Repeat(Roles.New, cap.Count)
-                    );
+                    capPoly = new PolyMesh(cap, new List<List<int>>
+                    {
+                        Enumerable.Range(0, cap.Count).ToList()
+                    });
                 }
             }
 
@@ -1260,11 +1271,9 @@ namespace Polyhydra.Core
 
                     newFaceIndices.Add(newExistingFace);
                     newFaceRoles.Add(Roles.Existing);
-                    // newFaceTags.Add(new HashSet<Tuple<string, TagType>>());
                 }
             }
 
-            // Debug.Log($"V: {newVertices.Count} F: {newFaceIndices.Count} R: {newVertexRoles.Count},{newFaceRoles.Count}");
             var conway = new PolyMesh(newVertices, newFaceIndices, newFaceRoles, newVertexRoles);
             return conway;
         }
@@ -2609,40 +2618,6 @@ namespace Polyhydra.Core
             }
         }
         
-        private static List<Vertex> _FillHole(Halfedge edge, List<Vertex> hole1Verts, List<Vertex> hole2Verts)
-        {
-            var verts = new List<Vertex>();
-            int failsafe1 = 0;
-            int i = hole1Verts.IndexOf(edge.Vertex);
-            var hole1StartingVert = hole1Verts[i];
-            var hole1CurrVert = hole1StartingVert;
-            bool hole2added = false;
-            do
-            {
-                verts.Add(hole1CurrVert);
-                if (hole2Verts.Contains(hole1CurrVert) && !hole2added)
-                {
-                    int failsafe2 = 0;
-                    int j = hole2Verts.IndexOf(hole1CurrVert);
-                    var hole2StartingVert = hole2Verts[j];
-                    var hole2CurrVert = hole2StartingVert;
-                    do
-                    {
-                        verts.Add(hole2CurrVert);
-                        j++;
-                        if (j >= hole2Verts.Count) j = 0;
-                        hole2CurrVert = hole2Verts[j];
-                    } while (hole2CurrVert.Name!=hole2StartingVert.Name && failsafe2++ < 10);
-                    hole2added = true;
-                }
-                i++;
-                if (i >= hole1Verts.Count) i = 0;
-                hole1CurrVert = hole1Verts[i];
-            } while (hole1CurrVert.Name!=hole1StartingVert.Name && failsafe1++ < 33);
-            return verts.Distinct().ToList();
-        }
-
-        
         public Face CollapseEdge(Halfedge edge)
         {
             if (edge.Pair == null) return null;
@@ -2684,6 +2659,39 @@ namespace Polyhydra.Core
             }
 
             return newFace;
+        }
+        
+        private static List<Vertex> _FillHole(Halfedge edge, List<Vertex> hole1Verts, List<Vertex> hole2Verts)
+        {
+            var verts = new List<Vertex>();
+            int failsafe1 = 0;
+            int i = hole1Verts.IndexOf(edge.Vertex);
+            var hole1StartingVert = hole1Verts[i];
+            var hole1CurrVert = hole1StartingVert;
+            bool hole2added = false;
+            do
+            {
+                verts.Add(hole1CurrVert);
+                if (hole2Verts.Contains(hole1CurrVert) && !hole2added)
+                {
+                    int failsafe2 = 0;
+                    int j = hole2Verts.IndexOf(hole1CurrVert);
+                    var hole2StartingVert = hole2Verts[j];
+                    var hole2CurrVert = hole2StartingVert;
+                    do
+                    {
+                        verts.Add(hole2CurrVert);
+                        j++;
+                        if (j >= hole2Verts.Count) j = 0;
+                        hole2CurrVert = hole2Verts[j];
+                    } while (hole2CurrVert.Name!=hole2StartingVert.Name && failsafe2++ < 10);
+                    hole2added = true;
+                }
+                i++;
+                if (i >= hole1Verts.Count) i = 0;
+                hole1CurrVert = hole1Verts[i];
+            } while (hole1CurrVert.Name!=hole1StartingVert.Name && failsafe1++ < 33);
+            return verts.Distinct().ToList();
         }
 
         public int ExtendFace(Halfedge edgeToAugment, int newPolySides)
@@ -2981,41 +2989,143 @@ namespace Polyhydra.Core
 
         }
 
-        // WIP
-        // Half working but with several failure cases
         public void MergeCoplanarFaces(float threshold)
         {
-            int failsafe = 0;
-            int mergedFaceCount;
-            var skipEdges = new List<Halfedge>();
-            var failedEdges = new List<Halfedge>();
-            do
+            var faceGroups = FindCoplanarFaces(threshold);
+            
+            foreach (var faces in faceGroups)
             {
-                var skipFaces = new List<Face>();
-                mergedFaceCount = 0;
-                foreach (var edge in Halfedges)
+                if (faces.Count < 2) return;
+                
+                var boundaryEdges = new HashSet<Halfedge>();
+                
+                foreach (var face in faces)
                 {
-                    if (edge.Pair == null || skipEdges.Contains(edge) || skipFaces.Contains(edge.Face)) continue;
-                    float angle = Vector3.Angle(edge.Face.Normal, edge.Pair.Face.Normal);
-                    if (angle <= threshold)
+                    foreach (var edge in face.GetHalfedges())
                     {
-                        mergedFaceCount++;
-                        var newFace = CollapseEdge(edge);
-                        if (newFace != null)
-                        {
-                            skipFaces.Add(newFace);
-                        }
-                        else
-                        {
-                            failedEdges.Add(edge);
-                        }
-                        break;
+                        // Add edge unless it's other face is in our list of faces to merge
+                        // This  would mean it's an inner edge not a boundary
+                        if (faces.Contains(edge?.Pair?.Face)) continue;
+                        boundaryEdges.Add(edge);
                     }
-                    skipEdges.Add(edge);
                 }
+
+                List<Vertex> GetLoop(Halfedge startHalfedge)
+                {
+                    var loop = new List<Vertex>();
+                    var currLoopEdge = startHalfedge;
+                    do
+                    {
+                        loop.Add(currLoopEdge.Vertex);
+                        Halfedge nextLoopEdge = null;
+                        currLoopEdge = currLoopEdge.Prev.Vertex.Halfedges.First(
+                            e=>boundaryEdges.Contains(e) && e!=currLoopEdge
+                        );
+                    } while (currLoopEdge != startHalfedge);
+                    return loop;
+                }
+
+                List<Vertex> newFaceVerts;
+                try
+                {
+                    newFaceVerts = GetLoop(boundaryEdges.First());
+                }
+                catch (InvalidOperationException e)
+                {
+                    Halfedges.MatchPairs();
+                    newFaceVerts = GetLoop(boundaryEdges.First());
+                }                
+
+                foreach (var face in faces)
+                {
+                    int index = Faces.IndexOf(face);
+                    FaceRoles.RemoveAt(index);
+                    FaceTags.RemoveAt(index);
+                    Faces.Remove(face);
+                }
+
+                var allVerts = new HashSet<Vertex>(Vertices);
+
+                foreach (var v in newFaceVerts)
+                {
+                    if (!allVerts.Contains(v))
+                    {
+                        Vertices.Add(v);
+                    }
+                }
+                                
+                // TODO proper debug gizmos
+                // if (DebugVerts==null) DebugVerts = new List<Vector3>();
+                // DebugVerts.Clear();
+                // foreach (var v in newFaceVerts)
+                // {
+                //     DebugVerts.Add(v.Position);
+                // }
                 
-                
-            } while (mergedFaceCount != 0 && failsafe++<1000);
+                bool success = Faces.Add(newFaceVerts);
+                if (!success)
+                {
+                    newFaceVerts.Reverse();
+                    success = Faces.Add(newFaceVerts);
+                }
+                if (success)
+                {
+                    FaceRoles.Add(Roles.New);
+                    FaceTags.Add(new HashSet<Tuple<string, TagType>>());
+                }
+                else
+                {
+                    Debug.LogError("Unable to add merged face.");
+                }
+                // Halfedges.MatchPairs(Faces.Last());
+            }
+            Halfedges.MatchPairs();
+            CullUnusedVertices();
         }
+
+        private void AddNeighbours(Face f, float threshold, ref HashSet<Face> tt, ref HashSet<Face> cf)
+        {
+            foreach (var edge in f.GetHalfedges())
+            {
+                if (edge.DihedralAngle < threshold)
+                {
+                    var foundFace = edge.Pair.Face;
+                    if (cf.Contains(foundFace)) continue;
+                    cf.Add(foundFace);
+                    tt.Add(foundFace);
+                }
+            }
+            tt.Remove(f);
+        }
+        
+        public List<HashSet<Face>> FindCoplanarFaces(float threshold)
+        {
+            var groups = new List<HashSet<Face>>();
+            var untestedFaces = new HashSet<Face>(Faces);
+            
+            while (untestedFaces.Count > 0)
+            {
+                var face = untestedFaces.First();
+                untestedFaces.Remove(face);
+                var faceGroup = new HashSet<Face>();
+                var toCheck = new HashSet<Face>();
+                faceGroup.Add(face);
+                toCheck.Add(face);
+            
+                AddNeighbours(face, threshold, ref toCheck, ref faceGroup);
+            
+                while (toCheck.Count > 0)
+                {
+                    var newCandidate = toCheck.First();
+                    AddNeighbours(newCandidate, threshold, ref toCheck, ref faceGroup);
+                }
+
+                if (faceGroup.Count > 1) groups.Add(faceGroup);
+                untestedFaces.ExceptWith(faceGroup);
+            }
+            return groups;
+        }
+
+
     }
 }

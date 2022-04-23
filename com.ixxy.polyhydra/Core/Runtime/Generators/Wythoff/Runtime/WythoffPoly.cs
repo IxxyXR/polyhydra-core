@@ -67,6 +67,14 @@ namespace Polyhydra.Wythoff
             UnpackSym(symbol);
             Calculate();
         }
+        
+        public WythoffPoly(int typeIndex)
+        {
+            if (typeIndex < 6) throw new ArgumentException("P and Q values required for types < 6");
+            string symbol = Uniform.Uniforms[typeIndex].Wythoff;
+            UnpackSym(symbol);
+            Calculate();
+        }
 
         public WythoffPoly(Types type, int p, int q)
         {
@@ -102,10 +110,7 @@ namespace Polyhydra.Wythoff
 
         public PolyMesh Build()
         {
-            // if ()
             BuildFaces();
-            var faceRoles = new List<PolyMesh.Roles>();
-            var vertexRoles = new List<PolyMesh.Roles>();
 
             var polyVerts = new Vector3[VertexCount];
             var polyFaces = new List<List<int>>();
@@ -115,17 +120,15 @@ namespace Polyhydra.Wythoff
             {
                 Vector p = Vertices[i];
                 polyVerts[i] = p.getVector3();
-                vertexRoles.Add(PolyMesh.Roles.Existing);
             }
 
             for (var faceIndex = 0; faceIndex < Faces.Count; faceIndex++)
             {
                 var face = Faces[faceIndex];
                 polyFaces.Add(face.points);
-                faceRoles.Add((PolyMesh.Roles)((int)face.configuration % 5));
             }
 
-            var poly = new PolyMesh(polyVerts, polyFaces, faceRoles, vertexRoles);
+            var poly = new PolyMesh(polyVerts, polyFaces);
             return poly;
         }
 

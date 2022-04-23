@@ -127,7 +127,6 @@ namespace Polyhydra.Core
 			{
 				case GridEnums.GridTypes.K_3_3_3_3_3_3:
 					tile = Shapes.MakePolygon(3);
-					tile = Shapes.MakePolygon(3);
 					tile = tile.Rotate(Vector3.up, 30);
 					tile.ExtendFace(0, 0, 3);
 					xOffset = tile.Vertices[0].Position - tile.Vertices[2].Position;
@@ -532,7 +531,6 @@ namespace Polyhydra.Core
 					poly = poly.Weld(0.01f);
 					break;
 			}
-            poly.InitTags();
             return poly;
         }
 		
