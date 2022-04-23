@@ -7,9 +7,9 @@ using UnityEngine;
 public class OffReaderTest : MonoBehaviour
 {
     public string filename = "test.off";
-    public PolyMesh.ConwayOperator op;
+    public PolyMesh.Operation op;
     public float OpParameter = .3f;
-    public float FaceScale = .99f;
+    [Range(.1f, 1f)] public float FaceScale = .99f;
     public bool Canonicalize;
     
     [ContextMenu("Go")]
@@ -18,9 +18,9 @@ public class OffReaderTest : MonoBehaviour
         using (StreamReader reader = new StreamReader($"Assets/{filename}"))
         {
             var poly = new PolyMesh(reader);
-            poly = poly.ApplyConwayOp(op, new OpParams(OpParameter));
+            poly = poly.AppyOperation(op, new OpParams(OpParameter));
             if (Canonicalize) poly = poly.Canonicalize(0.001f, 0.001f);
-            poly = poly.FaceScale(new OpParams(FaceScale));
+            if (FaceScale<1f) poly = poly.FaceScale(new OpParams(FaceScale));
             var mesh = poly.BuildUnityMesh(colorMethod: PolyMesh.ColorMethods.ByTags);
             gameObject.GetComponent<MeshFilter>().mesh = mesh;
         }

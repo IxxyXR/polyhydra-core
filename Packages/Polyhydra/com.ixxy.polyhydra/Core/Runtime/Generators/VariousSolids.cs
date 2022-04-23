@@ -82,10 +82,7 @@ public static class VariousSolids
             new List<int>{4, 10, 9, 3}
         };
 
-        var faceRoles = Enumerable.Repeat(PolyMesh.Roles.Existing, 10);
-        var vertexRoles = Enumerable.Repeat(PolyMesh.Roles.Existing, 12);
-
-        return new PolyMesh(verts, faces, faceRoles, vertexRoles);
+        return new PolyMesh(verts, faces);
     }
 
     public static PolyMesh L_Alt_Shape()
@@ -119,10 +116,7 @@ public static class VariousSolids
             new List<int>{6, 14, 13, 12, 4, 5}
         };
 
-        var faceRoles = Enumerable.Repeat(PolyMesh.Roles.Existing, 12);
-        var vertexRoles = Enumerable.Repeat(PolyMesh.Roles.Existing, 16);
-
-        return new PolyMesh(verts, faces, faceRoles, vertexRoles);
+        return new PolyMesh(verts, faces);
     }
 
     public static PolyMesh C_Shape()
@@ -175,9 +169,7 @@ public static class VariousSolids
             new List<int>{0,2,3}
         };
 
-        var faceRoles = Enumerable.Repeat(PolyMesh.Roles.Existing, 3);
-        var vertexRoles = Enumerable.Repeat(PolyMesh.Roles.Existing, 4);
-        return new PolyMesh(verts, faces, faceRoles, vertexRoles);
+        return new PolyMesh(verts, faces);
     }
 
     public static PolyMesh Test2Square()
@@ -196,9 +188,7 @@ public static class VariousSolids
             new List<int>{0,1,5,4}
         };
 
-        var faceRoles = Enumerable.Repeat(PolyMesh.Roles.Existing, 2);
-        var vertexRoles = Enumerable.Repeat(PolyMesh.Roles.Existing, 6);
-        return new PolyMesh(verts, faces, faceRoles, vertexRoles);
+        return new PolyMesh(verts, faces);
     }
 
     public static PolyMesh UvSphere(int verticalLines = 24, int horizontalLines = 24, float hemi = 1)

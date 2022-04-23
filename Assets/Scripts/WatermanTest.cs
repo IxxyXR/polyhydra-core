@@ -7,9 +7,9 @@ public class WatermanTest : MonoBehaviour
 {
     public int root = 2;
     [Range(0,6)] public int c = 0;
-    public PolyMesh.ConwayOperator op;
+    public PolyMesh.Operation op;
     public float OpParameter = .3f;
-    public float FaceScale = .99f;
+    [Range(.1f, 1f)] public float FaceScale = .99f;
     public bool Canonicalize;
     public bool mergeFaces = false;
     
@@ -17,9 +17,9 @@ public class WatermanTest : MonoBehaviour
     public void Go()
     {
         PolyMesh poly = WatermanPoly.Build(1f, root, c, mergeFaces);
-        poly = poly.ApplyConwayOp(op, new OpParams(OpParameter));
+        poly = poly.AppyOperation(op, new OpParams(OpParameter));
         if (Canonicalize) poly = poly.Canonicalize(0.001f, 0.001f);
-        poly = poly.FaceScale(new OpParams(FaceScale));
+        if (FaceScale<1f) poly = poly.FaceScale(new OpParams(FaceScale));
         var mesh = poly.BuildUnityMesh(colorMethod: PolyMesh.ColorMethods.ByRole);
         if (Application.isPlaying)
         {

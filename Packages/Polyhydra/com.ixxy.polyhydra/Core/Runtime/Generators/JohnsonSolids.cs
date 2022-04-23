@@ -19,14 +19,12 @@ public class JohnsonSolids
     public static PolyMesh Build(int type)
     {
         var poly = Generators[type]();
-        poly.InitTags();
         return poly;
     }
     
     public static PolyMesh Build(string name)
     {
         var poly = Generators[Names[name.ToLower()]]();
-        poly.InitTags();
         return poly;
     }
 

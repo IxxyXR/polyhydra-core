@@ -10,9 +10,9 @@ public class JohnsonTest : MonoBehaviour
 {
     public string name = "";
     [Range(1,92)] public int type = 1;
-    public PolyMesh.ConwayOperator op;
+    public PolyMesh.Operation op;
     public float OpParameter = .3f;
-    public float FaceScale = .99f;
+    [Range(.1f, 1f)] public float FaceScale = .99f;
     public bool Canonicalize;
     [ContextMenu("Go")]
     public void Go()
@@ -20,9 +20,9 @@ public class JohnsonTest : MonoBehaviour
         TextInfo textInfo = new CultureInfo("en-GB",false).TextInfo;
         name = textInfo.ToTitleCase(JohnsonSolids.Names.Keys.ToArray()[type - 1]);
         var poly = JohnsonSolids.Build(type);
-        poly = poly.ApplyConwayOp(op, new OpParams(OpParameter));
+        poly = poly.AppyOperation(op, new OpParams(OpParameter));
         if (Canonicalize) poly = poly.Canonicalize(0.001f, 0.001f);
-        poly = poly.FaceScale(new OpParams(FaceScale));
+        if (FaceScale<1f) poly = poly.FaceScale(new OpParams(FaceScale));
         var mesh = poly.BuildUnityMesh(colorMethod: PolyMesh.ColorMethods.BySides);
         gameObject.GetComponent<MeshFilter>().mesh = mesh;
     }

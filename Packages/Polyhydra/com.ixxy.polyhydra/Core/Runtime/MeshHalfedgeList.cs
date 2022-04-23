@@ -87,6 +87,15 @@ namespace Polyhydra.Core {
                 edge.Pair = Contains(rname) ? this[rname] : null;
             }
         }
+        
+        public void MatchPairs(Face face)
+        {
+            foreach (var edge in face.GetHalfedges())
+            {
+                var rname = (edge.Prev.Vertex.Name, edge.Vertex.Name);
+                edge.Pair = Contains(rname) ? this[rname] : null;
+            }
+        }
 
         /// <summary>
         /// Returns a list of unique halfedges.

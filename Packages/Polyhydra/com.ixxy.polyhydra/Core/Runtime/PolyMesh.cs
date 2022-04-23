@@ -150,6 +150,8 @@ namespace Polyhydra.Core
             }
         }
 
+        public List<Vector3> DebugVerts;
+
         public PolyMesh()
         {
             Halfedges = new MeshHalfedgeList(this);
@@ -157,6 +159,7 @@ namespace Polyhydra.Core
             Faces = new MeshFaceList(this);
             FaceRoles = new List<Roles>();
             VertexRoles = new List<Roles>();
+            InitTags();
         }
 
         public PolyMesh(
@@ -170,7 +173,36 @@ namespace Polyhydra.Core
             VertexRoles = vertexRoles.ToList();
             InitIndexed(verts, faceIndices);
             CullUnusedVertices();
+            InitTags();
+        }
 
+        public PolyMesh(string conwayString) : this()
+        {
+            var conwayMap =  new Dictionary<string, Operation>{
+                {"d", Operation.Dual},
+                {"a", Operation.Ambo},
+                {"k", Operation.Kis},
+                {"g", Operation.Gyro},
+                {"p", Operation.Propeller},
+                {"c", Operation.Chamfer},
+                {"w", Operation.Whirl},
+                {"l", Operation.Loft},
+                {"L", Operation.Lace},
+                {"I", Operation.JoinedLace},
+                {"K", Operation.Stake},
+                {"P", Operation.OppositeLace},
+                {"q", Operation.Quinto},
+                {"n", Operation.Needle},
+                {"x", Operation.Loft},
+                    
+                // "r": ConwayOperator.Reflect,
+                // "O": ConwayOperator.Quadsub,
+                // "u": ConwayOperator.Trisub,
+                // "H": ConwayOperator.Hollow,
+                // "Z": ConwayOperator.Triangulate,
+                // "C": ConwayOperator.Canonicalize,
+                // "A": ConwayOperator.AdjustXYZ,
+            };
         }
 
         public PolyMesh(
@@ -209,7 +241,7 @@ namespace Polyhydra.Core
         {
             var faceIndices = new List<int[]>();
             var vertexPoints = new List<Vector3>();
-
+            
             // Read all non-empty, non-comment lines into a list
             var lines = reader
                 .ReadToEnd()
@@ -337,10 +369,15 @@ namespace Polyhydra.Core
 
         public List<List<Halfedge>> FindBoundaries()
         {
+            return FindBoundaries(Halfedges);
+        }
+
+        public List<List<Halfedge>> FindBoundaries(IEnumerable<Halfedge> edges)
+        {
             var looped = new HashSet<Halfedge>();
             var loops = new List<List<Halfedge>>();
 
-            foreach (var startHalfedge in Halfedges)
+            foreach (var startHalfedge in edges)
             {
                 // If it's not a bare edge or we've already checked it
                 if (startHalfedge.Pair != null || looped.Contains(startHalfedge)) continue;
@@ -517,11 +554,7 @@ namespace Polyhydra.Core
             List<string> uniqueTags = null;
 
             var submeshTriangles = new List<List<int>>();
-
-
-            // TODO
-            // var hasNaked = conway.HasNaked();
-
+            
             // Strip down to Face-Vertex structure
             var points = ListVerticesByPoints();
             var faceIndices = ListFacesByVertexIndices();
@@ -616,7 +649,7 @@ namespace Polyhydra.Core
                 if (face.Sides > 3)
                 {
 
-                    if (face.IsConvex)
+                    if (face.AreAllVertsVisibleFromCentroid())
                     {
                         for (var edgeIndex = 0; edgeIndex < faceIndex.Count; edgeIndex++)
                         {
@@ -861,5 +894,277 @@ namespace Polyhydra.Core
             }
             return faceIndices;
         }
+        
+        public enum Operation
+        {
+            
+            // Conway Operators
+            
+            Identity = 0,
+            Kis = 1,
+            Ambo = 2,
+            Zip = 3,
+            Expand = 4,
+            Bevel = 5,
+            Join = 6,
+            Needle = 7,
+            Ortho = 8,
+            Meta = 9,
+            Truncate = 10,
+            Dual = 11,
+            Gyro = 12,
+            Snub = 13,
+            Subdivide = 14,
+            Loft = 15,
+            Chamfer = 16,
+            Quinto = 17,
+            Lace = 18,
+            JoinedLace = 19,
+            OppositeLace = 20,
+            JoinKisKis = 21,
+            Stake = 22,
+            JoinStake = 23,
+            Medial = 24,
+            EdgeMedial = 25,
+            Propeller = 26,
+            Whirl = 27,
+            Volute = 28,
+            Exalt = 29,
+            Yank = 30,
+            Squall = 31,
+            JoinSquall = 32,
+            Cross = 33,
+            
+            // Alternating Operators
+            
+            SplitFaces = 34,
+            Gable = 35,
+            
+            // Thickening Operators
+
+            Extrude = 36,
+            Shell = 37,
+            Segment = 79,
+            // Skeleton = 38,
+
+            // Object Transforms
+            
+            // Recenter = 64,
+            // SitLevel = 65,
+
+            // Face Transforms
+
+            // FaceOffset = 39,
+            // FaceScale = 40,
+            // FaceRotate = 41,
+            // FaceRotateX = 42,
+            // FaceRotateY = 43,
+            // FaceSlide = 44,
+            // Hinge = 48,
+            
+            // Vertex Transforms
+
+            // VertexScale = 45,
+            // VertexRotate = 46,
+            // VertexFlex = 47,
+            // VertexStellate = 81,
+
+            // PolarOffset,   TODO
+            
+            // Shape Replication
+            
+            // AddDual = 49,
+            // AddCopyX = 50,
+            // AddCopyY = 51,
+            // AddCopyZ = 52,
+            // AddMirrorX = 53,
+            // AddMirrorY = 54,
+            // AddMirrorZ = 55,
+            // Stack = 72,
+            // Layer = 73,
+            
+            // Face/Vertex Deletion            
+
+            // FaceRemove = 56,
+            // FaceKeep = 57,
+            // FaceRemoveX = 82,
+            // FaceRemoveY = 67,
+            // FaceRemoveZ = 83,
+            // FaceRemoveDistance = 84,
+            // FaceRemovePolar = 85,
+            // VertexRemove = 58,
+            // VertexKeep = 59,
+            
+            // Topology Manipulation
+            
+            // FillHoles = 60,
+            // ExtendBoundaries = 61,
+            // ConnectFaces = 80,
+            // FaceMerge = 62,
+            // Weld = 63,
+            // ConvexHull = 68,
+            
+            // Topology Preserving Transformations
+            
+            // Stretch = 66,
+            // Spherize = 69,
+            // Cylinderize = 70,
+            // Canonicalize = 71,
+
+            // Store/Recall
+            
+            // Stash = 74,
+            // Unstash = 75,
+            // UnstashToVerts = 76,
+            // UnstashToFaces = 77,
+            // TagFaces = 78,
+        }
+        
+        public PolyMesh AppyOperation(Operation op, OpParams p)
+        {
+
+            if (Faces.Count != FaceTags.Count)
+            {
+                Debug.LogWarning("{Faces.Count} faces but {FaceTags.Count} tags");
+                return this;
+            }
+            PolyMesh polyMesh = this;
+            
+            switch (op)
+            {
+                // Conway Operators
+                
+                case Operation.Identity:
+                    polyMesh = Duplicate();
+                    break;
+                case Operation.Kis:
+                    polyMesh = polyMesh.Kis(p);
+                    break;
+                case Operation.Ambo:
+                    polyMesh = polyMesh.Ambo();
+                    break;
+                case Operation.Zip:
+                    polyMesh = polyMesh.Zip(p);
+                    break;
+                case Operation.Expand:
+                    polyMesh = polyMesh.Expand(p);
+                    break;
+                case Operation.Bevel:
+                    polyMesh = polyMesh.Bevel(p);
+                    break;
+                case Operation.Join:
+                    polyMesh = polyMesh.Join(p);
+                    break;
+                case Operation.Needle:
+                    polyMesh = polyMesh.Needle(p);
+                    break;
+                case Operation.Ortho:
+                    polyMesh = polyMesh.Ortho(p);
+                    break;
+                case Operation.Meta:
+                    polyMesh = polyMesh.Meta(p);
+                    break;
+                case Operation.Truncate:
+                    polyMesh = polyMesh.Truncate(p);
+                    break;
+                case Operation.Dual:
+                    polyMesh = polyMesh.Dual();
+                    break;
+                case Operation.Gyro:
+                    polyMesh = polyMesh.Gyro(p);
+                    break;
+                case Operation.Snub:
+                    polyMesh = polyMesh.Gyro(p);
+                    polyMesh = polyMesh.Dual();
+                    break;
+                case Operation.Subdivide:
+                    polyMesh = polyMesh.Subdivide(p);
+                    break;
+                case Operation.Loft:
+                    polyMesh = polyMesh.Loft(p);
+                    break;
+                case Operation.Chamfer:
+                    polyMesh = polyMesh.Chamfer(p);
+                    break;
+                case Operation.Quinto:
+                    polyMesh = polyMesh.Quinto(p);
+                    break;
+                case Operation.Lace:
+                    polyMesh = polyMesh.Lace(p);
+                    break;
+                case Operation.JoinedLace:
+                    polyMesh = polyMesh.JoinedLace(p);
+                    break;
+                case Operation.OppositeLace:
+                    polyMesh = polyMesh.OppositeLace(p);
+                    break;
+                case Operation.JoinKisKis:
+                    polyMesh = polyMesh.JoinKisKis(p);
+                    break;
+                case Operation.Stake:
+                    polyMesh = polyMesh.Stake(p);
+                    break;
+                case Operation.JoinStake:
+                    polyMesh = polyMesh.Stake(p, join: true);
+                    break;
+                case Operation.Medial:
+                    polyMesh = polyMesh.Medial(p);
+                    break;
+                case Operation.EdgeMedial:
+                    polyMesh = polyMesh.EdgeMedial(p);
+                    break;
+                case Operation.Propeller:
+                    polyMesh = polyMesh.Propeller(p);
+                    break;
+                case Operation.Whirl:
+                    polyMesh = polyMesh.Whirl(p);
+                    break;
+                case Operation.Volute:
+                    polyMesh = polyMesh.Volute(p);
+                    break;
+                case Operation.Exalt:
+                    polyMesh = polyMesh.Exalt(p);
+                    break;
+                case Operation.Yank:
+                    polyMesh = polyMesh.Yank(p);
+                    break;
+                case Operation.Squall:
+                    polyMesh = polyMesh.Squall(p);
+                    break;
+                case Operation.JoinSquall:
+                    polyMesh = polyMesh.Squall(p, join: true);
+                    break;
+                case Operation.Cross:
+                    polyMesh = polyMesh.Cross(p);
+                    break;
+                
+                // Alternating Operators
+                
+                case Operation.SplitFaces:
+                    polyMesh = polyMesh.SplitFaces(p);
+                    break;
+                case Operation.Gable:
+                    polyMesh = polyMesh.Gable(p);
+                    break;
+                
+                // Thickening Operators
+                
+                case Operation.Extrude:
+                    polyMesh = polyMesh.Extrude(p);
+                    break;
+                case Operation.Shell:
+                    polyMesh = polyMesh.Shell(p);
+                    break;
+                case Operation.Segment:
+                    polyMesh = polyMesh.Segment(p);
+                    break;
+
+
+            }
+
+            return polyMesh;
+
+        }
+
     }
 }

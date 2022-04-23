@@ -125,7 +125,7 @@ using UnityEngine;
                 .GroupBy(x => x.Index / 3)
                 .Select(x => x.Select(v => v.Value));
             var poly = new PolyMesh(verts, faces);
-            // poly.MergeCoplanarFaces(0.01f);
+            if (mergeFaces) poly.MergeCoplanarFaces(0.01f);
             return poly;
 		}
 	}
