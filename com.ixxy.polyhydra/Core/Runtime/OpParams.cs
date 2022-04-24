@@ -77,10 +77,7 @@ namespace Polyhydra.Core
         {
             return new Filter(p =>
             {
-                Debug.Log("index");
-                Debug.Log(index);
                 if (index < 0) index = p.poly.Faces.Count - Mathf.Abs(index);
-                Debug.Log(index);
                 return p.index == index;
             });
         }
