@@ -28,12 +28,13 @@ using Debug = UnityEngine.Debug;
 
 [ExecuteInEditMode]
 [RequireComponent(typeof(MeshFilter), typeof(MeshRenderer))]
-public class Antiprism : MonoBehaviour
+public class Antiprism : TestBase
 {
+    [Header("Base Shape Parameters")]
     public string command = "conway kC";
 
     [ContextMenu("Go")]
-    public void Go()
+    public override void Go()
     {
         var parts = command.Split(new []{' '}, 2);
         string output = "";
@@ -61,14 +62,8 @@ public class Antiprism : MonoBehaviour
         
         using (StringReader reader = new StringReader(output))
         {
-            var poly = new PolyMesh(reader);
-            var mesh = poly.BuildUnityMesh(colorMethod: PolyMesh.ColorMethods.ByTags);
-            gameObject.GetComponent<MeshFilter>().mesh = mesh;
+            poly = new PolyMesh(reader);
+            Build(PolyMesh.ColorMethods.ByTags);
         }
-    }
-
-    private void OnValidate()
-    {
-        Go();
     }
 }

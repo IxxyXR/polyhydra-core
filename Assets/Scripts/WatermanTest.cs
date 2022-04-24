@@ -3,36 +3,19 @@ using UnityEngine;
 
 [ExecuteInEditMode]
 [RequireComponent(typeof(MeshFilter), typeof(MeshRenderer))]
-public class WatermanTest : MonoBehaviour
+public class WatermanTest : TestBase
 {
-    public int root = 2;
-    [Range(0,6)] public int c = 0;
-    public PolyMesh.Operation op;
-    public float OpParameter = .3f;
-    [Range(.1f, 1f)] public float FaceScale = .99f;
-    public bool Canonicalize;
-    public bool mergeFaces = false;
-    
+    [Header("Base Shape Parameters")]
+    public int Root = 2;
+    [Range(0,6)] public int C = 0;
+
+    public bool MergeFaces;
+
     [ContextMenu("Go")]
-    public void Go()
+    public override void Go()
     {
-        PolyMesh poly = WatermanPoly.Build(1f, root, c, mergeFaces);
-        poly = poly.AppyOperation(op, new OpParams(OpParameter));
-        if (Canonicalize) poly = poly.Canonicalize(0.001f, 0.001f);
-        if (FaceScale<1f) poly = poly.FaceScale(new OpParams(FaceScale));
-        var mesh = poly.BuildUnityMesh(colorMethod: PolyMesh.ColorMethods.ByRole);
-        if (Application.isPlaying)
-        {
-            gameObject.GetComponent<MeshFilter>().mesh = mesh;
-        }
-        else
-        {
-            gameObject.GetComponent<MeshFilter>().sharedMesh = mesh;
-        }
+        poly = WatermanPoly.Build(1f, Root, C, MergeFaces);
+        Build();
     }
 
-    private void OnValidate()
-    {
-        Go();
-    }
 }
