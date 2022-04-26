@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.Linq;
-using Polyhydra.Core;
 using UnityEngine;
 
 namespace Polyhydra.Core
@@ -48,7 +47,7 @@ namespace Polyhydra.Core
 			var vertexPoints = new List<Vector3>();
 			var faceIndices = new List<List<int>>();
 
-			var faceRoles = new List<PolyMesh.Roles>();
+			var faceRoles = new List<Roles>();
 
 			float theta = Mathf.PI * 2 / sides;
 
@@ -75,12 +74,12 @@ namespace Polyhydra.Core
 				faceIndices.Add(new List<int>{0, (i + 1) % sides + 1, i + 1});
 				if (sides % 2 == 0) // Even sides
 				{
-					faceRoles.Add((PolyMesh.Roles)(i % 2) + 2);
+					faceRoles.Add((Roles)(i % 2) + 2);
 				}
 				else
 				{
 					int lastCellMod = (i == sides - 1 && sides % 3 == 1) ? 1 : 0;  //  Fudge the last cell to stop clashes in some cases
-					faceRoles.Add((PolyMesh.Roles)((i + lastCellMod) % 3) + 2);
+					faceRoles.Add((Roles)((i + lastCellMod) % 3) + 2);
 				}
 			}
 
@@ -99,17 +98,17 @@ namespace Polyhydra.Core
 					});
 					if (sides % 2 == 0) // Even sides
 					{
-						faceRoles.Add((PolyMesh.Roles)((i + d) % 2) + 2);
+						faceRoles.Add((Roles)((i + d) % 2) + 2);
 					}
 					else
 					{
 						int lastCellMod = (i == sides - 1 && sides % 3 == 1) ? 1 : 0;  //  Fudge the last cell to stop clashes in some cases
-						faceRoles.Add((PolyMesh.Roles)((i + d + lastCellMod + 1) % 3) + 2);
+						faceRoles.Add((Roles)((i + d + lastCellMod + 1) % 3) + 2);
 					}
 				}
 			}
 
-			var vertexRoles = Enumerable.Repeat(PolyMesh.Roles.New, vertexPoints.Count);
+			var vertexRoles = Enumerable.Repeat(Roles.New, vertexPoints.Count);
 			return new PolyMesh(vertexPoints, faceIndices, faceRoles, vertexRoles);
 
 		}
@@ -121,7 +120,7 @@ namespace Polyhydra.Core
 			bool offsetAlternateRows = true;
 			bool alternateRows = false;
 
-			List<List<List<PolyMesh.Roles>>> roleSet = null;
+			List<List<List<Roles>>> roleSet = null;
 			
 			switch (type)
 			{
@@ -131,9 +130,9 @@ namespace Polyhydra.Core
 					tile.ExtendFace(0, 0, 3);
 					xOffset = tile.Vertices[0].Position - tile.Vertices[2].Position;
 					yOffset = tile.Vertices[3].Position - tile.Vertices[0].Position;
-                    roleSet = new List<List<List<PolyMesh.Roles>>>
-                    {new List<List<PolyMesh.Roles>>
-                        {new List<PolyMesh.Roles> { PolyMesh.Roles.Existing, PolyMesh.Roles.New}}
+                    roleSet = new List<List<List<Roles>>>
+                    {new List<List<Roles>>
+                        {new List<Roles> { Roles.Existing, Roles.New}}
                     };
 					break;
 				case GridEnums.GridTypes.K_4_4_4_4:
@@ -141,10 +140,10 @@ namespace Polyhydra.Core
 					tile = tile.Rotate(Vector3.up, 45);
 					xOffset = tile.Vertices[0].Position - tile.Vertices[3].Position;
 					yOffset = tile.Vertices[0].Position - tile.Vertices[1].Position;
-					roleSet = new List<List<List<PolyMesh.Roles>>>
-					{new List<List<PolyMesh.Roles>> {
-						new List<PolyMesh.Roles> { PolyMesh.Roles.Existing, PolyMesh.Roles.New},
-						new List<PolyMesh.Roles> { PolyMesh.Roles.New, PolyMesh.Roles.Existing},
+					roleSet = new List<List<List<Roles>>>
+					{new List<List<Roles>> {
+						new List<Roles> { Roles.Existing, Roles.New},
+						new List<Roles> { Roles.New, Roles.Existing},
 					}};
 					break;
 				case GridEnums.GridTypes.K_6_6_6:
@@ -152,11 +151,11 @@ namespace Polyhydra.Core
 					tile = tile.Rotate(Vector3.up, 30);
 					xOffset = tile.Vertices[1].Position - tile.Vertices[5].Position;
 					yOffset = tile.Vertices[1].Position - tile.Vertices[3].Position;	
-					roleSet = new List<List<List<PolyMesh.Roles>>>
-					{new List<List<PolyMesh.Roles>> {
-						new List<PolyMesh.Roles> { PolyMesh.Roles.Existing, PolyMesh.Roles.NewAlt, PolyMesh.Roles.New},
-						new List<PolyMesh.Roles> { PolyMesh.Roles.New, PolyMesh.Roles.Existing, PolyMesh.Roles.NewAlt},
-						new List<PolyMesh.Roles> { PolyMesh.Roles.NewAlt, PolyMesh.Roles.New, PolyMesh.Roles.Existing},
+					roleSet = new List<List<List<Roles>>>
+					{new List<List<Roles>> {
+						new List<Roles> { Roles.Existing, Roles.NewAlt, Roles.New},
+						new List<Roles> { Roles.New, Roles.Existing, Roles.NewAlt},
+						new List<Roles> { Roles.NewAlt, Roles.New, Roles.Existing},
 					}};
 					break;
 				case GridEnums.GridTypes.K_3_3_3_3_6:
@@ -172,20 +171,20 @@ namespace Polyhydra.Core
 					tile.ExtendFace(3, 2, 3);
 					xOffset = tile.Vertices[8].Position - tile.Vertices[10].Position;
 					yOffset = tile.Vertices[10].Position - tile.Vertices[4].Position;
-					roleSet = new List<List<List<PolyMesh.Roles>>>
-					{new List<List<PolyMesh.Roles>> {
-						new List<PolyMesh.Roles> {
-							PolyMesh.Roles.ExistingAlt,
-							PolyMesh.Roles.New,
-							PolyMesh.Roles.NewAlt,
-							PolyMesh.Roles.New,
-							PolyMesh.Roles.NewAlt,
-							PolyMesh.Roles.NewAlt,
-							PolyMesh.Roles.New,
-							PolyMesh.Roles.New,
-							PolyMesh.Roles.NewAlt,
-							PolyMesh.Roles.New,
-							PolyMesh.Roles.NewAlt
+					roleSet = new List<List<List<Roles>>>
+					{new List<List<Roles>> {
+						new List<Roles> {
+							Roles.ExistingAlt,
+							Roles.New,
+							Roles.NewAlt,
+							Roles.New,
+							Roles.NewAlt,
+							Roles.NewAlt,
+							Roles.New,
+							Roles.New,
+							Roles.NewAlt,
+							Roles.New,
+							Roles.NewAlt
 						}}};
 					break;
 				case GridEnums.GridTypes.K_3_3_3_4_4:
@@ -195,21 +194,21 @@ namespace Polyhydra.Core
 					tile.ExtendFace(0, 3, 3);
 					xOffset = tile.Vertices[2].Position - tile.Vertices[3].Position;
 					yOffset = tile.Vertices[4].Position - tile.Vertices[2].Position;
-					roleSet = new List<List<List<PolyMesh.Roles>>>
-					{new List<List<PolyMesh.Roles>> {
-						new List<PolyMesh.Roles> {
-							PolyMesh.Roles.Ignored,
-							PolyMesh.Roles.New,
-							PolyMesh.Roles.NewAlt,
-							PolyMesh.Roles.New,
-							PolyMesh.Roles.NewAlt,
+					roleSet = new List<List<List<Roles>>>
+					{new List<List<Roles>> {
+						new List<Roles> {
+							Roles.Ignored,
+							Roles.New,
+							Roles.NewAlt,
+							Roles.New,
+							Roles.NewAlt,
 						},
-						new List<PolyMesh.Roles> {
-							PolyMesh.Roles.Existing,
-							PolyMesh.Roles.New,
-							PolyMesh.Roles.NewAlt,
-							PolyMesh.Roles.New,
-							PolyMesh.Roles.NewAlt,
+						new List<Roles> {
+							Roles.Existing,
+							Roles.New,
+							Roles.NewAlt,
+							Roles.New,
+							Roles.NewAlt,
 						},
 					}};
 					offsetAlternateRows = false;
@@ -224,15 +223,15 @@ namespace Polyhydra.Core
 					tile.ExtendFace(2, 3, 3);
 					xOffset = tile.Vertices[5].Position - tile.Vertices[4].Position;
 					yOffset = tile.Vertices[5].Position - tile.Vertices[7].Position;	
-					roleSet = new List<List<List<PolyMesh.Roles>>>
-					{new List<List<PolyMesh.Roles>> {
-						new List<PolyMesh.Roles> {
-							PolyMesh.Roles.ExistingAlt,
-							PolyMesh.Roles.New,
-							PolyMesh.Roles.Ignored,
-							PolyMesh.Roles.NewAlt,
-							PolyMesh.Roles.NewAlt,
-							PolyMesh.Roles.Existing,
+					roleSet = new List<List<List<Roles>>>
+					{new List<List<Roles>> {
+						new List<Roles> {
+							Roles.ExistingAlt,
+							Roles.New,
+							Roles.Ignored,
+							Roles.NewAlt,
+							Roles.NewAlt,
+							Roles.Existing,
 						}}};
 					break;
 				case GridEnums.GridTypes.K_3_4_6_4:
@@ -245,15 +244,15 @@ namespace Polyhydra.Core
 					tile.ExtendFace(2, 0, 3);
 					xOffset = tile.Vertices[11].Position - tile.Vertices[4].Position;
 					yOffset = tile.Vertices[9].Position - tile.Vertices[3].Position;
-					roleSet = new List<List<List<PolyMesh.Roles>>>
-					{new List<List<PolyMesh.Roles>> {
-						new List<PolyMesh.Roles> {
-							PolyMesh.Roles.ExistingAlt,
-							PolyMesh.Roles.New,
-							PolyMesh.Roles.Ignored,
-							PolyMesh.Roles.New,
-							PolyMesh.Roles.NewAlt,
-							PolyMesh.Roles.Existing,
+					roleSet = new List<List<List<Roles>>>
+					{new List<List<Roles>> {
+						new List<Roles> {
+							Roles.ExistingAlt,
+							Roles.New,
+							Roles.Ignored,
+							Roles.New,
+							Roles.NewAlt,
+							Roles.Existing,
 						}}};
 					break;
 				case GridEnums.GridTypes.K_3_6_3_6:
@@ -263,17 +262,17 @@ namespace Polyhydra.Core
 					tile.ExtendFace(0, 1, 3);
 					xOffset = tile.Vertices[1].Position - tile.Vertices[4].Position;
 					yOffset = tile.Vertices[7].Position - tile.Vertices[2].Position;	
-					roleSet = new List<List<List<PolyMesh.Roles>>>
-					{new List<List<PolyMesh.Roles>> {
-						new List<PolyMesh.Roles> {
-							PolyMesh.Roles.ExistingAlt,
-							PolyMesh.Roles.Existing,
-							PolyMesh.Roles.New,
+					roleSet = new List<List<List<Roles>>>
+					{new List<List<Roles>> {
+						new List<Roles> {
+							Roles.ExistingAlt,
+							Roles.Existing,
+							Roles.New,
 						},
-						new List<PolyMesh.Roles> {
-							PolyMesh.Roles.NewAlt,
-							PolyMesh.Roles.Existing,
-							PolyMesh.Roles.New,
+						new List<Roles> {
+							Roles.NewAlt,
+							Roles.Existing,
+							Roles.New,
 						},
 					}};
 					offsetAlternateRows = false;
@@ -285,12 +284,12 @@ namespace Polyhydra.Core
 					tile.ExtendFace(0, 9, 3);
 					xOffset = tile.Vertices[4].Position - tile.Vertices[9].Position;
 					yOffset = tile.Vertices[2].Position - tile.Vertices[7].Position;
-					roleSet = new List<List<List<PolyMesh.Roles>>>
-					{new List<List<PolyMesh.Roles>> {
-						new List<PolyMesh.Roles> {
-							PolyMesh.Roles.ExistingAlt,
-							PolyMesh.Roles.New,
-							PolyMesh.Roles.NewAlt,
+					roleSet = new List<List<List<Roles>>>
+					{new List<List<Roles>> {
+						new List<Roles> {
+							Roles.ExistingAlt,
+							Roles.New,
+							Roles.NewAlt,
 						}}};
 					break;
 				case GridEnums.GridTypes.K_4_6_12:
@@ -303,15 +302,15 @@ namespace Polyhydra.Core
 					tile.ExtendFace(2, 4, 6);
 					xOffset = tile.Vertices[16].Position - tile.Vertices[10].Position;
 					yOffset = tile.Vertices[15].Position - tile.Vertices[7].Position;	
-					roleSet = new List<List<List<PolyMesh.Roles>>>
-					{new List<List<PolyMesh.Roles>> {
-						new List<PolyMesh.Roles> {
-							PolyMesh.Roles.ExistingAlt,
-							PolyMesh.Roles.New,
-							PolyMesh.Roles.New,
-							PolyMesh.Roles.New,
-							PolyMesh.Roles.NewAlt,
-							PolyMesh.Roles.NewAlt,
+					roleSet = new List<List<List<Roles>>>
+					{new List<List<Roles>> {
+						new List<Roles> {
+							Roles.ExistingAlt,
+							Roles.New,
+							Roles.New,
+							Roles.New,
+							Roles.NewAlt,
+							Roles.NewAlt,
 						}}};
 					break;
 				case GridEnums.GridTypes.K_4_8_8:
@@ -320,17 +319,17 @@ namespace Polyhydra.Core
 					tile.ExtendFace(0, 1, 4);
 					xOffset = tile.Vertices[2].Position - tile.Vertices[8].Position;
 					yOffset = tile.Vertices[9].Position - tile.Vertices[4].Position;
-					roleSet = new List<List<List<PolyMesh.Roles>>>
-					{new List<List<PolyMesh.Roles>> {
-						new List<PolyMesh.Roles> {
-							PolyMesh.Roles.ExistingAlt,
-							PolyMesh.Roles.New,
-							PolyMesh.Roles.NewAlt,
+					roleSet = new List<List<List<Roles>>>
+					{new List<List<Roles>> {
+						new List<Roles> {
+							Roles.ExistingAlt,
+							Roles.New,
+							Roles.NewAlt,
 						},
-						new List<PolyMesh.Roles> {
-							PolyMesh.Roles.Existing,
-							PolyMesh.Roles.New,
-							PolyMesh.Roles.NewAlt,
+						new List<Roles> {
+							Roles.Existing,
+							Roles.New,
+							Roles.NewAlt,
 						},
 					}};
 					offsetAlternateRows = false;
@@ -359,26 +358,26 @@ namespace Polyhydra.Core
 
 					xOffset = tile.Vertices[20].Position - tile.Vertices[10].Position;
 					yOffset = tile.Vertices[17].Position - tile.Vertices[8].Position;
-					roleSet = new List<List<List<PolyMesh.Roles>>>
-					{new List<List<PolyMesh.Roles>> {
-						new List<PolyMesh.Roles> {
-							PolyMesh.Roles.ExistingAlt,
-							PolyMesh.Roles.New,
-							PolyMesh.Roles.Ignored,
-							PolyMesh.Roles.New,
-							PolyMesh.Roles.Ignored,
-							PolyMesh.Roles.New,
-							PolyMesh.Roles.Ignored,
-							PolyMesh.Roles.New,
-							PolyMesh.Roles.New,
-							PolyMesh.Roles.New,
-							PolyMesh.Roles.NewAlt,
-							PolyMesh.Roles.NewAlt,
-							PolyMesh.Roles.NewAlt,
-							PolyMesh.Roles.NewAlt,
-							PolyMesh.Roles.NewAlt,
-							PolyMesh.Roles.NewAlt,
-							PolyMesh.Roles.NewAlt,
+					roleSet = new List<List<List<Roles>>>
+					{new List<List<Roles>> {
+						new List<Roles> {
+							Roles.ExistingAlt,
+							Roles.New,
+							Roles.Ignored,
+							Roles.New,
+							Roles.Ignored,
+							Roles.New,
+							Roles.Ignored,
+							Roles.New,
+							Roles.New,
+							Roles.New,
+							Roles.NewAlt,
+							Roles.NewAlt,
+							Roles.NewAlt,
+							Roles.NewAlt,
+							Roles.NewAlt,
+							Roles.NewAlt,
+							Roles.NewAlt,
 						}}};
 					break;
 				case GridEnums.GridTypes.K_3_3_6_6__3_6_3_6:
@@ -388,17 +387,17 @@ namespace Polyhydra.Core
 					tile.ExtendFace(0, 0, 3);
 					xOffset = tile.Vertices[2].Position - tile.Vertices[5].Position;
 					yOffset = tile.Vertices[1].Position - tile.Vertices[3].Position;
-					roleSet = new List<List<List<PolyMesh.Roles>>>
-					{new List<List<PolyMesh.Roles>> {
-						new List<PolyMesh.Roles> {
-							PolyMesh.Roles.New,
-							PolyMesh.Roles.Existing,
-							PolyMesh.Roles.Ignored,
+					roleSet = new List<List<List<Roles>>>
+					{new List<List<Roles>> {
+						new List<Roles> {
+							Roles.New,
+							Roles.Existing,
+							Roles.Ignored,
 						},
-						new List<PolyMesh.Roles> {
-							PolyMesh.Roles.NewAlt,
-							PolyMesh.Roles.Existing,
-							PolyMesh.Roles.Ignored,
+						new List<Roles> {
+							Roles.NewAlt,
+							Roles.Existing,
+							Roles.Ignored,
 						},
 					}};
 					offsetAlternateRows = false;
@@ -414,23 +413,23 @@ namespace Polyhydra.Core
 					tile.ExtendFace(3, 3, 3);
 					xOffset = tile.Vertices[5].Position - tile.Vertices[10].Position;
 					yOffset = tile.Vertices[2].Position - tile.Vertices[7].Position;
-					roleSet = new List<List<List<PolyMesh.Roles>>>
-					{new List<List<PolyMesh.Roles>> {
-						new List<PolyMesh.Roles> {
-							PolyMesh.Roles.Existing,
-							PolyMesh.Roles.NewAlt,
-							PolyMesh.Roles.NewAlt,
-							PolyMesh.Roles.Ignored,
-							PolyMesh.Roles.NewAlt,
-							PolyMesh.Roles.NewAlt,
+					roleSet = new List<List<List<Roles>>>
+					{new List<List<Roles>> {
+						new List<Roles> {
+							Roles.Existing,
+							Roles.NewAlt,
+							Roles.NewAlt,
+							Roles.Ignored,
+							Roles.NewAlt,
+							Roles.NewAlt,
 						},
-						new List<PolyMesh.Roles> {
-							PolyMesh.Roles.ExistingAlt,
-							PolyMesh.Roles.NewAlt,
-							PolyMesh.Roles.NewAlt,
-							PolyMesh.Roles.Ignored,
-							PolyMesh.Roles.NewAlt,
-							PolyMesh.Roles.NewAlt,
+						new List<Roles> {
+							Roles.ExistingAlt,
+							Roles.NewAlt,
+							Roles.NewAlt,
+							Roles.Ignored,
+							Roles.NewAlt,
+							Roles.NewAlt,
 						},
 					}};
 					offsetAlternateRows = false;
@@ -445,14 +444,14 @@ namespace Polyhydra.Core
 					tile.ExtendFace(2, 0, 4);
 					xOffset = tile.Vertices[2].Position - tile.Vertices[5].Position;
 					yOffset = tile.Vertices[9].Position - tile.Vertices[3].Position;
-					roleSet = new List<List<List<PolyMesh.Roles>>>
-					{new List<List<PolyMesh.Roles>> {
-						new List<PolyMesh.Roles> {
-							PolyMesh.Roles.ExistingAlt,
-							PolyMesh.Roles.NewAlt,
-							PolyMesh.Roles.NewAlt,
-							PolyMesh.Roles.Existing,
-							PolyMesh.Roles.ExistingAlt,
+					roleSet = new List<List<List<Roles>>>
+					{new List<List<Roles>> {
+						new List<Roles> {
+							Roles.ExistingAlt,
+							Roles.NewAlt,
+							Roles.NewAlt,
+							Roles.Existing,
+							Roles.ExistingAlt,
 						}}};
 					break;
 				case GridEnums.GridTypes.Durer1:
@@ -462,12 +461,12 @@ namespace Polyhydra.Core
 					tile.AddKite(0, 3, 1, 1);
 					xOffset = tile.Vertices[1].Position - tile.Vertices[3].Position;
 					yOffset = tile.Vertices[7].Position - tile.Vertices[2].Position;
-					roleSet = new List<List<List<PolyMesh.Roles>>>
-					{new List<List<PolyMesh.Roles>> {
-						new List<PolyMesh.Roles> {
-							PolyMesh.Roles.ExistingAlt,
-							PolyMesh.Roles.New,
-							PolyMesh.Roles.NewAlt,
+					roleSet = new List<List<List<Roles>>>
+					{new List<List<Roles>> {
+						new List<Roles> {
+							Roles.ExistingAlt,
+							Roles.New,
+							Roles.NewAlt,
 						}}};
 					break;
 				case GridEnums.GridTypes.Durer2:
@@ -478,13 +477,13 @@ namespace Polyhydra.Core
 					tile.AddRhombus(0, 2, 72);
 					xOffset = tile.Vertices[1].Position - tile.Vertices[3].Position;
 					yOffset = tile.Vertices[6].Position - tile.Vertices[2].Position;
-					roleSet = new List<List<List<PolyMesh.Roles>>>
-					{new List<List<PolyMesh.Roles>> {
-						new List<PolyMesh.Roles> {
-							PolyMesh.Roles.ExistingAlt,
-							PolyMesh.Roles.New,
-							PolyMesh.Roles.NewAlt,
-							PolyMesh.Roles.NewAlt,
+					roleSet = new List<List<List<Roles>>>
+					{new List<List<Roles>> {
+						new List<Roles> {
+							Roles.ExistingAlt,
+							Roles.New,
+							Roles.NewAlt,
+							Roles.NewAlt,
 						}}};
 					break;
                 default:
@@ -494,9 +493,11 @@ namespace Polyhydra.Core
 			}
 			
 			poly = new PolyMesh();
-			var newFaceRoles = new List<PolyMesh.Roles>();
-			var xCentering = (xOffset * (xRepeats - 1)) / 2f;
-			var yCentering = (yOffset * (yRepeats - 1)) / 2f;
+			var newFaceRoles = new List<Roles>();
+            var xCentering = ((xOffset * (xRepeats - 1)) / 2f);
+            xCentering.y = 0;
+			var yCentering = ((yOffset * (yRepeats - 1)) / 2f);
+            yCentering.x = 0;
 
 			int roleCountY = roleSet.Count;
 			int roleCountX = roleSet[0].Count;
@@ -505,9 +506,19 @@ namespace Polyhydra.Core
 			{
 				var rowOffset = offsetAlternateRows ? y % roleCountX : 0;
 				for (int x=0; x<xRepeats; x++)
-				{
+                {
 					var colOffset = alternateRows && y%2==0 ? 1 : 0;
-					poly.Append(tile, (xOffset * x - xCentering) + (yOffset * y - yCentering));
+                    // Vector3 tileOffset = (xOffset * x) + (yOffset * y - yCentering);
+                    Vector3 tileOffset = (xOffset * x - xCentering) + (yOffset * y - yCentering);
+                    if (y % 2 == 0)
+                    {
+                        tileOffset.x -= yOffset.x * Mathf.FloorToInt(y);
+                    }
+                    else
+                    {
+                        tileOffset.x -= yOffset.x * Mathf.FloorToInt(y+1);
+                    }
+                    poly.Append(tile, tileOffset);
 					newFaceRoles.AddRange(roleSet[y%roleCountY][(x+colOffset)%roleCountX].GetRange(rowOffset, tileCount));
 				}
 			}
