@@ -194,7 +194,7 @@ public static class VariousSolids
     public static PolyMesh UvSphere(int verticalLines = 24, int horizontalLines = 24, float hemi = 1)
     {
 
-        var faceRoles = new List<PolyMesh.Roles>();
+        var faceRoles = new List<Roles>();
 
         horizontalLines = Mathf.Clamp(horizontalLines, 3, 24);
         verticalLines = Mathf.Clamp(verticalLines, 3, 24);
@@ -228,11 +228,11 @@ public static class VariousSolids
                     ((v + 1) * verticalLines) + ((u + 1) % verticalLines),
                     ((v + 1) * verticalLines) + u
                 });
-                faceRoles.Add((u + v) % 2 == 0 ? PolyMesh.Roles.New : PolyMesh.Roles.NewAlt);
+                faceRoles.Add((u + v) % 2 == 0 ? Roles.New : Roles.NewAlt);
             }
         }
 
-        var vertexRoles = Enumerable.Repeat(PolyMesh.Roles.Existing, verts.Count);
+        var vertexRoles = Enumerable.Repeat(Roles.Existing, verts.Count);
         var poly = new PolyMesh(verts, faces, faceRoles, vertexRoles);
         return poly;
     }

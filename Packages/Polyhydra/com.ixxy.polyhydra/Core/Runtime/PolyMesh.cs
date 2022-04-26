@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using AsImpL;
+using Polyhydra.Wythoff;
 using UnityEngine;
 using UnityEngine.Rendering;
 using Random = UnityEngine.Random;
@@ -11,9 +12,42 @@ using Random = UnityEngine.Random;
 namespace Polyhydra.Core
 {
     
+    public enum Axis {X,Y,Z}
+    
+    public enum TagType
+    {
+        Introvert,
+        Extrovert
+    }
+
+    public enum UVMethods
+    {
+        FirstEdge,
+        BestEdge,
+        FirstVertex,
+        BestVertex,
+        ObjectAligned
+    }
+
+    public enum ColorMethods
+    {
+        BySides,
+        ByRole,
+        ByFaceDirection,
+        ByTags,
+    }
+    
+    public enum Roles
+    {
+        Ignored,
+        Existing,
+        New,
+        NewAlt,
+        ExistingAlt,
+    }
+    
     public partial class PolyMesh
     {
-        private const float TOLERANCE = 0.02f;
         private PointOctree<Vertex> octree;
 
         public static Color[] DefaultFaceColors =
@@ -36,47 +70,15 @@ namespace Polyhydra.Core
         {
             return (x % m + m) % m;
         }
-        public enum TagType
-        {
-            Introvert,
-            Extrovert
-        }
-
-        public enum UVMethods
-        {
-            FirstEdge,
-            BestEdge,
-            FirstVertex,
-            BestVertex,
-            ObjectAligned
-        }
-
-        public enum ColorMethods
-        {
-            BySides,
-            ByRole,
-            ByFaceDirection,
-            ByTags,
-        }
-
+        
         public List<Roles> FaceRoles;
         public List<Roles> VertexRoles;
         public List<HashSet<Tuple<string, TagType>>> FaceTags;
-
-
+        
         public MeshHalfedgeList Halfedges { get; private set; }
         public MeshVertexList Vertices { get; set; }
         public MeshFaceList Faces { get; private set; }
 
-        public enum Roles
-        {
-            Ignored,
-            Existing,
-            New,
-            NewAlt,
-            ExistingAlt,
-        }
-        
         public void SetFaceRoles(Roles role)
         {
             FaceRoles = Enumerable.Repeat(role, Faces.Count).ToList();
@@ -176,33 +178,273 @@ namespace Polyhydra.Core
             InitTags();
         }
 
-        public PolyMesh(string conwayString) : this()
+        public enum SeedShape
         {
-            var conwayMap =  new Dictionary<string, Operation>{
-                {"d", Operation.Dual},
-                {"a", Operation.Ambo},
-                {"k", Operation.Kis},
-                {"g", Operation.Gyro},
-                {"p", Operation.Propeller},
-                {"c", Operation.Chamfer},
-                {"w", Operation.Whirl},
-                {"l", Operation.Loft},
-                {"L", Operation.Lace},
-                {"I", Operation.JoinedLace},
-                {"K", Operation.Stake},
-                {"P", Operation.OppositeLace},
-                {"q", Operation.Quinto},
-                {"n", Operation.Needle},
-                {"x", Operation.Loft},
-                    
-                // "r": ConwayOperator.Reflect,
-                // "O": ConwayOperator.Quadsub,
-                // "u": ConwayOperator.Trisub,
-                // "H": ConwayOperator.Hollow,
-                // "Z": ConwayOperator.Triangulate,
-                // "C": ConwayOperator.Canonicalize,
-                // "A": ConwayOperator.AdjustXYZ,
+            Tetrahedron,
+            Octahedron,
+            Cube,
+            Icosahedron,
+            Dodecahedron,
+            Prism,
+            Antiprism,
+            Pyramid,
+            Polygon,
+            Johnson,
+            Grid,
+            Random,
+        }
+        
+        public static PolyMesh FromConwayString(string conwayString)
+        {
+            // Seed types
+            var seedMap = new Dictionary<string, SeedShape>{
+              {"T",  SeedShape.Tetrahedron},
+              {"O",  SeedShape.Octahedron},
+              {"C",  SeedShape.Cube},
+              {"I",  SeedShape.Icosahedron},
+              {"D",  SeedShape.Dodecahedron},
+              {"P",  SeedShape.Prism},
+              {"A",  SeedShape.Antiprism},
+              {"Y",  SeedShape.Pyramid},
+              {"Z",  SeedShape.Polygon},
+              {"J",  SeedShape.Johnson},
+              {"R",  SeedShape.Random},
+              {"K",  SeedShape.Grid},
             };
+            
+            var operatorMap = new Dictionary<string, Operation>{
+                
+                {"a", Operation.Ambo},
+                {"b", Operation.Bevel},
+                {"d", Operation.Dual},
+                {"e", Operation.Expand},
+                {"g", Operation.Gyro},
+                {"j", Operation.Join},
+                {"k", Operation.Kis},
+                {"m", Operation.Meta},
+                {"o", Operation.Ortho},
+                {"p", Operation.Propeller},
+                {"s", Operation.Snub},
+                {"t", Operation.Truncate},
+                {"c", Operation.Chamfer},
+                {"G", Operation.OppositeLace},
+                {"K", Operation.Stake},
+                {"L", Operation.Lace},
+                {"l", Operation.Loft},
+                {"M", Operation.Medial},
+                {"n", Operation.Needle},
+                {"q", Operation.Quinto},
+                {"u", Operation.Subdivide},
+                {"w", Operation.Whirl},
+                {"X", Operation.Cross},
+                {"z", Operation.Zip},
+                {"C", Operation.Canonicalize},
+                
+                // {"r", Operation.Reflect},
+                // {"O", Operation.Quadsub},
+                // {"u", Operation.Trisub},
+                // {"H", Operation.Hollow},
+                // {"Z", Operation.Triangulate},
+                // {"A", Operation.AdjustXYZ},
+            };
+            
+            var allTokens = new HashSet<string>(seedMap.Keys);
+            allTokens.UnionWith(operatorMap.Keys);
+
+            bool IsToken(string c) {return allTokens.Contains(c);}
+            bool isNumeric(string c){return "1234567890.".Contains(c);}
+
+            var tokens = new List<(string, float)>();
+            int pointer = 0;
+            
+            while (pointer < conwayString.Length)
+            {
+              var opString = conwayString.Substring(pointer, 1);
+              if (!IsToken(opString))
+              {
+                  Debug.LogError($"Unexpected token: {opString} in input {conwayString} at {pointer}");
+                  pointer++;
+                  continue;
+              }
+              var start_n = ++pointer;
+              while (pointer < conwayString.Length && isNumeric(conwayString.Substring(pointer, 1)))
+              {
+                  ++pointer;
+              }
+              float floatString;
+              var floatValue = float.TryParse(conwayString.Substring(start_n, pointer-start_n), out floatString);
+              tokens.Add((opString, floatValue ? floatString : float.NaN));
+            }
+            
+            tokens.Reverse();
+            const string parameterizedSeeds = "PAYZJK";
+            if (parameterizedSeeds.IndexOf(tokens[0].Item1, StringComparison.Ordinal) >= 0)
+            {
+                if(tokens[0].Item2 < 3) {
+                  throw new Exception("Invalid number of faces for seed");
+                }
+            }
+            else if (!float.IsNaN(tokens[0].Item2))
+            {
+                throw new Exception("Seed "  + tokens[0].Item1 + " does not use a parameter");
+            }
+
+            var seed = seedMap[tokens[0].Item1];
+            var poly = GenerateConwaySeedShape(seed, tokens[0].Item2);
+
+            // Apply operators
+            for (var i = 1; i < tokens.Count; ++i)
+            {
+                Filter filter = null;
+                float val = 0;
+                var op = operatorMap[tokens[i].Item1];
+                OpParams p = new OpParams();
+
+                if (!float.IsNaN(tokens[i].Item2))
+                {
+                    if (
+                        op==Operation.Loft || op==Operation.Needle || 
+                        op==Operation.Kis || op==Operation.Lace || op==Operation.Stake)
+                    {
+                        int sides = Mathf.FloorToInt(tokens[i].Item2);
+                        filter = Filter.Sides(sides);
+                    }
+                    else if (op==Operation.Truncate)
+                    {
+                        int vertexEdges = Mathf.FloorToInt(tokens[i].Item2);
+                        filter = Filter.VertexEdges(vertexEdges);
+                    }
+                }
+                
+                if (op==Operation.Lace && tokens[i].Item2 == 0)
+                {
+                    // Antiprism's L0 op
+                    // TODO actual Antiprism syntax is L_0
+                    op = Operation.OppositeLace;
+                }
+
+                if (op == Operation.Chamfer)
+                {
+                    val = 0.5f;
+                }
+                else if (op == Operation.Join || op == Operation.Propeller || op == Operation.Needle)
+                {
+                    val = 0;
+                }
+                else
+                {
+                    val = 1 / 3f;
+                }
+
+                if (filter == null)
+                {
+                    p = new OpParams(val);
+                }
+                else
+                {
+                    p = new OpParams(val, filter);
+                }
+
+                if (op==Operation.Canonicalize)
+                {
+                    poly = poly.Canonicalize(tokens[i].Item2, tokens[i].Item2);
+                }
+                else
+                {
+                    poly = poly.AppyOperation(op, p);
+                }
+
+                if (op==Operation.Propeller || op==Operation.Quinto)
+                {
+                    poly = poly.Canonicalize(2, 2); // Antiprism compatibility
+                }
+                
+            }
+            return poly;
+        }
+
+        public static PolyMesh GenerateConwaySeedShape(SeedShape seedShape, float param = 0)
+        {
+            var gridTypeMap = new Dictionary<string, GridEnums.GridTypes>
+            {
+                {"333333", GridEnums.GridTypes.K_3_3_3_3_3_3},
+                {"4444", GridEnums.GridTypes.K_4_4_4_4},
+                {"666", GridEnums.GridTypes.K_6_6_6},
+                {"33336", GridEnums.GridTypes.K_3_3_3_3_6},
+                {"33344", GridEnums.GridTypes.K_3_3_3_4_4},
+                {"33434", GridEnums.GridTypes.K_3_3_4_3_4},
+                {"3464", GridEnums.GridTypes.K_3_4_6_4},
+                {"3636", GridEnums.GridTypes.K_3_6_3_6},
+                {"31212", GridEnums.GridTypes.K_3_12_12},
+                {"4612", GridEnums.GridTypes.K_4_6_12},
+                {"488", GridEnums.GridTypes.K_4_8_8},
+                {"33412333333", GridEnums.GridTypes.K_3_3_4_12__3_3_3_3_3_3},
+                {"33663636", GridEnums.GridTypes.K_3_3_6_6__3_6_3_6},
+                {"3431231212", GridEnums.GridTypes.K_3_4_3_12__3_12_12},
+                {"34463636", GridEnums.GridTypes.K_3_4_4_6__3_6_3_6},
+            };
+
+            PolyMesh poly = null;
+            WythoffPoly wythoff;
+
+            int paramInt = Mathf.FloorToInt(param);
+            int sides = Mathf.Max(paramInt, 3);
+            
+            switch (seedShape)
+            {
+                case SeedShape.Tetrahedron:
+                    wythoff = new WythoffPoly(Wythoff.Types.Tetrahedron);
+                    wythoff.Build();
+                    poly = wythoff.Build();
+                    break;
+                case SeedShape.Octahedron:
+                    wythoff = new WythoffPoly(Wythoff.Types.Octahedron);
+                    wythoff.Build();
+                    poly = wythoff.Build();
+                    break;
+                case SeedShape.Cube:
+                    wythoff = new WythoffPoly(Wythoff.Types.Cube);
+                    wythoff.Build();
+                    poly = wythoff.Build();
+                    break;
+                case SeedShape.Icosahedron:
+                    wythoff = new WythoffPoly(Wythoff.Types.Icosahedron);
+                    wythoff.Build();
+                    poly = wythoff.Build();
+                    break;
+                case SeedShape.Dodecahedron:
+                    wythoff = new WythoffPoly(Wythoff.Types.Dodecahedron);
+                    wythoff.Build();
+                    poly = wythoff.Build();
+                    break;
+                case SeedShape.Prism:
+                    poly = RotationalSolids.Prism(sides);
+                    break;
+                case SeedShape.Antiprism:
+                    poly = RotationalSolids.Antiprism(sides);
+                    break;
+                case SeedShape.Pyramid:
+                    poly = RotationalSolids.Pyramid(sides);
+                    break;
+                case SeedShape.Polygon:
+                    poly = Shapes.MakePolygon(sides);
+                    break;
+                case SeedShape.Johnson:
+                    poly = JohnsonSolids.Build(paramInt);
+                    break;
+                case SeedShape.Random:
+                    int c = Mathf.FloorToInt(Random.Range(0, 7));
+                    int root = Mathf.FloorToInt(Random.Range(1, 60));
+                    poly = WatermanPoly.Build(1, root, c, true);
+                    break;
+                case SeedShape.Grid:
+                    var typeString = paramInt.ToString();
+                    var gridType = gridTypeMap[typeString];
+                    poly = Grids.Build(gridType, GridEnums.GridShapes.Plane, 5, 5);
+                    break;
+            }
+
+            return poly;
         }
 
         public PolyMesh(
@@ -371,7 +613,7 @@ namespace Polyhydra.Core
         {
             return FindBoundaries(Halfedges);
         }
-
+        
         public List<List<Halfedge>> FindBoundaries(IEnumerable<Halfedge> edges)
         {
             var looped = new HashSet<Halfedge>();
@@ -1009,7 +1251,7 @@ namespace Polyhydra.Core
             // Stretch = 66,
             // Spherize = 69,
             // Cylinderize = 70,
-            // Canonicalize = 71,
+            Canonicalize = 71,
 
             // Store/Recall
             
@@ -1019,7 +1261,7 @@ namespace Polyhydra.Core
             // UnstashToFaces = 77,
             // TagFaces = 78,
         }
-        
+
         public PolyMesh AppyOperation(Operation op, OpParams p)
         {
 
@@ -1158,8 +1400,6 @@ namespace Polyhydra.Core
                 case Operation.Segment:
                     polyMesh = polyMesh.Segment(p);
                     break;
-
-
             }
 
             return polyMesh;

@@ -8,8 +8,6 @@ namespace Polyhydra.Core
     public partial class PolyMesh
     {
         
-        #region conway methods
-
         public PolyMesh Dual()
         {
             var newFaceTags = new List<HashSet<Tuple<string, TagType>>>();
@@ -962,7 +960,7 @@ namespace Polyhydra.Core
             {
                 float offset = o.GetValueA(this, faceIndex);
                 var face = Faces[faceIndex];
-                vertexPoints.Add(face.Centroid + face.Normal * offset);
+                vertexPoints.Add(face.Centroid + face.Normal * (offset + 1));
                 newCentroidVertices[face.Name] = vertexIndex++;
                 vertexRoles.Add(Roles.New);
             }
@@ -1219,11 +1217,7 @@ namespace Polyhydra.Core
             var poly = new PolyMesh(vertexPoints, faceIndices, faceRoles, vertexRoles, newFaceTags);
             return poly;
         }
-
-        #endregion
-
-        #region extended conway methods
-
+        
         public PolyMesh Subdivide(OpParams o)
         {
             var newFaceTags = new List<HashSet<Tuple<string, TagType>>>();
@@ -2736,10 +2730,6 @@ namespace Polyhydra.Core
             result = result.Kis(o);
             return result;
         }
-
-        #endregion
-
-        #region alternating conway methods
         
         public PolyMesh Gable(OpParams o, int edgeOffset=0)
         {
@@ -2903,33 +2893,5 @@ namespace Polyhydra.Core
             return new PolyMesh(vertexPoints, faceIndices, faceRoles, vertexRoles, newFaceTags);
         }
         
-        #endregion
-
-        public enum Axes {X,Y,Z}
-
-        public void ApplyNoise(Axes axis, float strength=1,
-            float xscale=1, float yscale=1,
-            float xoffset=0, float yoffset=0)
-        {
-            foreach (var v in Vertices)
-            {
-                float offset;
-                switch (axis)
-                {
-                    case Axes.X:
-                        offset = Mathf.PerlinNoise((v.Position.y+xoffset)*xscale, (v.Position.z+yoffset)*yscale);
-                        v.Position += new Vector3(offset * strength, 0, 0);
-                        break;
-                    case Axes.Y:
-                        offset = Mathf.PerlinNoise((v.Position.x+xoffset)*xscale, (v.Position.z+yoffset)*yscale);
-                        v.Position += new Vector3(0, offset * strength, 0);
-                        break;
-                    case Axes.Z:
-                        offset = Mathf.PerlinNoise((v.Position.x+xoffset)*xscale, (v.Position.y+yoffset)*yscale);
-                        v.Position += new Vector3(0, 0, offset * strength);
-                        break;
-                }
-            }
-        }
     }
 }

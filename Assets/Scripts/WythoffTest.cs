@@ -11,8 +11,6 @@ public class WythoffTest : TestBase
     public string name = "";
     [Range(6, 80)] public int type = 6;
     
-    private PolyMesh poly;
-    
     [ContextMenu("Go")]
     public override void Go()
     {

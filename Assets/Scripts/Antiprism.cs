@@ -63,7 +63,7 @@ public class Antiprism : TestBase
         using (StringReader reader = new StringReader(output))
         {
             poly = new PolyMesh(reader);
-            Build(PolyMesh.ColorMethods.ByTags);
+            Build(ColorMethods.ByTags);
         }
     }
 }

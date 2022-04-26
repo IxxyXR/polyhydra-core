@@ -18,6 +18,6 @@ public class JohnsonTest : TestBase
         TextInfo textInfo = new CultureInfo("en-GB",false).TextInfo;
         name = textInfo.ToTitleCase(JohnsonSolids.Names.Keys.ToArray()[type - 1]);
         poly = JohnsonSolids.Build(type);
-        Build(PolyMesh.ColorMethods.BySides);
+        Build();
     }
 }

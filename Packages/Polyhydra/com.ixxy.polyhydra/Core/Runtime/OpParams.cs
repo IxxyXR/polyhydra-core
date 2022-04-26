@@ -27,8 +27,6 @@ namespace Polyhydra.Core
         
         public Func<FilterParams, bool> eval;
 
-        public enum Axis {X, Y, Z};
-        
         public enum PositionType
         {
             VertexAny,
@@ -82,7 +80,23 @@ namespace Polyhydra.Core
             });
         }
         
-        public static Filter Role(PolyMesh.Roles role)
+        public static Filter Sides(int sides)
+        {
+            return new Filter(p =>
+            {
+                return p.poly.Faces[p.index].Sides == sides;
+            });
+        }
+        
+        public static Filter VertexEdges(int vertexOrder)
+        {
+            return new Filter(p =>
+            {
+                return p.poly.Vertices[p.index].Halfedges.Count == vertexOrder;
+            });
+        }
+        
+        public static Filter Role(Roles role)
         {
             return new Filter(p =>
             {
@@ -140,7 +154,7 @@ namespace Polyhydra.Core
         public float GetValueA(PolyMesh poly, int index) => funcA?.eval.Invoke(new FilterParams(poly, index)) ?? 0;
         public float GetValueB(PolyMesh poly, int index) => funcB?.eval.Invoke(new FilterParams(poly, index)) ?? 0;
 
-        private List<Tuple<string, PolyMesh.TagType>> _tagList;
+        private List<Tuple<string, TagType>> _tagList;
 
         public OpParams(
             string selectByTags = "" 
@@ -251,7 +265,7 @@ namespace Polyhydra.Core
             tags = selectByTags;
         }
 
-        public List<Tuple<string, PolyMesh.TagType>> TagListFromString(bool introvert=false)
+        public List<Tuple<string, TagType>> TagListFromString(bool introvert=false)
         {
             if (_tagList == null)
             {
@@ -261,15 +275,15 @@ namespace Polyhydra.Core
             return _tagList;
         }
 
-        public static List<Tuple<string, PolyMesh.TagType>> TagListFromString(string tagString, bool introvert=false)
+        public static List<Tuple<string, TagType>> TagListFromString(string tagString, bool introvert=false)
         {
-            var tagList = new List<Tuple<string, PolyMesh.TagType>>();
+            var tagList = new List<Tuple<string, TagType>>();
             if (!string.IsNullOrEmpty(tagString))
             {
                 var substrings = tagString.Split(',');
                 if (substrings.Length == 0) substrings = new[] {tagString};
-                var tagType = introvert ? PolyMesh.TagType.Introvert : PolyMesh.TagType.Extrovert;
-                tagList = substrings.Select(item => new Tuple<string, PolyMesh.TagType>(item, tagType)).ToList();
+                var tagType = introvert ? TagType.Introvert : TagType.Extrovert;
+                tagList = substrings.Select(item => new Tuple<string, TagType>(item, tagType)).ToList();
             }
 
             return tagList;

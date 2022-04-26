@@ -3014,6 +3014,7 @@ namespace Polyhydra.Core
                 {
                     var loop = new List<Vertex>();
                     var currLoopEdge = startHalfedge;
+                    int failsafe = 0;
                     do
                     {
                         loop.Add(currLoopEdge.Vertex);
@@ -3021,7 +3022,8 @@ namespace Polyhydra.Core
                         currLoopEdge = currLoopEdge.Prev.Vertex.Halfedges.First(
                             e=>boundaryEdges.Contains(e) && e!=currLoopEdge
                         );
-                    } while (currLoopEdge != startHalfedge);
+                    } while (currLoopEdge != startHalfedge && failsafe++ < 1000);  // Assumes we won't have 1000 sides faces!
+                    if (failsafe>=1000) loop.Clear();  // Failure
                     return loop;
                 }
 
@@ -3124,6 +3126,31 @@ namespace Polyhydra.Core
                 untestedFaces.ExceptWith(faceGroup);
             }
             return groups;
+        }
+
+        public void ApplyNoise(Axis axis, float strength=1,
+            float xscale=1, float yscale=1,
+            float xoffset=0, float yoffset=0)
+        {
+            foreach (var v in Vertices)
+            {
+                float offset;
+                switch (axis)
+                {
+                    case Axis.X:
+                        offset = Mathf.PerlinNoise((v.Position.y+xoffset)*xscale, (v.Position.z+yoffset)*yscale);
+                        v.Position += new Vector3(offset * strength, 0, 0);
+                        break;
+                    case Axis.Y:
+                        offset = Mathf.PerlinNoise((v.Position.x+xoffset)*xscale, (v.Position.z+yoffset)*yscale);
+                        v.Position += new Vector3(0, offset * strength, 0);
+                        break;
+                    case Axis.Z:
+                        offset = Mathf.PerlinNoise((v.Position.x+xoffset)*xscale, (v.Position.y+yoffset)*yscale);
+                        v.Position += new Vector3(0, 0, offset * strength);
+                        break;
+                }
+            }
         }
 
 

@@ -333,6 +333,28 @@ namespace Polyhydra.Core
             return conway;
         }
 
+        public void Flatten(Axis axis)
+        {
+            var flattenVector = Vector3.one;
+            switch (axis)
+            {
+                case Axis.X:
+                    flattenVector = Vector3.right;
+                    break;
+                case Axis.Y:
+                    flattenVector = Vector3.up;
+                    break;
+                case Axis.Z:
+                    flattenVector = Vector3.forward;
+                    break;
+            }
+            
+            foreach (var v in Vertices)
+            {
+                v.Position = Vector3.Scale(v.Position, flattenVector);
+            }
+        }
+
         public PolyMesh Cylinderize(OpParams o)
         {
 	        var vertexPoints = new List<Vector3>();

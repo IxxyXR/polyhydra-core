@@ -28,8 +28,8 @@ public static class RotationalSolids
                 edge2.Prev.Vertex
             };
             poly.Faces.Add(side1);
-            poly.FaceRoles.Add(PolyMesh.Roles.New);
-            poly.FaceTags.Add(new HashSet<Tuple<string, PolyMesh.TagType>>());
+            poly.FaceRoles.Add(Roles.New);
+            poly.FaceTags.Add(new HashSet<Tuple<string, TagType>>());
 
             var side2 = new List<Vertex>
             {
@@ -39,8 +39,8 @@ public static class RotationalSolids
                 edge2.Prev.Vertex
             };
             poly.Faces.Add(side2);
-            poly.FaceRoles.Add(PolyMesh.Roles.NewAlt);
-            poly.FaceTags.Add(new HashSet<Tuple<string, PolyMesh.TagType>>());
+            poly.FaceRoles.Add(Roles.NewAlt);
+            poly.FaceTags.Add(new HashSet<Tuple<string, TagType>>());
 
             i++;
             edge1 = edge1.Next.Next;
@@ -71,8 +71,8 @@ public static class RotationalSolids
                     edge2.Vertex
                 };
                 poly.Faces.Add(side1);
-                poly.FaceRoles.Add(PolyMesh.Roles.New);
-                poly.FaceTags.Add(new HashSet<Tuple<string, PolyMesh.TagType>>());
+                poly.FaceRoles.Add(Roles.New);
+                poly.FaceTags.Add(new HashSet<Tuple<string, TagType>>());
 
                 var side2 = new List<Vertex>
                 {
@@ -82,8 +82,8 @@ public static class RotationalSolids
                     edge2.Vertex,
                 };
                 poly.Faces.Add(side2);
-                poly.FaceRoles.Add(PolyMesh.Roles.NewAlt);
-                poly.FaceTags.Add(new HashSet<Tuple<string, PolyMesh.TagType>>());
+                poly.FaceRoles.Add(Roles.NewAlt);
+                poly.FaceTags.Add(new HashSet<Tuple<string, TagType>>());
 
                 i++;
                 edge2 = edge2.Next;
@@ -130,8 +130,8 @@ public static class RotationalSolids
                 newV1,
             };
             poly.Faces.Add(pentFace);
-            poly.FaceRoles.Add(PolyMesh.Roles.New);
-            poly.FaceTags.Add(new HashSet<Tuple<string, PolyMesh.TagType>>());
+            poly.FaceRoles.Add(Roles.New);
+            poly.FaceTags.Add(new HashSet<Tuple<string, TagType>>());
 
             i++;
             edge1 = edge1.Next.Next;
@@ -188,8 +188,8 @@ public static class RotationalSolids
                     edge2.Vertex
                 };
                 poly.Faces.Add(side1);
-                poly.FaceRoles.Add(PolyMesh.Roles.New);
-                poly.FaceTags.Add(new HashSet<Tuple<string, PolyMesh.TagType>>());
+                poly.FaceRoles.Add(Roles.New);
+                poly.FaceTags.Add(new HashSet<Tuple<string, TagType>>());
 
 
                 var side2 = new List<Vertex>
@@ -199,8 +199,8 @@ public static class RotationalSolids
                     edge2.Prev.Vertex
                 };
                 poly.Faces.Add(side2);
-                poly.FaceRoles.Add(PolyMesh.Roles.NewAlt);
-                poly.FaceTags.Add(new HashSet<Tuple<string, PolyMesh.TagType>>());
+                poly.FaceRoles.Add(Roles.NewAlt);
+                poly.FaceTags.Add(new HashSet<Tuple<string, TagType>>());
 
             }
             else
@@ -213,8 +213,8 @@ public static class RotationalSolids
                     edge2.Prev.Vertex
                 };
                 poly.Faces.Add(side);
-                poly.FaceRoles.Add(PolyMesh.Roles.New);
-                poly.FaceTags.Add(new HashSet<Tuple<string, PolyMesh.TagType>>());
+                poly.FaceRoles.Add(Roles.New);
+                poly.FaceTags.Add(new HashSet<Tuple<string, TagType>>());
 
             }
 
@@ -263,8 +263,8 @@ public static class RotationalSolids
         var baseVerts = poly.Vertices.GetRange(0, sides);
         baseVerts.Reverse();
         poly.Faces.Insert(0, baseVerts);
-        poly.FaceRoles.Insert(0, PolyMesh.Roles.Existing);
-        poly.FaceTags.Insert(0, new HashSet<Tuple<string, PolyMesh.TagType>>());
+        poly.FaceRoles.Insert(0, Roles.Existing);
+        poly.FaceTags.Insert(0, new HashSet<Tuple<string, TagType>>());
         poly.Halfedges.MatchPairs();
         return poly;
     }
@@ -375,8 +375,8 @@ public static class RotationalSolids
                 edge2.Vertex
             };
             poly.Faces.Add(side1);
-            poly.FaceRoles.Add(PolyMesh.Roles.New);
-            poly.FaceTags.Add(new HashSet<Tuple<string, PolyMesh.TagType>>());
+            poly.FaceRoles.Add(Roles.New);
+            poly.FaceTags.Add(new HashSet<Tuple<string, TagType>>());
 
             var side2 = new List<Vertex>
             {
@@ -386,8 +386,8 @@ public static class RotationalSolids
                 edge2.Vertex,
             };
             poly.Faces.Add(side2);
-            poly.FaceRoles.Add(PolyMesh.Roles.NewAlt);
-            poly.FaceTags.Add(new HashSet<Tuple<string, PolyMesh.TagType>>());
+            poly.FaceRoles.Add(Roles.NewAlt);
+            poly.FaceTags.Add(new HashSet<Tuple<string, TagType>>());
 
             i++;
             edge2 = edge2.Next;
@@ -434,8 +434,8 @@ public static class RotationalSolids
                 edge2.Vertex
             };
             poly.Faces.Add(side1);
-            poly.FaceRoles.Add(PolyMesh.Roles.New);
-            poly.FaceTags.Add(new HashSet<Tuple<string, PolyMesh.TagType>>());
+            poly.FaceRoles.Add(Roles.New);
+            poly.FaceTags.Add(new HashSet<Tuple<string, TagType>>());
 
             var side2 = new List<Vertex>
             {
@@ -445,8 +445,8 @@ public static class RotationalSolids
                 edge2.Vertex,
             };
             poly.Faces.Add(side2);
-            poly.FaceRoles.Add(PolyMesh.Roles.NewAlt);
-            poly.FaceTags.Add(new HashSet<Tuple<string, PolyMesh.TagType>>());
+            poly.FaceRoles.Add(Roles.NewAlt);
+            poly.FaceTags.Add(new HashSet<Tuple<string, TagType>>());
 
             i++;
             edge2 = edge2.Next;
@@ -488,8 +488,8 @@ public static class RotationalSolids
                 edge2.Vertex
             };
             poly.Faces.Add(side1);
-            poly.FaceRoles.Add(PolyMesh.Roles.New);
-            poly.FaceTags.Add(new HashSet<Tuple<string, PolyMesh.TagType>>());
+            poly.FaceRoles.Add(Roles.New);
+            poly.FaceTags.Add(new HashSet<Tuple<string, TagType>>());
             var side2 = new List<Vertex>
             {
                 middleVerts[PolyMesh.ActualMod(i * 2 + indexOffset, sides * 2)],
@@ -498,8 +498,8 @@ public static class RotationalSolids
                 edge2.Vertex,
             };
             poly.Faces.Add(side2);
-            poly.FaceRoles.Add(PolyMesh.Roles.NewAlt);
-            poly.FaceTags.Add(new HashSet<Tuple<string, PolyMesh.TagType>>());
+            poly.FaceRoles.Add(Roles.NewAlt);
+            poly.FaceTags.Add(new HashSet<Tuple<string, TagType>>());
 
             i++;
             edge2 = edge2.Next;
@@ -531,7 +531,7 @@ public static class RotationalSolids
     private static PolyMesh _MakeDipyramid(int sides, float height)
     {
         PolyMesh poly = _MakePyramid(sides, height);
-        poly = poly.Kis(new OpParams(height, Filter.Role(PolyMesh.Roles.Existing)));
+        poly = poly.Kis(new OpParams(height, Filter.Role(Roles.Existing)));
         return poly;
     }
 

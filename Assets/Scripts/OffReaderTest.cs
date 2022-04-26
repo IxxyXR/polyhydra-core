@@ -15,7 +15,7 @@ public class OffReaderTest : TestBase
         using (StreamReader reader = new StreamReader($"Assets/{filename}"))
         {
             poly = new PolyMesh(reader);
-            Build(PolyMesh.ColorMethods.ByTags);
+            Build(ColorMethods.ByTags);
         }
     }
 }
