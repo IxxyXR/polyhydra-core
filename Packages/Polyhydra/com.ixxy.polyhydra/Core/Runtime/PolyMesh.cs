@@ -516,15 +516,15 @@ namespace Polyhydra.Core
             int firstFaceLine = NVertices + 2;
             for (int i = firstFaceLine; i < firstFaceLine + NFaces; i++)
             {
+                
                 // Split on any whitespace
                 var faceString = System.Text.RegularExpressions.Regex.Split(lines[i], "\\s+");
-                
                 int sides = int.Parse(faceString[0]);
                 if (sides < 3) continue;
                 var face = new int[sides];
                 for (int j = 0; j < sides; j++)
                 {
-                    face[j] = int.Parse(faceString[j + 1]);
+                    face[sides - j - 1] = int.Parse(faceString[j + 1]);
                 }
 
                 // Assume any line with more than 3 values also has colours
