@@ -448,11 +448,11 @@ namespace Polyhydra.Core
         }
 
         public PolyMesh(
-            IEnumerable<Vector3> verts,
+			IEnumerable<Vector3> verts,
             IEnumerable<IEnumerable<int>> faceIndices,
             IEnumerable<Roles> faceRoles,
             IEnumerable<Roles> vertexRoles
-        ) : this()
+		) : this()
         {
             if (faceRoles.Count() != faceIndices.Count())
             {
@@ -468,7 +468,7 @@ namespace Polyhydra.Core
             InitTags();
         }
 
-        private PolyMesh(
+        public PolyMesh(
             IEnumerable<Vector3> verticesByPoints,
             IEnumerable<IEnumerable<int>> facesByVertexIndices,
             IEnumerable<Roles> faceRoles,
