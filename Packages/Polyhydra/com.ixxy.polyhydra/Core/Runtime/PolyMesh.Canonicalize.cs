@@ -7,8 +7,6 @@ namespace Polyhydra.Core
 {
     public partial class PolyMesh
     {
-        #region Canonicalize
-
         public void SetVertexPositions(List<Vector3> newPositions)
         {
             for (var i = 0; i < Vertices.Count; i++)
@@ -301,87 +299,5 @@ namespace Polyhydra.Core
             return canonicalized;
         }
 
-        public PolyMesh Spherize(OpParams o)
-        {
-            int GetVertID(Vertex v)
-            {
-                return Vertices.FindIndex(a => a == v);
-            }
-            
-            // TODO - preserve planar faces
-
-            var vertexPoints = new List<Vector3>();
-            var faceIndices = ListFacesByVertexIndices();
-
-            for (var vertexIndex = 0; vertexIndex < Vertices.Count; vertexIndex++)
-            {
-                float amount = o.GetValueA(this, vertexIndex);
-                var vertex = Vertices[vertexIndex];
-                if (IncludeVertex(vertexIndex, o.TagListFromString(), o.filter))
-                {
-                    vertexPoints.Add(Vector3.LerpUnclamped(vertex.Position, vertex.Position.normalized, amount));
-                    VertexRoles[vertexIndex] = Roles.Existing;
-                }
-                else
-                {
-                    vertexPoints.Add(vertex.Position);
-                    VertexRoles[vertexIndex] = Roles.Ignored;
-                }
-            }
-
-            var conway = new PolyMesh(vertexPoints, faceIndices, FaceRoles, VertexRoles, FaceTags);
-            return conway;
-        }
-
-        public void Flatten(Axis axis)
-        {
-            var flattenVector = Vector3.one;
-            switch (axis)
-            {
-                case Axis.X:
-                    flattenVector = Vector3.right;
-                    break;
-                case Axis.Y:
-                    flattenVector = Vector3.up;
-                    break;
-                case Axis.Z:
-                    flattenVector = Vector3.forward;
-                    break;
-            }
-            
-            foreach (var v in Vertices)
-            {
-                v.Position = Vector3.Scale(v.Position, flattenVector);
-            }
-        }
-
-        public PolyMesh Cylinderize(OpParams o)
-        {
-	        var vertexPoints = new List<Vector3>();
-	        var faceIndices = ListFacesByVertexIndices();
-
-	        for (var vertexIndex = 0; vertexIndex < Vertices.Count; vertexIndex++)
-	        {
-		        float amount = o.GetValueA(this, vertexIndex);
-		        var vertex = Vertices[vertexIndex];
-		        if (IncludeVertex(vertexIndex, o.TagListFromString(), o.filter))
-		        {
-			        var normalized = new Vector2(vertex.Position.x, vertex.Position.z).normalized;
-			        var result = new Vector3(normalized.x, vertex.Position.y, normalized.y);
-			        vertexPoints.Add(Vector3.LerpUnclamped(vertex.Position, result, amount));
-			        VertexRoles[vertexIndex] = Roles.Existing;
-		        }
-		        else
-		        {
-			        vertexPoints.Add(vertex.Position);
-			        VertexRoles[vertexIndex] = Roles.Ignored;
-		        }
-	        }
-
-	        var conway = new PolyMesh(vertexPoints, faceIndices, FaceRoles, VertexRoles, FaceTags);
-	        return conway;
-        }
-        
-        #endregion Canonicalize
     }
 }

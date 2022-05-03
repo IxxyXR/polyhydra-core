@@ -134,7 +134,7 @@ namespace Polyhydra.Core
                     normal += crossTmp;
                     edge = edge.Next; // move on to next halfedge
                 } while (edge != Halfedge);
-                return new Vector3(normal.x, normal.y, normal.z).normalized;;
+                return new Vector3(normal.x, normal.y, normal.z).normalized;
             }
         }
 

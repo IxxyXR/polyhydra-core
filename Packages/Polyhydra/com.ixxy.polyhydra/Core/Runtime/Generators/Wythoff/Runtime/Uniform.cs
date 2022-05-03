@@ -57,8 +57,12 @@ namespace Polyhydra.Wythoff {
 			Coxeter = coxeter;
 			Wenninger = wenninger;
 		}
-		
-		
+        
+        public static Uniform FromCoxeter(int coxeter)
+        {
+            return Uniforms.First(u => u.Coxeter == coxeter);
+        }
+
         public static Uniform[] Uniforms = {
 
             // Dummy entry as these are 1-indexed

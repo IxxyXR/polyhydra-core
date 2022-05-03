@@ -23,14 +23,12 @@ namespace AsImpL
 
             // setup the data structure used for triangulation
             List<Vertex> poly = face.GetVertices().Select((v, i)=>new Vertex(i, v.Position)).ToList();
-            // TODO
-            // if (!face.IsClockwise)
-            // {
-            //     poly.Reverse();
-            // }
+            if (face.IsClockwise)
+            {
+                poly.Reverse();
+            }
             // use the ear clipping triangulation
             List<Triangle> newTris = Triangulation.TriangulateByEarClipping(poly, planeNormal);
-
             return newTris;
             
         }

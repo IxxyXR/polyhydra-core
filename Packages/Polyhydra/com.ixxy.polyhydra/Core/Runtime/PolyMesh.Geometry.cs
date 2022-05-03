@@ -342,7 +342,7 @@ namespace Polyhydra.Core
                 for (var vertexIndex = 0; vertexIndex < verts.Count; vertexIndex += 2)
                 {
                     var vert = verts[vertexIndex];
-                    vert.Position = Vector3.LerpUnclamped(faceCentroid, vert.Position, (float)scale);
+                    vert.Position = Vector3.LerpUnclamped(faceCentroid, vert.Position, scale);
                 }
             }
         }
@@ -791,10 +791,38 @@ namespace Polyhydra.Core
         /// <param name="distance">Distance to offset the mesh (thickness)</param>
         /// <param name="symmetric">Whether to extrude in both (-ve and +ve) directions</param>
         /// <returns>The extruded mesh (always closed)</returns>
-        public PolyMesh Shell(float distance)
+        public PolyMesh Shell(float distance, bool symmetric = true)
         {
             var offsetList = Enumerable.Repeat(distance, Vertices.Count).ToList();
-            return Shell(new OpParams(new OpFunc(x => offsetList[x.index])));
+            return Shell(new OpParams(new OpFunc(x => offsetList[x.index])), symmetric);
+        }
+
+        public PolyMesh LayeredExtrude(int storeys, float storeyHeight = 1f)
+        {
+            var roof = Duplicate();
+            var building = Duplicate();
+            building = building.Flip();
+            for (var i = 0; i < storeys; i++)
+            {
+                building = building.ExtendBoundaries(storeyHeight, 0, Vector3.up);
+            }
+            roof.Transform(new Vector3(0, storeys * storeyHeight, 0));
+            building.Append(roof);
+            building.FaceRoles = Enumerable.Repeat(Roles.Existing, building.FaceRoles.Count).ToList();
+            building = building.Weld(0.001f);
+            return building;
+        }
+
+        private PolyMesh Flip()
+        {
+            var flippedFaces = ListFacesByVertexIndices();
+            for (var faceIndex = 0; faceIndex < flippedFaces.Length; faceIndex++)
+            {
+                var face = flippedFaces[faceIndex];
+                face.Reverse();
+                flippedFaces[faceIndex] = face;
+            }
+            return new PolyMesh(ListVerticesByPoints(), flippedFaces, FaceRoles, VertexRoles, FaceTags);
         }
 
         /// <summary>
@@ -810,7 +838,7 @@ namespace Polyhydra.Core
             return Loft(o);
         }
 
-        public PolyMesh Shell(OpParams o, bool symmetric = true)
+        public PolyMesh Shell(OpParams o, bool symmetric = true, int segments = 1)
         {
             var newFaceTags = new List<HashSet<Tuple<string, TagType>>>();
 
@@ -885,8 +913,6 @@ namespace Polyhydra.Core
             return result;
         }
 
-
-
         public void ScalePolyhedra(float scale = 1)
         {
             if (Vertices.Count > 0)
@@ -899,30 +925,6 @@ namespace Polyhydra.Core
                     Vertices[i].Position *= unitScale * scale;
                 }
             }
-        }
-
-        public PolyMesh FaceRemoveLinear(float lower, float upper, int axis, string tags = "")
-        {
-            if (lower > upper) (upper, lower) = (lower, upper);
-            float yMax = Vertices.Max(v => v.Position[axis]);
-            float yMin = Vertices.Min(v => v.Position[axis]);
-            lower = Mathf.Lerp(yMin, yMax, lower);
-            upper = Mathf.Lerp(yMin, yMax, upper);
-            var slice = new Filter(x =>
-                x.poly.Faces[x.index].Centroid[axis] > lower && x.poly.Faces[x.index].Centroid[axis] < upper);
-            return _FaceRemove(new OpParams { tags = tags, filter = slice }, true);
-        }
-
-        public PolyMesh FaceRemoveDistance(float lower, float upper, string tags = "")
-        {
-            if (lower > upper) (upper, lower) = (lower, upper);
-            float yMax = Vertices.Max(v => v.Position.magnitude);
-            float yMin = 0;
-            lower = Mathf.Lerp(yMin, yMax, lower);
-            upper = Mathf.Lerp(yMin, yMax, upper);
-            var slice = new Filter(x =>
-                x.poly.Faces[x.index].Centroid.magnitude > lower && x.poly.Faces[x.index].Centroid.magnitude < upper);
-            return _FaceRemove(new OpParams(slice, tags), true);
         }
 
         public (PolyMesh top, PolyMesh bottom, PolyMesh cap) SliceByPlane(Plane plane, bool Cap = false,
@@ -1521,8 +1523,9 @@ namespace Polyhydra.Core
             return Duplicate(Matrix4x4.TRS(transform, rotation, scale));
         }
 
-        public void _ExtendBoundaries(List<List<Halfedge>> boundaries, float scale, float angle = 0)
+        public void _ExtendBoundaries(List<List<Halfedge>> boundaries, float scale, Vector3 directionVector, float angle = 0)
         {
+            
             FaceRoles = Enumerable.Repeat(Roles.Existing, Faces.Count).ToList();
             var newFaceTags = new List<HashSet<Tuple<string, TagType>>>();
             newFaceTags.AddRange(FaceTags);
@@ -1532,14 +1535,25 @@ namespace Polyhydra.Core
                 int firstNewVertexIndex = Vertices.Count;
                 for (var edgeIndex = 0; edgeIndex < boundary.Count; edgeIndex++)
                 {
+                    Vector3 direction;
                     var edge1 = boundary[edgeIndex];
-                    var direction1 = edge1.Midpoint - edge1.Face.Centroid;
-                    var edge2 = boundary[(edgeIndex + boundary.Count - 1) % boundary.Count];
-                    var direction2 = edge2.Midpoint - edge2.Face.Centroid;
-                    var direction = direction1 == direction2 ? direction1 : direction1 + direction2;
-                    var normal = (edge1.Face.Normal + edge2.Face.Normal) / 2f;
-                    direction = Vector3.LerpUnclamped(direction, normal, angle / 90f).normalized;
-                    Vertices.Add(new Vertex(edge1.Vertex.Position + (direction * scale)));
+                    
+                    // If directionVector is zero then calculate a direction based on angle and the edge's normal
+                    if (directionVector == Vector3.zero)
+                    {
+                        var direction1 = edge1.Midpoint - edge1.Face.Centroid;
+                        var edge2 = boundary[(edgeIndex + boundary.Count - 1) % boundary.Count];
+                        var direction2 = edge2.Midpoint - edge2.Face.Centroid;
+                        direction = direction1 == direction2 ? direction1 : direction1 + direction2;
+                        var normal = (edge1.Face.Normal + edge2.Face.Normal) / 2f;
+                        direction = Vector3.LerpUnclamped(direction, normal, angle / 90f).normalized;
+                    }
+                    else
+                    {
+                        direction = directionVector;
+                    }
+                    
+                    Vertices.Add(new Vertex(edge1.Vertex.Position + direction * scale));
                     VertexRoles.Add(Roles.New);
                 }
 
@@ -1645,13 +1659,18 @@ namespace Polyhydra.Core
             return this;
         }
 
-        public PolyMesh ExtendBoundaries(OpParams o)
+        public PolyMesh ExtendBoundaries(OpParams o, Vector3 directionOverride)
         {
             float amount = o.GetValueA(this, 0);
             float angle = o.GetValueB(this, 0);
+            return ExtendBoundaries(amount, angle, directionOverride);
+        }
+        
+        public PolyMesh ExtendBoundaries(float amount, float angle, Vector3 direction)
+        {
             var poly = Duplicate();
             var boundaries = poly.FindBoundaries();
-            poly._ExtendBoundaries(boundaries, amount, angle);
+            poly._ExtendBoundaries(boundaries, amount, direction, angle);
             return poly;
         }
 
@@ -3153,6 +3172,79 @@ namespace Polyhydra.Core
             }
         }
 
+        public PolyMesh Spherize(OpParams o)
+        {
+            var vertexPoints = new List<Vector3>();
+            var faceIndices = ListFacesByVertexIndices();
+
+            for (var vertexIndex = 0; vertexIndex < Vertices.Count; vertexIndex++)
+            {
+                float amount = o.GetValueA(this, vertexIndex);
+                var vertex = Vertices[vertexIndex];
+                if (IncludeVertex(vertexIndex, o.TagListFromString(), o.filter))
+                {
+                    vertexPoints.Add(Vector3.LerpUnclamped(vertex.Position, vertex.Position.normalized, amount));
+                    VertexRoles[vertexIndex] = Roles.Existing;
+                }
+                else
+                {
+                    vertexPoints.Add(vertex.Position);
+                    VertexRoles[vertexIndex] = Roles.Ignored;
+                }
+            }
+
+            var polyMesh = new PolyMesh(vertexPoints, faceIndices, FaceRoles, VertexRoles, FaceTags);
+            return polyMesh;
+        }
+
+        public void Flatten(Axis axis)
+        {
+            var flattenVector = Vector3.one;
+            switch (axis)
+            {
+                case Axis.X:
+                    flattenVector = Vector3.right;
+                    break;
+                case Axis.Y:
+                    flattenVector = Vector3.up;
+                    break;
+                case Axis.Z:
+                    flattenVector = Vector3.forward;
+                    break;
+            }
+            
+            foreach (var v in Vertices)
+            {
+                v.Position = Vector3.Scale(v.Position, flattenVector);
+            }
+        }
+
+        public PolyMesh Cylinderize(OpParams o)
+        {
+	        var vertexPoints = new List<Vector3>();
+	        var faceIndices = ListFacesByVertexIndices();
+
+	        for (var vertexIndex = 0; vertexIndex < Vertices.Count; vertexIndex++)
+	        {
+		        float amount = o.GetValueA(this, vertexIndex);
+		        var vertex = Vertices[vertexIndex];
+		        if (IncludeVertex(vertexIndex, o.TagListFromString(), o.filter))
+		        {
+			        var normalized = new Vector2(vertex.Position.x, vertex.Position.z).normalized;
+			        var result = new Vector3(normalized.x, vertex.Position.y, normalized.y);
+			        vertexPoints.Add(Vector3.LerpUnclamped(vertex.Position, result, amount));
+			        VertexRoles[vertexIndex] = Roles.Existing;
+		        }
+		        else
+		        {
+			        vertexPoints.Add(vertex.Position);
+			        VertexRoles[vertexIndex] = Roles.Ignored;
+		        }
+	        }
+
+	        var polyMesh = new PolyMesh(vertexPoints, faceIndices, FaceRoles, VertexRoles, FaceTags);
+	        return polyMesh;
+        }
 
     }
 }
