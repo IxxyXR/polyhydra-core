@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Polyhydra.Core;
 using UnityEngine;
 
@@ -75,7 +76,7 @@ namespace Polyhydra.Wythoff
             UnpackSym(symbol);
             Calculate();
         }
-        
+
         public WythoffPoly(Types type)
         {
             int typeIndex = (int)type + 1;

@@ -189,6 +189,7 @@ namespace Polyhydra.Core
             Antiprism,
             Pyramid,
             Polygon,
+            Uniform,
             Johnson,
             Grid,
             Random,
@@ -208,6 +209,7 @@ namespace Polyhydra.Core
               {"Y",  SeedShape.Pyramid},
               {"Z",  SeedShape.Polygon},
               {"J",  SeedShape.Johnson},
+              {"U",  SeedShape.Uniform},
               {"R",  SeedShape.Random},
               {"K",  SeedShape.Grid},
             };
@@ -277,7 +279,7 @@ namespace Polyhydra.Core
             }
             
             tokens.Reverse();
-            const string parameterizedSeeds = "PAYZJK";
+            const string parameterizedSeeds = "PAYZJKU";
             if (parameterizedSeeds.IndexOf(tokens[0].Item1, StringComparison.Ordinal) >= 0)
             {
                 if(tokens[0].Item2 < 3) {
@@ -427,10 +429,15 @@ namespace Polyhydra.Core
                     poly = RotationalSolids.Pyramid(sides);
                     break;
                 case SeedShape.Polygon:
-                    poly = Shapes.MakePolygon(sides);
+                    poly = Shapes.Polygon(sides);
                     break;
                 case SeedShape.Johnson:
                     poly = JohnsonSolids.Build(paramInt);
+                    break;
+                case SeedShape.Uniform:
+                    wythoff = new WythoffPoly(Uniform.FromCoxeter(sides).Coxeter);
+                    wythoff.Build();
+                    poly = wythoff.Build();
                     break;
                 case SeedShape.Random:
                     int c = Mathf.FloorToInt(Random.Range(0, 7));
@@ -890,33 +897,30 @@ namespace Polyhydra.Core
 
                 if (face.Sides > 3)
                 {
-
                     if (face.AreAllVertsVisibleFromCentroid())
                     {
                         for (var edgeIndex = 0; edgeIndex < faceIndex.Count; edgeIndex++)
                         {
                             // Convex faces can use fan triangulation
                             // It's fast at the cost of an extra triangle per face
-                            // TOD We could also use fan triangulation for concave faces where
-                            // every vertex can be seen from the centroid
                             meshVertices.Add(faceCentroid);
                             meshUVs.Add(calcUV(meshVertices[index], xAxis, yAxis));
                             faceTris.Add(index++);
                             edgeUVs.Add(new Vector2(0, 0));
                             barycentricUVs.Add(new Vector3(0, 0, 1));
-
+                        
                             meshVertices.Add(points[faceIndex[edgeIndex]]);
                             meshUVs.Add(calcUV(meshVertices[index], xAxis, yAxis));
                             faceTris.Add(index++);
                             edgeUVs.Add(new Vector2(1, 1));
                             barycentricUVs.Add(new Vector3(0, 1, 0));
-
+                        
                             meshVertices.Add(points[faceIndex[(edgeIndex + 1) % face.Sides]]);
                             meshUVs.Add(calcUV(meshVertices[index], xAxis, yAxis));
                             faceTris.Add(index++);
                             edgeUVs.Add(new Vector2(1, 1));
                             barycentricUVs.Add(new Vector3(1, 0, 0));
-
+                        
                             meshNormals.AddRange(Enumerable.Repeat(faceNormal, 3));
                             meshColors.AddRange(Enumerable.Repeat(color, 3));
                             miscUVs1.AddRange(Enumerable.Repeat(miscUV1, 3));
@@ -925,12 +929,12 @@ namespace Polyhydra.Core
                     }
                     else
                     {
-                        // Concave faces need ear clipping triangluation
+                        // Concave faces need ear clipping triangulation
                         // This doesn't work well for complex (self-intersecting) faces
                         // but those are mostly Wythoff Uniform polyhedra
                         // and therefore have convex faces
                         var newTris = Triangulator.Triangulate(face);
-                        
+
                         for (int t = 0; t < newTris.Count; t++)
                         {
                             meshVertices.Add(newTris[t].v1.Position);
@@ -956,6 +960,8 @@ namespace Polyhydra.Core
                             miscUVs1.AddRange(Enumerable.Repeat(miscUV1, 3));
                             miscUVs2.AddRange(Enumerable.Repeat(miscUV2, 3));
                         }
+
+                        faceTris.Reverse();
                     } 
                 }
                 else
@@ -1204,7 +1210,7 @@ namespace Polyhydra.Core
             // FaceSlide = 44,
             // Hinge = 48,
             
-            // Vertex Transforms
+            // Affine Vertex Transforms
 
             // VertexScale = 45,
             // VertexRotate = 46,
@@ -1246,11 +1252,11 @@ namespace Polyhydra.Core
             // Weld = 63,
             // ConvexHull = 68,
             
-            // Topology Preserving Transformations
+            // Non-Affine Vertex Transforms
             
             // Stretch = 66,
-            // Spherize = 69,
-            // Cylinderize = 70,
+            Spherize = 69,
+            Cylinderize = 70,
             Canonicalize = 71,
 
             // Store/Recall
@@ -1399,6 +1405,15 @@ namespace Polyhydra.Core
                     break;
                 case Operation.Segment:
                     polyMesh = polyMesh.Segment(p);
+                    break;
+                
+                // Non-affine Vertex Operators
+                
+                case Operation.Spherize:
+                    polyMesh = polyMesh.Spherize(p);
+                    break;
+                case Operation.Cylinderize:
+                    polyMesh = polyMesh.Cylinderize(p);
                     break;
             }
 

@@ -11,9 +11,9 @@ public static class RotationalSolids
     {
         sides = Mathf.Clamp(sides, 3, 64);
 
-        PolyMesh poly = Shapes.MakePolygon(sides * 2, true);
+        PolyMesh poly = Shapes.Polygon(sides * 2, true);
         Face bottom = poly.Faces[0];
-        PolyMesh cap1 = Shapes.MakePolygon(sides, false, 0.25f, capHeight, _CalcCupolaCapRadius(sides));
+        PolyMesh cap1 = Shapes.Polygon(sides, false, 0.25f, capHeight, _CalcCupolaCapRadius(sides));
         poly.Append(cap1);
 
         int i = 0;
@@ -51,7 +51,7 @@ public static class RotationalSolids
         if (bi)
         {
             float angleOffset = capGyro ? 0.75f : 0.25f;
-            PolyMesh cap2 = Shapes.MakePolygon(sides, true, angleOffset, -capHeight, _CalcCupolaCapRadius(sides));
+            PolyMesh cap2 = Shapes.Polygon(sides, true, angleOffset, -capHeight, _CalcCupolaCapRadius(sides));
             poly.Append(cap2);
 
             i = 0;
@@ -103,9 +103,9 @@ public static class RotationalSolids
 
         sides = Mathf.Clamp(sides, 3, 64);
 
-        PolyMesh poly = Shapes.MakePolygon(sides);
+        PolyMesh poly = Shapes.Polygon(sides);
         Face bottom = poly.Faces[0];
-        PolyMesh cap1 = Shapes.MakePolygon(sides, true, 0.25f, height, _CalcCupolaCapRadius(sides));
+        PolyMesh cap1 = Shapes.Polygon(sides, true, 0.25f, height, _CalcCupolaCapRadius(sides));
         poly.Append(cap1);
 
         int i = 0;
@@ -170,8 +170,8 @@ public static class RotationalSolids
 
     private static PolyMesh _MakePrism(int sides, float height, bool anti = false)
     {
-        PolyMesh poly = Shapes.MakePolygon(sides, true);
-        PolyMesh cap = Shapes.MakePolygon(sides, false, anti ? 0.5f : 0, height);
+        PolyMesh poly = Shapes.Polygon(sides, true);
+        PolyMesh cap = Shapes.Polygon(sides, false, anti ? 0.5f : 0, height);
         poly.Append(cap);
 
         int i = 0;
@@ -258,7 +258,7 @@ public static class RotationalSolids
 
     private static PolyMesh _MakePyramid(int sides, float height)
     {
-        PolyMesh polygon = Shapes.MakePolygon(sides);
+        PolyMesh polygon = Shapes.Polygon(sides);
         var poly = polygon.Kis(new OpParams(height));
         var baseVerts = poly.Vertices.GetRange(0, sides);
         baseVerts.Reverse();
@@ -360,7 +360,7 @@ public static class RotationalSolids
         poly.FaceTags.RemoveAt(poly.FaceRoles.Count - 1);
 
         float angleOffset = sideGyro ? 0.75f : 0.25f;
-        PolyMesh cap2 = Shapes.MakePolygon(sides, true, angleOffset, -capHeight, _CalcCupolaCapRadius(sides));
+        PolyMesh cap2 = Shapes.Polygon(sides, true, angleOffset, -capHeight, _CalcCupolaCapRadius(sides));
         poly.Append(cap2);
         var edge2 = poly.Faces.Last().Halfedge.Prev;
 
@@ -409,7 +409,7 @@ public static class RotationalSolids
     {
         PolyMesh poly = Antiprism(sides * 2, height);
         Face topFace = poly.Faces[1];
-        PolyMesh cap1 = Shapes.MakePolygon(
+        PolyMesh cap1 = Shapes.Polygon(
             sides, 
             false, 
             0f, 
@@ -468,7 +468,7 @@ public static class RotationalSolids
         PolyMesh poly = GyroelongatedCupola(sides, height, capHeight);
         Face bottomFace = poly.Faces[0];
         float angleOffset = capGyro ? 0.75f : 0.25f;
-        PolyMesh cap2 = Shapes.MakePolygon(sides, true, angleOffset, -capHeight,
+        PolyMesh cap2 = Shapes.Polygon(sides, true, angleOffset, -capHeight,
             _CalcCupolaCapRadius(sides));
         poly.Append(cap2);
 

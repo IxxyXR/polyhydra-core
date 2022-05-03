@@ -125,7 +125,7 @@ namespace Polyhydra.Core
 			switch (type)
 			{
 				case GridEnums.GridTypes.K_3_3_3_3_3_3:
-					tile = Shapes.MakePolygon(3);
+					tile = Shapes.Polygon(3);
 					tile = tile.Rotate(Vector3.up, 30);
 					tile.ExtendFace(0, 0, 3);
 					xOffset = tile.Vertices[0].Position - tile.Vertices[2].Position;
@@ -136,7 +136,7 @@ namespace Polyhydra.Core
                     };
 					break;
 				case GridEnums.GridTypes.K_4_4_4_4:
-					tile = Shapes.MakePolygon(4);
+					tile = Shapes.Polygon(4);
 					tile = tile.Rotate(Vector3.up, 45);
 					xOffset = tile.Vertices[0].Position - tile.Vertices[3].Position;
 					yOffset = tile.Vertices[0].Position - tile.Vertices[1].Position;
@@ -147,7 +147,7 @@ namespace Polyhydra.Core
 					}};
 					break;
 				case GridEnums.GridTypes.K_6_6_6:
-					tile = Shapes.MakePolygon(6);
+					tile = Shapes.Polygon(6);
 					tile = tile.Rotate(Vector3.up, 30);
 					xOffset = tile.Vertices[1].Position - tile.Vertices[5].Position;
 					yOffset = tile.Vertices[1].Position - tile.Vertices[3].Position;	
@@ -159,7 +159,7 @@ namespace Polyhydra.Core
 					}};
 					break;
 				case GridEnums.GridTypes.K_3_3_3_3_6:
-					tile = Shapes.MakePolygon(6);
+					tile = Shapes.Polygon(6);
 					tile = tile.Rotate(Vector3.up, -19);
 					tile.ExtendFace(0, 0, 3);
 					tile.ExtendFace(0, 1, 3);
@@ -188,7 +188,7 @@ namespace Polyhydra.Core
 						}}};
 					break;
 				case GridEnums.GridTypes.K_3_3_3_4_4:
-					tile = Shapes.MakePolygon(4);
+					tile = Shapes.Polygon(4);
 					tile = tile.Rotate(Vector3.up, -45);
 					tile.ExtendFace(0, 1, 3);
 					tile.ExtendFace(0, 3, 3);
@@ -214,7 +214,7 @@ namespace Polyhydra.Core
 					offsetAlternateRows = false;
 					break;
 				case GridEnums.GridTypes.K_3_3_4_3_4:
-					tile = Shapes.MakePolygon(3);
+					tile = Shapes.Polygon(3);
 					tile = tile.Rotate(Vector3.up, 30);
 					tile.ExtendFace(0, 2, 4);
 					tile.ExtendFace(0, 1, 4);
@@ -235,7 +235,7 @@ namespace Polyhydra.Core
 						}}};
 					break;
 				case GridEnums.GridTypes.K_3_4_6_4:
-					tile = Shapes.MakePolygon(6);
+					tile = Shapes.Polygon(6);
 					tile = tile.Rotate(Vector3.up, 30);
 					tile.ExtendFace(0, 0, 4);
 					tile.ExtendFace(0, 1, 4);
@@ -256,7 +256,7 @@ namespace Polyhydra.Core
 						}}};
 					break;
 				case GridEnums.GridTypes.K_3_6_3_6:
-					tile = Shapes.MakePolygon(6);
+					tile = Shapes.Polygon(6);
 					tile = tile.Rotate(Vector3.up, 30);
 					tile.ExtendFace(0, 0, 3);
 					tile.ExtendFace(0, 1, 3);
@@ -278,7 +278,7 @@ namespace Polyhydra.Core
 					offsetAlternateRows = false;
 					break;
 				case GridEnums.GridTypes.K_3_12_12:
-					tile = Shapes.MakePolygon(12);
+					tile = Shapes.Polygon(12);
 					tile = tile.Rotate(Vector3.up, 45);
 					tile.ExtendFace(0, 7, 3);
 					tile.ExtendFace(0, 9, 3);
@@ -293,7 +293,7 @@ namespace Polyhydra.Core
 						}}};
 					break;
 				case GridEnums.GridTypes.K_4_6_12:
-					tile = Shapes.MakePolygon(12);
+					tile = Shapes.Polygon(12);
 					tile = tile.Rotate(Vector3.up, 45);
 					tile.ExtendFace(0, 0, 4);
 					tile.ExtendFace(0, 2, 4);
@@ -314,7 +314,7 @@ namespace Polyhydra.Core
 						}}};
 					break;
 				case GridEnums.GridTypes.K_4_8_8:
-					tile = Shapes.MakePolygon(8);
+					tile = Shapes.Polygon(8);
 					tile = tile.Rotate(Vector3.up, -22.5f);
 					tile.ExtendFace(0, 1, 4);
 					xOffset = tile.Vertices[2].Position - tile.Vertices[8].Position;
@@ -335,7 +335,7 @@ namespace Polyhydra.Core
 					offsetAlternateRows = false;
 					break;
 				case GridEnums.GridTypes.K_3_3_4_12__3_3_3_3_3_3:
-					tile = Shapes.MakePolygon(12);
+					tile = Shapes.Polygon(12);
 					tile = tile.Rotate(Vector3.up, 15);
 					tile.ExtendFace(0, 0, 3);
 					tile.ExtendFace(0, 1, 4);
@@ -381,7 +381,7 @@ namespace Polyhydra.Core
 						}}};
 					break;
 				case GridEnums.GridTypes.K_3_3_6_6__3_6_3_6:
-					tile = Shapes.MakePolygon(6);
+					tile = Shapes.Polygon(6);
 					tile = tile.Rotate(Vector3.up, 0);
 					tile.ExtendFace(0, 5, 3);
 					tile.ExtendFace(0, 0, 3);
@@ -404,7 +404,7 @@ namespace Polyhydra.Core
 					alternateRows = true;
 					break;
 				case GridEnums.GridTypes.K_3_4_3_12__3_12_12:
-					tile = Shapes.MakePolygon(12);
+					tile = Shapes.Polygon(12);
 					tile = tile.Rotate(Vector3.up, 15);
 					tile.ExtendFace(0, 1, 3);
 					tile.ExtendFace(0, 0, 3);
@@ -436,7 +436,7 @@ namespace Polyhydra.Core
 					alternateRows = true;
 					break;
 				case GridEnums.GridTypes.K_3_4_4_6__3_6_3_6:
-					tile = Shapes.MakePolygon(6);
+					tile = Shapes.Polygon(6);
 					tile = tile.Rotate(Vector3.up, 0);
 					tile.ExtendFace(0, 5, 3);
 					tile.ExtendFace(0, 0, 3);
@@ -455,7 +455,7 @@ namespace Polyhydra.Core
 						}}};
 					break;
 				case GridEnums.GridTypes.Durer1:
-					tile = Shapes.MakePolygon(5);
+					tile = Shapes.Polygon(5);
 					tile = tile.Rotate(Vector3.up, 54);
 					tile.ExtendFace(0, 5, 5);
 					tile.AddKite(0, 3, 1, 1);
@@ -470,7 +470,7 @@ namespace Polyhydra.Core
 						}}};
 					break;
 				case GridEnums.GridTypes.Durer2:
-					tile = Shapes.MakePolygon(5);
+					tile = Shapes.Polygon(5);
 					tile = tile.Rotate(Vector3.up, 54);
 					tile.ExtendFace(0, 5, 5);
 					tile.AddKite(0, 3, 1, 1);
