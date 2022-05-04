@@ -596,11 +596,11 @@ public static class RotationalSolids
         return poly;
     }
 
-    public static PolyMesh Build(RotationalPolyType johnsonPolyType, int sides)
+    public static PolyMesh Build(RotationalPolyType type, int sides)
     {
           PolyMesh poly;
 
-        switch (johnsonPolyType)
+        switch (type)
         {
             case RotationalPolyType.Prism:
                 poly = Prism(sides);
@@ -657,11 +657,11 @@ public static class RotationalSolids
         return poly;
     }
 
-    public static PolyMesh Build(RotationalPolyType johnsonPolyType, int sides, float height, float capHeight)
+    public static PolyMesh Build(RotationalPolyType type, int sides, float height, float capHeight)
     {
         PolyMesh poly;
 
-        switch (johnsonPolyType)
+        switch (type)
         {
             case RotationalPolyType.Prism:
                 poly = Prism(sides, height);

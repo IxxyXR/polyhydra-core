@@ -304,7 +304,7 @@ namespace Polyhydra.Core
             {
                 float amount = o.GetValueA(this, vertexIndex);
                 var v = Vertices[vertexIndex];
-                if (IncludeVertex(vertexIndex, o.TagListFromString(), o.filter))
+                if (IncludeVertex(vertexIndex, o.filter))
                 {
                     foreach (var edge in v.Halfedges)
                     {
@@ -355,7 +355,7 @@ namespace Polyhydra.Core
                         pos2 = faceEdges[ActualMod((i + 1), faceEdges.Count)].PointAlongEdge(1 - amount);
                     }
 
-                    if (IncludeVertex(GetVertID(edge.Vertex), o.TagListFromString(), o.filter))
+                    if (IncludeVertex(GetVertID(edge.Vertex), o.filter))
                     {
                         centerFace.Add(newVerts[pos1]);
                         centerFace.Add(newVerts[pos2]);
@@ -380,7 +380,7 @@ namespace Polyhydra.Core
                 float amount = o.GetValueA(this, vertexIndex);
 
                 var vertex = Vertices[vertexIndex];
-                if (!IncludeVertex(GetVertID(vertex), o.TagListFromString(), o.filter)) continue;
+                if (!IncludeVertex(GetVertID(vertex), o.filter)) continue;
                 bool boundary = false;
                 var edges = vertex.Halfedges;
 
@@ -1036,7 +1036,7 @@ namespace Polyhydra.Core
             {
                 var prevFaceTagSet = FaceTags[faceIndex];
                 bool includeFace = selectedFaces == null || selectedFaces.Contains(faceIndex);
-                includeFace &= IncludeFace(faceIndex, o.TagListFromString(), o.filter);
+                includeFace &= IncludeFace(faceIndex, o.filter);
                 if (includeFace)
                 {
                     var face = Faces[faceIndex];
@@ -1330,7 +1330,7 @@ namespace Polyhydra.Core
                 var face = Faces[faceIndex];
                 var offsetVector = face.Normal * offset;
 
-                if (IncludeFace(faceIndex, o.TagListFromString(), o.filter))
+                if (IncludeFace(faceIndex, o.filter))
                 {
                     var edge = face.Halfedge;
                     var centroid = face.Centroid;
@@ -1577,7 +1577,7 @@ namespace Polyhydra.Core
                 var prevFaceTagSet = FaceTags[faceIndex];
                 var face = Faces[faceIndex];
                 var offsetVector = face.Normal * offset;
-                if (joined || opposite || IncludeFace(faceIndex, o.TagListFromString(), o.filter))
+                if (joined || opposite || IncludeFace(faceIndex, o.filter))
                 {
                     var edge = face.Halfedge;
                     var centroid = face.Centroid;
@@ -1755,7 +1755,7 @@ namespace Polyhydra.Core
                 float ratio = o.GetValueA(this, faceIndex);
                 var prevFaceTagSet = FaceTags[faceIndex];
                 var face = Faces[faceIndex];
-                if (join || IncludeFace(faceIndex, o.TagListFromString(), o.filter))
+                if (join || IncludeFace(faceIndex, o.filter))
                 {
                     var edge = face.Halfedge;
                     var centroid = face.Centroid;
@@ -2753,7 +2753,7 @@ namespace Polyhydra.Core
             for (int faceIndex = 0; faceIndex < Faces.Count; faceIndex++)
             {
                 var prevFaceTagSet = FaceTags[faceIndex];
-                bool includeFace = IncludeFace(faceIndex, o.TagListFromString(), o.filter);
+                bool includeFace = IncludeFace(faceIndex, o.filter);
                 var face = Faces[faceIndex];
                 if (includeFace && face.Sides % 2 == 0)  // Only even sided faces
                 {
@@ -2857,7 +2857,7 @@ namespace Polyhydra.Core
                 var edges = face.GetHalfedges();
                 int oppositeVertexIndex = (vertexOffset + (face.Sides / 2) % face.Sides);
                 var prevFaceTagSet = FaceTags[faceIndex];
-                bool includeFace = IncludeFace(faceIndex, o.TagListFromString(), o.filter);
+                bool includeFace = IncludeFace(faceIndex, o.filter);
                 if (includeFace && face.Sides % 2 == 0 )  // Only even sided faces > 4
                 {
                     var newFace1 = new List<int>();

@@ -94,9 +94,19 @@ namespace Polyhydra.Wythoff
             Calculate();
         }
 
-        public WythoffPoly(string symbol)
+        public WythoffPoly(string symbolOrName)
         {
-            UnpackSym(symbol);
+            if (symbolOrName.StartsWith("#") || symbolOrName.Contains("|"))
+            {
+                UnpackSym(symbolOrName);
+            }
+            else
+            {
+                symbolOrName = Uniform.Uniforms.First(
+                    u => String.Equals(u.Name, symbolOrName, StringComparison.CurrentCultureIgnoreCase)
+                ).Wythoff;
+                UnpackSym(symbolOrName);
+            }
             Calculate();
         }
 
