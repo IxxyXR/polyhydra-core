@@ -768,9 +768,7 @@ namespace Polyhydra.Core
             Color[] colors = null,
             ColorMethods colorMethod = ColorMethods.ByRole,
             UVMethods uvMethod = UVMethods.FirstEdge,
-            bool largeMeshFormat = true,
-            bool earClipping = true  // Default is fan triangulation from centroid
-        )
+            bool largeMeshFormat = true)
         {
             Vector2 calcUV(Vector3 point, Vector3 xAxis, Vector3 yAxis)
             {
@@ -1258,6 +1256,7 @@ namespace Polyhydra.Core
             Spherize = 69,
             Cylinderize = 70,
             Canonicalize = 71,
+            PerlinNoise = 86,
 
             // Store/Recall
             
@@ -1265,7 +1264,7 @@ namespace Polyhydra.Core
             // Unstash = 75,
             // UnstashToVerts = 76,
             // UnstashToFaces = 77,
-            // TagFaces = 78,
+            TagFaces = 78,
         }
 
         public PolyMesh AppyOperation(Operation op, OpParams p)
@@ -1413,6 +1412,9 @@ namespace Polyhydra.Core
                     polyMesh = polyMesh.Spherize(p);
                     break;
                 case Operation.Cylinderize:
+                    polyMesh = polyMesh.Cylinderize(p);
+                    break;
+                case Operation.PerlinNoise:
                     polyMesh = polyMesh.Cylinderize(p);
                     break;
             }

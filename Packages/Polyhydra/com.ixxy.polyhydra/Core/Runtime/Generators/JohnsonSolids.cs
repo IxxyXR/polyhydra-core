@@ -24,8 +24,17 @@ public class JohnsonSolids
     
     public static PolyMesh Build(string name)
     {
-        var poly = Generators[Names[name.ToLower()]]();
-        return poly;
+        if (name.ToLower().StartsWith("j"))
+        {
+            int type = Int32.Parse(name.Substring(1));
+            var poly = Generators[type]();
+            return poly;
+        }
+        else
+        {
+            var poly = Generators[Names[name.ToLower()]]();
+            return poly;
+        }
     }
 
     public static Dictionary<string, int> Names = new Dictionary<string, int>

@@ -8,35 +8,14 @@ namespace Polyhydra.Core
 {
     public partial class PolyMesh
     {
-
-        public bool IncludeFace(int faceIndex, IEnumerable<Tuple<string, TagType>> tagList = null, Filter filter = null)
+        public bool IncludeFace(int faceIndex, Filter filter = null)
         {
-            bool include = true;
-            if (tagList != null && tagList.Any())
-            {
-                // Return true if any tag strings match
-                include = tagList.Select(x => x.Item1).Intersect(FaceTags[faceIndex].Select(x => x.Item1)).Any();
-            }
-
-            bool filterResult = filter == null || filter.eval(new FilterParams(this, faceIndex));
-            return include && filterResult;
+            return filter == null || filter.eval(new FilterParams(this, faceIndex));
         }
 
-        public bool IncludeVertex(int vertexIndex, IEnumerable<Tuple<string, TagType>> tagList = null, Filter filter = null)
+        public bool IncludeVertex(int vertexIndex, Filter filter = null)
         {
-            bool include = true;
-            if (tagList != null && tagList.Any())
-            {
-                // Return true if any tags match
-                var vert = Vertices[vertexIndex];
-                foreach (var face in vert.GetVertexFaces())
-                {
-                    // Bit clunky and slow
-                    include = include && tagList.Intersect(FaceTags[Faces.IndexOf(face)]).Any();
-                }
-            }
-            bool filterResult = filter == null || filter.eval(new FilterParams(this, vertexIndex));
-            return include && filterResult;
+            return filter == null || filter.eval(new FilterParams(this, vertexIndex));
         }
 
         public PolyMesh AddMirrored(OpParams o, Vector3 axis)
@@ -72,7 +51,7 @@ namespace Polyhydra.Core
             amount /= 2.0f;
             var original = Duplicate(axis * -amount, 1.0f);
             var copy = Duplicate(axis * amount, 1.0f);
-            copy = copy.FaceKeep(filter, tags);
+            copy = copy.FaceKeep(filter);
             original.Append(copy);
             return original;
         }
@@ -85,7 +64,7 @@ namespace Polyhydra.Core
             Vector3 offsetVector = axis * offset;
 
             var original = Duplicate();
-            var copy = FaceKeep(filter, tags);
+            var copy = FaceKeep(filter);
 
             int copies = 0;
             while (scale > limit && copies < 64) // TODO make copies configurable
@@ -232,7 +211,7 @@ namespace Polyhydra.Core
             for (var faceIndex = 0; faceIndex < Faces.Count; faceIndex++)
             {
                 var face = poly.Faces[faceIndex];
-                if (!IncludeFace(faceIndex, o.TagListFromString(), o.filter)) continue;
+                if (!IncludeFace(faceIndex, o.filter)) continue;
                 var faceNormal = face.Normal;
                 //var amount = amount * (float) (randomize ? random.NextDouble() : 1);
                 var faceVerts = face.GetVertices();
@@ -285,8 +264,8 @@ namespace Polyhydra.Core
             {
                 float scale = o.GetValueA(this, vertexIndex);
                 var vertex = Vertices[vertexIndex];
-                var includeVertex = IncludeVertex(vertexIndex, o.TagListFromString(), o.filter);
-                vertexPoints.Add(includeVertex ? vertex.Position * (float)scale : vertex.Position);
+                var includeVertex = IncludeVertex(vertexIndex, o.filter);
+                vertexPoints.Add(includeVertex ? vertex.Position * scale : vertex.Position);
             }
 
             return new PolyMesh(vertexPoints, faceIndices, FaceRoles, VertexRoles, FaceTags);
@@ -306,13 +285,13 @@ namespace Polyhydra.Core
                 float scale = o.GetValueA(this, faceIndex);
                 var face = Faces[faceIndex];
                 var faceCentroid = face.Centroid;
-                var includeFace = IncludeFace(faceIndex, o.TagListFromString(), o.filter);
+                var includeFace = IncludeFace(faceIndex, o.filter);
                 int c = vertexPoints.Count;
 
                 vertexPoints.AddRange(face.GetVertices()
                     .Select((v, i) =>
                         i % 2 == 0 && includeFace
-                            ? Vector3.LerpUnclamped(faceCentroid, v.Position, (float)scale)
+                            ? Vector3.LerpUnclamped(faceCentroid, v.Position, scale)
                             : v.Position));
                 var faceVerts = new List<int>();
                 for (int ii = 0; ii < face.GetVertices().Count; ii++)
@@ -334,7 +313,7 @@ namespace Polyhydra.Core
             for (var faceIndex = 0; faceIndex < Faces.Count; faceIndex++)
             {
                 var face = Faces[faceIndex];
-                var includeFace = IncludeFace(faceIndex, o.TagListFromString(), o.filter);
+                var includeFace = IncludeFace(faceIndex, o.filter);
                 if (!includeFace) continue;
                 var verts = face.GetVertices();
                 float scale = o.GetValueA(this, faceIndex);
@@ -353,7 +332,7 @@ namespace Polyhydra.Core
             for (var faceIndex = 0; faceIndex < Faces.Count; faceIndex++)
             {
                 var face = poly.Faces[faceIndex];
-                if (!IncludeFace(faceIndex, o.TagListFromString(), o.filter)) continue;
+                if (!IncludeFace(faceIndex, o.filter)) continue;
                 var faceCentroid = face.Centroid;
                 var faceVerts = face.GetVertices();
                 for (var vertexIndex = 0; vertexIndex < faceVerts.Count; vertexIndex++)
@@ -375,7 +354,7 @@ namespace Polyhydra.Core
             {
                 float amount = o.GetValueA(this, faceIndex);
                 var face = poly.Faces[faceIndex];
-                if (!IncludeFace(faceIndex, o.TagListFromString(), o.filter)) continue;
+                if (!IncludeFace(faceIndex, o.filter)) continue;
                 var faceCentroid = face.Centroid;
                 var direction = face.Normal;
                 var _angle = (360f / face.Sides) * amount;
@@ -404,12 +383,12 @@ namespace Polyhydra.Core
                 float scale = o.GetValueA(this, faceIndex);
                 var face = Faces[faceIndex];
                 var faceCentroid = face.Centroid;
-                var includeFace = IncludeFace(faceIndex, o.TagListFromString(), o.filter);
+                var includeFace = IncludeFace(faceIndex, o.filter);
                 int c = vertexPoints.Count;
 
                 vertexPoints.AddRange(face.GetVertices()
                     .Select(v =>
-                        includeFace ? Vector3.LerpUnclamped(faceCentroid, v.Position, (float)scale) : v.Position));
+                        includeFace ? Vector3.LerpUnclamped(faceCentroid, v.Position, scale) : v.Position));
                 var faceVerts = new List<int>();
                 for (int ii = 0; ii < face.GetVertices().Count; ii++)
                 {
@@ -439,13 +418,11 @@ namespace Polyhydra.Core
                 var face = Faces[faceIndex];
                 var _angle = (360f / face.Sides) * amount;
 
-                var includeFace = IncludeFace(faceIndex, o.TagListFromString(), o.filter);
+                var includeFace = IncludeFace(faceIndex, o.filter);
 
                 int c = vertexPoints.Count;
                 var faceVertices = new List<int>();
-
-                c = vertexPoints.Count;
-
+                
                 var pivot = face.Centroid;
                 Vector3 direction = face.Normal;
                 switch (axis)
@@ -458,7 +435,7 @@ namespace Polyhydra.Core
                         break;
                 }
 
-                var rot = Quaternion.AngleAxis((float)_angle, direction);
+                var rot = Quaternion.AngleAxis(_angle, direction);
 
                 vertexPoints.AddRange(
                     face.GetVertices().Select(
@@ -496,7 +473,7 @@ namespace Polyhydra.Core
                 for (var idx = 0; idx < oldFaceIndices.Count; idx++)
                 {
                     var vertexIndex = oldFaceIndices[idx];
-                    bool keep = IncludeVertex(vertexIndex, o.TagListFromString(), o.filter);
+                    bool keep = IncludeVertex(vertexIndex, o.filter);
                     keep = invertLogic ? !keep : keep;
                     if (!keep)
                     {
@@ -549,14 +526,14 @@ namespace Polyhydra.Core
             return _FaceRemove(o, true);
         }
 
-        public PolyMesh FaceRemove(Filter filter, string tags)
+        public PolyMesh FaceRemove(Filter filter)
         {
-            return _FaceRemove(new OpParams { filter = filter, tags = tags }, false);
+            return _FaceRemove(new OpParams { filter = filter}, false);
         }
 
-        public PolyMesh FaceKeep(Filter filter, string tags)
+        public PolyMesh FaceKeep(Filter filter)
         {
-            return _FaceRemove(new OpParams { filter = filter, tags = tags }, true);
+            return _FaceRemove(new OpParams { filter = filter}, true);
         }
 
         public PolyMesh FaceRemove(bool invertLogic, List<int> faceIndices)
@@ -579,7 +556,7 @@ namespace Polyhydra.Core
             {
                 var face = Faces[faceIndex];
                 bool removeFace;
-                removeFace = IncludeFace(faceIndex, o.TagListFromString(), o.filter);
+                removeFace = IncludeFace(faceIndex, o.filter);
                 removeFace = invertLogic ? !removeFace : removeFace;
                 if (removeFace)
                 {
@@ -675,7 +652,7 @@ namespace Polyhydra.Core
                     existingVertexRoles[vert.Position] = VertexRoles[existingFaceIndices[faceIndex][vertIndex]];
                 }
 
-                if (IncludeFace(faceIndex, o.TagListFromString(), o.filter))
+                if (IncludeFace(faceIndex, o.filter))
                 {
                     faceList1.Add(newPoly1.Faces[faceIndex]);
                 }
@@ -748,7 +725,7 @@ namespace Polyhydra.Core
             for (var faceIndex = 0; faceIndex < Faces.Count; faceIndex++)
             {
                 float offset = o.GetValueA(this, faceIndex);
-                var vertexOffset = IncludeFace(faceIndex, o.TagListFromString(), o.filter) ? offset : 0;
+                var vertexOffset = IncludeFace(faceIndex, o.filter) ? offset : 0;
                 for (var i = 0; i < Faces[faceIndex].GetVertices().Count; i++)
                 {
                     offsetList.Add(vertexOffset);
@@ -773,13 +750,12 @@ namespace Polyhydra.Core
         {
             Vector3[] points = new Vector3[Vertices.Count];
             float _offset;
-            var faceOffsets = new Dictionary<string, float>();
 
             for (int i = 0; i < Vertices.Count && i < offset.Count; i++)
             {
                 var vert = Vertices[i];
                 _offset = offset[i];
-                points[i] = vert.Position + Vertices[i].Normal * (float)_offset;
+                points[i] = vert.Position + Vertices[i].Normal * _offset;
             }
 
             return new PolyMesh(points, ListFacesByVertexIndices(), FaceRoles, VertexRoles, FaceTags);
@@ -1224,7 +1200,7 @@ namespace Polyhydra.Core
 
             for (var faceIndex = 0; faceIndex < Faces.Count; faceIndex++)
             {
-                var includeFace = IncludeFace(faceIndex, o.TagListFromString(), o.filter);
+                var includeFace = IncludeFace(faceIndex, o.filter);
 
                 if (includeFace)
                 {
@@ -1370,13 +1346,12 @@ namespace Polyhydra.Core
         {
             var result = Duplicate();
 
-            var tagList = OpParams.TagListFromString(tags);
             if (toFaces)
             {
                 for (var i = 0; i < Faces.Count; i++)
                 {
                     var face = Faces[i];
-                    if (IncludeFace(i, tagList, filter))
+                    if (IncludeFace(i, filter))
                     {
                         Vector3 transform = face.Centroid + face.Normal * offset;
                         var rot = Quaternion.AngleAxis(angle, face.Normal);
@@ -1389,7 +1364,7 @@ namespace Polyhydra.Core
                 for (var vertexIndex = 0; vertexIndex < Vertices.Count; vertexIndex++)
                 {
                     var vert = Vertices[vertexIndex];
-                    if (IncludeVertex(vertexIndex, tagList, filter))
+                    if (IncludeVertex(vertexIndex, filter))
                     {
                         Vector3 transform = vert.Position + vert.Normal * offset;
                         var rot = Quaternion.AngleAxis(angle, vert.Normal);
@@ -2116,7 +2091,7 @@ namespace Polyhydra.Core
                 var faceNormal = face.Normal;
                 var offsetVector = faceNormal * offset;
 
-                if (IncludeFace(faceIndex, o.TagListFromString(), o.filter))
+                if (IncludeFace(faceIndex, o.filter))
                 {
 
                     var edge = face.Halfedge;
@@ -3147,30 +3122,35 @@ namespace Polyhydra.Core
             return groups;
         }
 
-        public void ApplyNoise(Axis axis, float strength=1,
+        public void PerlinNoise(Vector3 axis, float strength=1,
             float xscale=1, float yscale=1,
             float xoffset=0, float yoffset=0)
         {
             foreach (var v in Vertices)
             {
-                float offset;
-                switch (axis)
+                // Not entirely sure this is correct but it works well enough for simple cases.
+                var resultant = Vector3.ProjectOnPlane(v.Position, axis);
+                Vector2 projected;
+                if (resultant.x == 0)
                 {
-                    case Axis.X:
-                        offset = Mathf.PerlinNoise((v.Position.y+xoffset)*xscale, (v.Position.z+yoffset)*yscale);
-                        v.Position += new Vector3(offset * strength, 0, 0);
-                        break;
-                    case Axis.Y:
-                        offset = Mathf.PerlinNoise((v.Position.x+xoffset)*xscale, (v.Position.z+yoffset)*yscale);
-                        v.Position += new Vector3(0, offset * strength, 0);
-                        break;
-                    case Axis.Z:
-                        offset = Mathf.PerlinNoise((v.Position.x+xoffset)*xscale, (v.Position.y+yoffset)*yscale);
-                        v.Position += new Vector3(0, 0, offset * strength);
-                        break;
+                    projected = new Vector2(resultant.y, resultant.z);
                 }
+                else if (resultant.y == 0)
+                {
+                    projected = new Vector2(resultant.x, resultant.z);
+                }
+                else
+                {
+                    projected = new Vector2(resultant.x, resultant.y);
+                }
+                
+                float offset = Mathf.PerlinNoise(
+                    (projected.x + xoffset) * xscale,
+                    (projected.y + yoffset) * yscale
+                );
+                v.Position += axis * offset * strength;
             }
-        }
+        }	
 
         public PolyMesh Spherize(OpParams o)
         {
@@ -3181,7 +3161,7 @@ namespace Polyhydra.Core
             {
                 float amount = o.GetValueA(this, vertexIndex);
                 var vertex = Vertices[vertexIndex];
-                if (IncludeVertex(vertexIndex, o.TagListFromString(), o.filter))
+                if (IncludeVertex(vertexIndex, o.filter))
                 {
                     vertexPoints.Add(Vector3.LerpUnclamped(vertex.Position, vertex.Position.normalized, amount));
                     VertexRoles[vertexIndex] = Roles.Existing;
@@ -3228,7 +3208,7 @@ namespace Polyhydra.Core
 	        {
 		        float amount = o.GetValueA(this, vertexIndex);
 		        var vertex = Vertices[vertexIndex];
-		        if (IncludeVertex(vertexIndex, o.TagListFromString(), o.filter))
+		        if (IncludeVertex(vertexIndex, o.filter))
 		        {
 			        var normalized = new Vector2(vertex.Position.x, vertex.Position.z).normalized;
 			        var result = new Vector3(normalized.x, vertex.Position.y, normalized.y);
