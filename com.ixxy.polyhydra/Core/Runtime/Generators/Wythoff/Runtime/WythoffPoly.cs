@@ -77,7 +77,7 @@ namespace Polyhydra.Wythoff
             Calculate();
         }
 
-        public WythoffPoly(Types type)
+        public WythoffPoly(UniformTypes type)
         {
             int typeIndex = (int)type + 1;
             if (typeIndex < 6) throw new ArgumentException("P and Q values required for types < 6");
@@ -86,7 +86,7 @@ namespace Polyhydra.Wythoff
             Calculate();
         }
 
-        public WythoffPoly(Types type, int p, int q)
+        public WythoffPoly(UniformTypes type, int p, int q)
         {
             string symbol = Uniform.Uniforms[((int)type) + 1].Wythoff;
             symbol = symbol.Replace("p", p.ToString()).Replace("q", q.ToString());

@@ -395,38 +395,38 @@ namespace Polyhydra.Core
             switch (seedShape)
             {
                 case SeedShape.Tetrahedron:
-                    wythoff = new WythoffPoly(Wythoff.Types.Tetrahedron);
+                    wythoff = new WythoffPoly(Wythoff.UniformTypes.Tetrahedron);
                     wythoff.Build();
                     poly = wythoff.Build();
                     break;
                 case SeedShape.Octahedron:
-                    wythoff = new WythoffPoly(Wythoff.Types.Octahedron);
+                    wythoff = new WythoffPoly(Wythoff.UniformTypes.Octahedron);
                     wythoff.Build();
                     poly = wythoff.Build();
                     break;
                 case SeedShape.Cube:
-                    wythoff = new WythoffPoly(Wythoff.Types.Cube);
+                    wythoff = new WythoffPoly(Wythoff.UniformTypes.Cube);
                     wythoff.Build();
                     poly = wythoff.Build();
                     break;
                 case SeedShape.Icosahedron:
-                    wythoff = new WythoffPoly(Wythoff.Types.Icosahedron);
+                    wythoff = new WythoffPoly(Wythoff.UniformTypes.Icosahedron);
                     wythoff.Build();
                     poly = wythoff.Build();
                     break;
                 case SeedShape.Dodecahedron:
-                    wythoff = new WythoffPoly(Wythoff.Types.Dodecahedron);
+                    wythoff = new WythoffPoly(Wythoff.UniformTypes.Dodecahedron);
                     wythoff.Build();
                     poly = wythoff.Build();
                     break;
                 case SeedShape.Prism:
-                    poly = RotationalSolids.Prism(sides);
+                    poly = RadialSolids.Prism(sides);
                     break;
                 case SeedShape.Antiprism:
-                    poly = RotationalSolids.Antiprism(sides);
+                    poly = RadialSolids.Antiprism(sides);
                     break;
                 case SeedShape.Pyramid:
-                    poly = RotationalSolids.Pyramid(sides);
+                    poly = RadialSolids.Pyramid(sides);
                     break;
                 case SeedShape.Polygon:
                     poly = Shapes.Polygon(sides);
@@ -1191,68 +1191,68 @@ namespace Polyhydra.Core
             Extrude = 36,
             Shell = 37,
             Segment = 79,
-            // Skeleton = 38,
+            Skeleton = 38,
 
             // Object Transforms
             
-            // Recenter = 64,
-            // SitLevel = 65,
+            Recenter = 64,
+            SitLevel = 65,
 
             // Face Transforms
 
-            // FaceOffset = 39,
-            // FaceScale = 40,
-            // FaceRotate = 41,
-            // FaceRotateX = 42,
-            // FaceRotateY = 43,
-            // FaceSlide = 44,
-            // Hinge = 48,
+            FaceOffset = 39,
+            FaceScale = 40,
+            FaceRotate = 41,
+            FaceRotateX = 42,
+            FaceRotateY = 43,
+            FaceSlide = 44,
+            Hinge = 48,
             
             // Affine Vertex Transforms
 
-            // VertexScale = 45,
-            // VertexRotate = 46,
-            // VertexFlex = 47,
-            // VertexStellate = 81,
+            VertexScale = 45,
+            VertexRotate = 46,
+            VertexFlex = 47,
+            VertexStellate = 81,
 
             // PolarOffset,   TODO
             
             // Shape Replication
             
-            // AddDual = 49,
-            // AddCopyX = 50,
-            // AddCopyY = 51,
-            // AddCopyZ = 52,
-            // AddMirrorX = 53,
-            // AddMirrorY = 54,
-            // AddMirrorZ = 55,
-            // Stack = 72,
-            // Layer = 73,
+            AddDual = 49,
+            AddCopyX = 50,
+            AddCopyY = 51,
+            AddCopyZ = 52,
+            AddMirrorX = 53,
+            AddMirrorY = 54,
+            AddMirrorZ = 55,
+            Stack = 72,
+            Layer = 73,
             
             // Face/Vertex Deletion            
 
-            // FaceRemove = 56,
-            // FaceKeep = 57,
-            // FaceRemoveX = 82,
-            // FaceRemoveY = 67,
-            // FaceRemoveZ = 83,
-            // FaceRemoveDistance = 84,
-            // FaceRemovePolar = 85,
-            // VertexRemove = 58,
-            // VertexKeep = 59,
+            FaceRemove = 56,
+            FaceKeep = 57,
+            FaceRemoveX = 82,
+            FaceRemoveY = 67,
+            FaceRemoveZ = 83,
+            FaceRemoveDistance = 84,
+            FaceRemovePolar = 85,
+            VertexRemove = 58,
+            VertexKeep = 59,
             
             // Topology Manipulation
             
-            // FillHoles = 60,
-            // ExtendBoundaries = 61,
-            // ConnectFaces = 80,
-            // FaceMerge = 62,
-            // Weld = 63,
-            // ConvexHull = 68,
+            FillHoles = 60,
+            ExtendBoundaries = 61,
+            ConnectFaces = 80,
+            FaceMerge = 62,
+            Weld = 63,
+            ConvexHull = 68,
             
             // Non-Affine Vertex Transforms
             
-            // Stretch = 66,
+            Stretch = 66,
             Spherize = 69,
             Cylinderize = 70,
             Canonicalize = 71,
@@ -1260,10 +1260,10 @@ namespace Polyhydra.Core
 
             // Store/Recall
             
-            // Stash = 74,
-            // Unstash = 75,
-            // UnstashToVerts = 76,
-            // UnstashToFaces = 77,
+            Stash = 74,
+            Unstash = 75,
+            UnstashToVerts = 76,
+            UnstashToFaces = 77,
             TagFaces = 78,
         }
 

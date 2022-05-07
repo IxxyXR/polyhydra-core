@@ -5,7 +5,7 @@ using Polyhydra.Core;
 using UnityEngine;
 
 
-public static class RotationalSolids
+public static class RadialSolids
 {
     private static PolyMesh _MakeCupola(int sides, float capHeight, bool bi = false, bool capGyro = true)
     {
@@ -596,58 +596,58 @@ public static class RotationalSolids
         return poly;
     }
 
-    public static PolyMesh Build(RotationalPolyType type, int sides)
+    public static PolyMesh Build(RadialPolyType type, int sides)
     {
           PolyMesh poly;
 
         switch (type)
         {
-            case RotationalPolyType.Prism:
+            case RadialPolyType.Prism:
                 poly = Prism(sides);
                 break;
-            case RotationalPolyType.Antiprism:
+            case RadialPolyType.Antiprism:
                 poly = Antiprism(sides);
                 break;
-            case RotationalPolyType.Pyramid:
+            case RadialPolyType.Pyramid:
                 poly = Pyramid(sides);
                 break;
-            case RotationalPolyType.ElongatedPyramid:
+            case RadialPolyType.ElongatedPyramid:
                 poly = ElongatedPyramid(sides);
                 break;
-            case RotationalPolyType.GyroelongatedPyramid:
+            case RadialPolyType.GyroelongatedPyramid:
                 poly = GyroelongatedPyramid(sides);
                 break;
-            case RotationalPolyType.Dipyramid:
+            case RadialPolyType.Dipyramid:
                 poly = Dipyramid(sides);
                 break;
-            case RotationalPolyType.ElongatedDipyramid:
+            case RadialPolyType.ElongatedDipyramid:
                 poly = ElongatedDipyramid(sides);
                 break;
-            case RotationalPolyType.GyroelongatedDipyramid:
+            case RadialPolyType.GyroelongatedDipyramid:
                 poly = GyroelongatedDipyramid(sides);
                 break;
-            case RotationalPolyType.Cupola:
+            case RadialPolyType.Cupola:
                 poly = Cupola(sides);
                 break;
-            case RotationalPolyType.ElongatedCupola:
+            case RadialPolyType.ElongatedCupola:
                 poly = ElongatedCupola(sides);
                 break;
-            case RotationalPolyType.GyroelongatedCupola:
+            case RadialPolyType.GyroelongatedCupola:
                 poly = GyroelongatedCupola(sides);
                 break;
-            case RotationalPolyType.OrthoBicupola:
+            case RadialPolyType.OrthoBicupola:
                 poly = OrthoBicupola(sides);
                 break;
-            case RotationalPolyType.GyroBicupola:
+            case RadialPolyType.GyroBicupola:
                 poly = GyroBicupola(sides);
                 break;
-            case RotationalPolyType.ElongatedOrthoBicupola:
+            case RadialPolyType.ElongatedOrthoBicupola:
                 poly = ElongatedBicupola(sides, false);
                 break;
-            case RotationalPolyType.ElongatedGyroBicupola:
+            case RadialPolyType.ElongatedGyroBicupola:
                 poly = ElongatedBicupola(sides, true);
                 break;
-            case RotationalPolyType.GyroelongatedBicupola:
+            case RadialPolyType.GyroelongatedBicupola:
                 poly = GyroelongatedBicupola(sides, false);
                 break;
             default:
@@ -657,58 +657,58 @@ public static class RotationalSolids
         return poly;
     }
 
-    public static PolyMesh Build(RotationalPolyType type, int sides, float height, float capHeight)
+    public static PolyMesh Build(RadialPolyType type, int sides, float height, float capHeight)
     {
         PolyMesh poly;
 
         switch (type)
         {
-            case RotationalPolyType.Prism:
+            case RadialPolyType.Prism:
                 poly = Prism(sides, height);
                 break;
-            case RotationalPolyType.Antiprism:
+            case RadialPolyType.Antiprism:
                 poly = Antiprism(sides, height);
                 break;
-            case RotationalPolyType.Pyramid:
+            case RadialPolyType.Pyramid:
                 poly = Pyramid(sides, capHeight);
                 break;
-            case RotationalPolyType.ElongatedPyramid:
+            case RadialPolyType.ElongatedPyramid:
                 poly = ElongatedPyramid(sides, height, capHeight);
                 break;
-            case RotationalPolyType.GyroelongatedPyramid:
+            case RadialPolyType.GyroelongatedPyramid:
                 poly = GyroelongatedPyramid(sides, height, capHeight);
                 break;
-            case RotationalPolyType.Dipyramid:
+            case RadialPolyType.Dipyramid:
                 poly = Dipyramid(sides, capHeight);
                 break;
-            case RotationalPolyType.ElongatedDipyramid:
+            case RadialPolyType.ElongatedDipyramid:
                 poly = ElongatedDipyramid(sides, height, capHeight);
                 break;
-            case RotationalPolyType.GyroelongatedDipyramid:
+            case RadialPolyType.GyroelongatedDipyramid:
                 poly = GyroelongatedDipyramid(sides, height, capHeight);
                 break;
-            case RotationalPolyType.Cupola:
+            case RadialPolyType.Cupola:
                 poly = Cupola(sides, capHeight);
                 break;
-            case RotationalPolyType.ElongatedCupola:
+            case RadialPolyType.ElongatedCupola:
                 poly = ElongatedCupola(sides, height, capHeight);
                 break;
-            case RotationalPolyType.GyroelongatedCupola:
+            case RadialPolyType.GyroelongatedCupola:
                 poly = GyroelongatedCupola(sides, height, capHeight);
                 break;
-            case RotationalPolyType.OrthoBicupola:
+            case RadialPolyType.OrthoBicupola:
                 poly = OrthoBicupola(sides, capHeight);
                 break;
-            case RotationalPolyType.GyroBicupola:
+            case RadialPolyType.GyroBicupola:
                 poly = GyroBicupola(sides, capHeight);
                 break;
-            case RotationalPolyType.ElongatedOrthoBicupola:
+            case RadialPolyType.ElongatedOrthoBicupola:
                 poly = ElongatedBicupola(sides, height, capHeight, false);
                 break;
-            case RotationalPolyType.ElongatedGyroBicupola:
+            case RadialPolyType.ElongatedGyroBicupola:
                 poly = ElongatedBicupola(sides, height, capHeight, true);
                 break;
-            case RotationalPolyType.GyroelongatedBicupola:
+            case RadialPolyType.GyroelongatedBicupola:
                 poly = GyroelongatedBicupola(sides, height, capHeight, true);
                 break;
             default:
@@ -718,7 +718,7 @@ public static class RotationalSolids
         return poly;
     }
 
-    public enum RotationalPolyType
+    public enum RadialPolyType
     {
         Prism,
         Antiprism,
