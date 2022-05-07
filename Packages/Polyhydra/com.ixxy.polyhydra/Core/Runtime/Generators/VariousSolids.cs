@@ -13,7 +13,7 @@ namespace Polyhydra.Core
 
     public static class VariousSolids
     {
-        public static PolyMesh Build(VariousSolidTypes type, int x, int y, int z)
+        public static PolyMesh Build(VariousSolidTypes type, int x, int y, int z = 0)
         {
             PolyMesh poly = null;
 

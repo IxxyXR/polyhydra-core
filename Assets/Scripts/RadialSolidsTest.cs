@@ -8,10 +8,10 @@ using UnityEngine.Serialization;
 
 [ExecuteInEditMode]
 [RequireComponent(typeof(MeshFilter), typeof(MeshRenderer))]
-public class RotationalSolidsTest : TestBase
+public class RadialSolidsTest : TestBase
 {
     [Header("Base Shape Parameters")]
-    public RotationalSolids.RotationalPolyType type;
+    public RadialSolids.RadialPolyType type;
     [Range(3, 64)] public int Sides = 5;
     public bool SetHeight;
     public float Height = 1f;
@@ -22,11 +22,11 @@ public class RotationalSolidsTest : TestBase
     {
         if (SetHeight)
         {
-            poly = RotationalSolids.Build(type, Sides, Height, CapHeight);
+            poly = RadialSolids.Build(type, Sides, Height, CapHeight);
         }
         else
         {
-            poly = RotationalSolids.Build(type, Sides);
+            poly = RadialSolids.Build(type, Sides);
         }
         Build();
     }

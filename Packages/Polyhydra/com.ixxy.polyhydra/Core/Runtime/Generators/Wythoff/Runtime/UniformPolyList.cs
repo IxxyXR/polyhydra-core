@@ -1,6 +1,6 @@
 namespace Polyhydra.Wythoff
 {
-    public enum Types
+    public enum UniformTypes
     {
         Polygonal_Prism,
         Polygonal_Antiprism,
