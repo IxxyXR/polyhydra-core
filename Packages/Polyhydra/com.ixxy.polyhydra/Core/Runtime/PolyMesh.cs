@@ -13,12 +13,6 @@ namespace Polyhydra.Core
 {
     
     public enum Axis {X,Y,Z}
-    
-    public enum TagType
-    {
-        Introvert,
-        Extrovert
-    }
 
     public enum UVMethods
     {
@@ -73,7 +67,7 @@ namespace Polyhydra.Core
         
         public List<Roles> FaceRoles;
         public List<Roles> VertexRoles;
-        public List<HashSet<Tuple<string, TagType>>> FaceTags;
+        public List<HashSet<string>> FaceTags;
         
         public MeshHalfedgeList Halfedges { get; private set; }
         public MeshVertexList Vertices { get; set; }
@@ -480,7 +474,7 @@ namespace Polyhydra.Core
             IEnumerable<IEnumerable<int>> facesByVertexIndices,
             IEnumerable<Roles> faceRoles,
             IEnumerable<Roles> vertexRoles,
-            List<HashSet<Tuple<string, TagType>>> newFaceTags
+            List<HashSet<string>> newFaceTags
         ) : this(verticesByPoints, facesByVertexIndices, faceRoles, vertexRoles)
         {
             FaceTags = newFaceTags;
@@ -517,7 +511,7 @@ namespace Polyhydra.Core
                 vertexPoints.Add(v);
             }
             
-            FaceTags = new List<HashSet<Tuple<string, TagType>>>();
+            FaceTags = new List<HashSet<string>>();
 
             // Faces should immediately follow all vertices
             int firstFaceLine = NVertices + 2;
@@ -543,11 +537,8 @@ namespace Polyhydra.Core
                         float.Parse(faceString[sides + 2]),
                         float.Parse(faceString[sides + 3])
                     );
-                    var tags = new HashSet<Tuple<string, TagType>>();
-                    tags.Add(new Tuple<string, TagType>(
-                        $"#{ColorUtility.ToHtmlStringRGB(faceColor)}",
-                        TagType.Extrovert)
-                    );
+                    var tags = new HashSet<string>();
+                    tags.Add($"#{ColorUtility.ToHtmlStringRGB(faceColor)}");
                     FaceTags.Add(tags);
                 }
 
@@ -651,7 +642,6 @@ namespace Polyhydra.Core
             do
             {
                 loop.Add(currLoopEdge);
-                Halfedge nextLoopEdge = null;
                 currLoopEdge = currLoopEdge.Prev.Vertex.Halfedges.First(e=>e.Pair==null && e!=currLoopEdge);
             } while (currLoopEdge != startHalfedge && failsafe++ < 1000);
 
@@ -824,7 +814,7 @@ namespace Polyhydra.Core
                         for (int i = 0; i < colors.Length; i++) submeshTriangles.Add(new List<int>());
                         break;
                     case ColorMethods.ByTags:
-                        var flattenedTags = FaceTags.SelectMany(d => d.Select(i => i.Item1));
+                        var flattenedTags = FaceTags.SelectMany(d => d);
                         uniqueTags = new HashSet<string>(flattenedTags).ToList();
                         for (int i = 0; i < uniqueTags.Count + 1; i++) submeshTriangles.Add(new List<int>());
                         break;
@@ -1003,7 +993,7 @@ namespace Polyhydra.Core
                         case ColorMethods.ByTags:
                             if (FaceTags[i].Count > 0)
                             {
-                                string htmlColor = FaceTags[i].First(t => t.Item1.StartsWith("#")).Item1;
+                                string htmlColor = FaceTags[i].First(t => t.StartsWith("#"));
                                 int uniqueTagIndex = uniqueTags.IndexOf(htmlColor);
                                 submeshTriangles[uniqueTagIndex + 1].AddRange(faceTris);
                             }
@@ -1088,7 +1078,7 @@ namespace Polyhydra.Core
                     var c = Color.white;
                     if (i < FaceTags.Count && FaceTags[i].Count > 0)
                     {
-                        string htmlColor = FaceTags[i].First(t => t.Item1.StartsWith("#")).Item1;
+                        string htmlColor = FaceTags[i].First(t => t.StartsWith("#"));
                         if (!(ColorUtility.TryParseHtmlString(htmlColor, out c)))
                         {
                             ColorUtility.TryParseHtmlString(htmlColor.Replace("#", ""), out c);
@@ -1118,10 +1108,10 @@ namespace Polyhydra.Core
 
         public void InitTags(string tag=null)
         {
-            var tagset = new HashSet<Tuple<string, TagType>>();
+            var tagset = new HashSet<string>();
             if (!string.IsNullOrEmpty(tag))
             {
-                tagset.Add(new Tuple<string, TagType>(tag, TagType.Extrovert));
+                tagset.Add(tag);
             }
             FaceTags = Enumerable.Repeat(tagset, Faces.Count).ToList();
         }
@@ -1206,65 +1196,67 @@ namespace Polyhydra.Core
             FaceRotateX = 42,
             FaceRotateY = 43,
             FaceSlide = 44,
-            Hinge = 48,
+            // Hinge = 48,
             
             // Affine Vertex Transforms
 
             VertexScale = 45,
             VertexRotate = 46,
-            VertexFlex = 47,
+            VertexOffset = 47,
             VertexStellate = 81,
 
             // PolarOffset,   TODO
             
             // Shape Replication
             
-            AddDual = 49,
-            AddCopyX = 50,
-            AddCopyY = 51,
-            AddCopyZ = 52,
-            AddMirrorX = 53,
-            AddMirrorY = 54,
-            AddMirrorZ = 55,
-            Stack = 72,
-            Layer = 73,
+            // AddDual = 49,
+            // AddCopyX = 50,
+            // AddCopyY = 51,
+            // AddCopyZ = 52,
+            // AddMirrorX = 53,
+            // AddMirrorY = 54,
+            // AddMirrorZ = 55,
+            // Stack = 72,
+            // Layer = 73,
             
             // Face/Vertex Deletion            
 
             FaceRemove = 56,
             FaceKeep = 57,
-            FaceRemoveX = 82,
-            FaceRemoveY = 67,
-            FaceRemoveZ = 83,
-            FaceRemoveDistance = 84,
-            FaceRemovePolar = 85,
+            // FaceRemoveX = 82,
+            // FaceRemoveY = 67,
+            // FaceRemoveZ = 83,
+            // FaceRemoveDistance = 84,
+            // FaceRemovePolar = 85,
             VertexRemove = 58,
             VertexKeep = 59,
             
             // Topology Manipulation
             
             FillHoles = 60,
-            ExtendBoundaries = 61,
-            ConnectFaces = 80,
-            FaceMerge = 62,
+            // ExtendBoundaries = 61,
+            // ConnectFaces = 80,
+            // FaceMerge = 62,
             Weld = 63,
             ConvexHull = 68,
             
             // Non-Affine Vertex Transforms
             
-            Stretch = 66,
+            // Stretch = 66,
             Spherize = 69,
             Cylinderize = 70,
             Canonicalize = 71,
-            PerlinNoise = 86,
+            PerlinNoiseX = 86,
+            PerlinNoiseY = 87,
+            PerlinNoiseZ = 88,
 
             // Store/Recall
             
-            Stash = 74,
-            Unstash = 75,
-            UnstashToVerts = 76,
-            UnstashToFaces = 77,
-            TagFaces = 78,
+            // Stash = 74,
+            // Unstash = 75,
+            // UnstashToVerts = 76,
+            // UnstashToFaces = 77,
+            // TagFaces = 78,
         }
 
         public PolyMesh AppyOperation(Operation op, OpParams p)
@@ -1272,7 +1264,7 @@ namespace Polyhydra.Core
 
             if (Faces.Count != FaceTags.Count)
             {
-                Debug.LogWarning("{Faces.Count} faces but {FaceTags.Count} tags");
+                Debug.LogWarning($"{Faces.Count} faces but {FaceTags.Count} tags");
                 return this;
             }
             PolyMesh polyMesh = this;
@@ -1405,17 +1397,158 @@ namespace Polyhydra.Core
                 case Operation.Segment:
                     polyMesh = polyMesh.Segment(p);
                     break;
-                
-                // Non-affine Vertex Operators
-                
+                case Operation.Skeleton:
+                    polyMesh = Loft(p);
+                    polyMesh = polyMesh.FaceRemove(new OpParams(Filter.Role(Roles.Existing)));
+                    polyMesh = polyMesh.Shell(new OpParams(p.funcA), false);
+                    break;
+
+                // Object Transforms
+
+                case Operation.Recenter:
+                    polyMesh.Recenter();
+                    break;
+                case Operation.SitLevel:
+                    polyMesh.SitLevel();
+                    break;
+
+                // Face Transforms
+
+                case Operation.FaceOffset:
+                    polyMesh = polyMesh.Offset(p);
+                    break;
+                case Operation.FaceScale:
+                    polyMesh = polyMesh.FaceScale(p);
+                    break;
+                case Operation.FaceRotate:
+                    polyMesh = polyMesh.FaceRotate(p);
+                    break;
+                case Operation.FaceRotateX:
+                    polyMesh = polyMesh.FaceRotate(p, (int)Axis.X);
+                    break;
+                case Operation.FaceRotateY:
+                    polyMesh = polyMesh.FaceRotate(p, (int)Axis.Z);
+                    break;
+                case Operation.FaceSlide:
+                    polyMesh = polyMesh.FaceSlide(p);
+                    break;
+                // case Operation.Hinge:
+                //     polyMesh = polyMesh.Hinge(p);
+                //     break;
+
+                // Affine Vertex Transforms
+
+                case Operation.VertexScale:
+                    polyMesh = polyMesh.VertexScale(p);
+                    break;
+                case Operation.VertexRotate:
+                    polyMesh = polyMesh.VertexRotate(p);
+                    break;
+                case Operation.VertexOffset:
+                    polyMesh = polyMesh.VertexOffset(p);
+                    break;
+                case Operation.VertexStellate:
+                    polyMesh.VertexStellate(p);
+                    break;
+
+                // PolarOffset,   TODO
+
+                // Shape Replication
+
+                // case Operation.AddDual:
+                //     polyMesh = polyMesh.AddDual(p);
+                //     break;
+                // case Operation.AddCopyX:
+                //     polyMesh = polyMesh.AddCopy(p);
+                //     break;
+                // case Operation.AddCopyY:
+                //     polyMesh = polyMesh.AddCopyY(p);
+                //     break;
+                // case Operation.AddCopyZ:
+                //     polyMesh = polyMesh.AddCopyZ(p);
+                //     break;
+                // case Operation.AddMirrorX:
+                //     polyMesh = polyMesh.AddMirrorX(p);
+                //     break;
+                // case Operation.AddMirrorY:
+                //     polyMesh = polyMesh.AddMirrorY(p);
+                //     break;
+                // case Operation.AddMirrorZ:
+                //     polyMesh = polyMesh.AddMirrorZ(p);
+                //     break;
+                // case Operation.Stack:
+                //     polyMesh = polyMesh.Stack(p);
+                //     break;
+                // case Operation.Layer:
+                //     polyMesh = polyMesh.Layer(p);
+                //     break;
+
+                // Face/Vertex Deletion            
+
+                case Operation.FaceRemove:
+                    polyMesh = polyMesh.FaceRemove(p);
+                    break;
+                case Operation.FaceKeep:
+                    polyMesh = polyMesh.FaceKeep(p);
+                    break;
+                case Operation.VertexRemove:
+                    polyMesh = polyMesh.VertexRemove(p, false);
+                    break;
+                case Operation.VertexKeep:
+                    polyMesh = polyMesh.VertexRemove(p, invertLogic: true);
+                    break;
+
+                // Topology Manipulation
+
+                case Operation.FillHoles:
+                    polyMesh = polyMesh.FillHoles();
+                    break;
+                // case Operation.ExtendBoundaries:
+                //     polyMesh = polyMesh.ExtendBoundaries(p);
+                //     break;
+                // case Operation.ConnectFaces:
+                //     polyMesh = polyMesh.ConnectFaces(p);
+                //     break;
+                // case Operation.FaceMerge:
+                //     polyMesh = polyMesh.FaceMerge(p);
+                //     break;
+                case Operation.Weld:
+                    polyMesh = polyMesh.Weld(p.OriginalParamA);
+                    break;
+                case Operation.ConvexHull:
+                    polyMesh = polyMesh.ConvexHull(true);
+                    break;
+
+                // Non-Affine Vertex Transforms
+
+                // case Operation.Stretch:
+                //     polyMesh = polyMesh.Stretch(p);
+                //     break;
                 case Operation.Spherize:
                     polyMesh = polyMesh.Spherize(p);
                     break;
                 case Operation.Cylinderize:
                     polyMesh = polyMesh.Cylinderize(p);
                     break;
-                case Operation.PerlinNoise:
-                    polyMesh = polyMesh.Cylinderize(p);
+                // case Operation.Canonicalize:
+                //     polyMesh = polyMesh.Canonicalize(p);
+                //     break;
+                case Operation.PerlinNoiseX:
+                    polyMesh.PerlinNoise(Vector3.left, p.OriginalParamA, p.OriginalParamB);
+                    break;
+                case Operation.PerlinNoiseY:
+                    polyMesh.PerlinNoise(Vector3.up, p.OriginalParamA, p.OriginalParamB);
+                    break;
+                case Operation.PerlinNoiseZ:
+                    polyMesh.PerlinNoise(Vector3.forward,p.OriginalParamA, p.OriginalParamB);
+                    break;
+
+                // case Operation.TagFaces:
+                //     polyMesh = polyMesh.TagFaces()
+                //     break;
+                
+                default:
+                    Debug.LogError($"Unrecognised operation: {op}");
                     break;
             }
 

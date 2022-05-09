@@ -8,7 +8,7 @@ using UnityEngine;
 public class WythoffTest : TestBase
 {
     [Header("Base Shape Parameters")]
-    public string name = "";
+    public string PolyhedraName = "";
     [Range(6, 80)] public int type = 6;
     
     [ContextMenu("Go")]
@@ -16,7 +16,7 @@ public class WythoffTest : TestBase
     {
         var wythoff = new WythoffPoly(type);
         poly = wythoff.Build();
-        name = Uniform.Uniforms[type].Name;
+        PolyhedraName = Uniform.Uniforms[type].Name;
         Build();
     }
 }

@@ -150,6 +150,12 @@ namespace Polyhydra.Core
         public OpFunc funcB;
         public Filter filter;
 
+        public float OriginalParamA => _OriginalParamA;
+        public float OriginalParamB => _OriginalParamB;
+        private float _OriginalParamA;
+        private float _OriginalParamB;
+
+
         public float GetValueA(PolyMesh poly, int index) => funcA?.eval.Invoke(new FilterParams(poly, index)) ?? 0;
         public float GetValueB(PolyMesh poly, int index) => funcB?.eval.Invoke(new FilterParams(poly, index)) ?? 0;
         
@@ -160,12 +166,15 @@ namespace Polyhydra.Core
         
         public OpParams(float a, Filter filter=null)
         {
+            _OriginalParamA = a;
             funcA = new OpFunc(a);
             this.filter = filter;
         }
 
         public OpParams(float a, float b, Filter filter=null)
         {
+            _OriginalParamA = a;
+            _OriginalParamB = b;
             funcA = new OpFunc(a);
             funcB = new OpFunc(b);
             this.filter = filter;
@@ -179,6 +188,7 @@ namespace Polyhydra.Core
 
         public OpParams(float a, OpFunc b, Filter filter=null)
         {
+            _OriginalParamA = a;
             funcA = new OpFunc(a);
             funcB = b;
             this.filter = filter;

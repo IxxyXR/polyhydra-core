@@ -9,14 +9,14 @@ using UnityEngine;
 public class JohnsonTest : TestBase
 {
     [Header("Base Shape Parameters")]
-    public string name = "";
+    public string SolidName = "";
     [Range(1,92)] public int type = 1;
     
     [ContextMenu("Go")]
     public override void Go()
     {
         TextInfo textInfo = new CultureInfo("en-GB",false).TextInfo;
-        name = textInfo.ToTitleCase(JohnsonSolids.Names.Keys.ToArray()[type - 1]);
+        SolidName = textInfo.ToTitleCase(JohnsonSolids.Names.Keys.ToArray()[type - 1]);
         poly = JohnsonSolids.Build(type);
         Build();
     }
