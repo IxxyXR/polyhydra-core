@@ -29,7 +29,7 @@ public static class RadialSolids
             };
             poly.Faces.Add(side1);
             poly.FaceRoles.Add(Roles.New);
-            poly.FaceTags.Add(new HashSet<Tuple<string, TagType>>());
+            poly.FaceTags.Add(new HashSet<string>());
 
             var side2 = new List<Vertex>
             {
@@ -40,7 +40,7 @@ public static class RadialSolids
             };
             poly.Faces.Add(side2);
             poly.FaceRoles.Add(Roles.NewAlt);
-            poly.FaceTags.Add(new HashSet<Tuple<string, TagType>>());
+            poly.FaceTags.Add(new HashSet<string>());
 
             i++;
             edge1 = edge1.Next.Next;
@@ -72,7 +72,7 @@ public static class RadialSolids
                 };
                 poly.Faces.Add(side1);
                 poly.FaceRoles.Add(Roles.New);
-                poly.FaceTags.Add(new HashSet<Tuple<string, TagType>>());
+                poly.FaceTags.Add(new HashSet<string>());
 
                 var side2 = new List<Vertex>
                 {
@@ -83,7 +83,7 @@ public static class RadialSolids
                 };
                 poly.Faces.Add(side2);
                 poly.FaceRoles.Add(Roles.NewAlt);
-                poly.FaceTags.Add(new HashSet<Tuple<string, TagType>>());
+                poly.FaceTags.Add(new HashSet<string>());
 
                 i++;
                 edge2 = edge2.Next;
@@ -131,7 +131,7 @@ public static class RadialSolids
             };
             poly.Faces.Add(pentFace);
             poly.FaceRoles.Add(Roles.New);
-            poly.FaceTags.Add(new HashSet<Tuple<string, TagType>>());
+            poly.FaceTags.Add(new HashSet<string>());
 
             i++;
             edge1 = edge1.Next.Next;
@@ -189,7 +189,7 @@ public static class RadialSolids
                 };
                 poly.Faces.Add(side1);
                 poly.FaceRoles.Add(Roles.New);
-                poly.FaceTags.Add(new HashSet<Tuple<string, TagType>>());
+                poly.FaceTags.Add(new HashSet<string>());
 
 
                 var side2 = new List<Vertex>
@@ -200,7 +200,7 @@ public static class RadialSolids
                 };
                 poly.Faces.Add(side2);
                 poly.FaceRoles.Add(Roles.NewAlt);
-                poly.FaceTags.Add(new HashSet<Tuple<string, TagType>>());
+                poly.FaceTags.Add(new HashSet<string>());
 
             }
             else
@@ -214,7 +214,7 @@ public static class RadialSolids
                 };
                 poly.Faces.Add(side);
                 poly.FaceRoles.Add(Roles.New);
-                poly.FaceTags.Add(new HashSet<Tuple<string, TagType>>());
+                poly.FaceTags.Add(new HashSet<string>());
 
             }
 
@@ -264,7 +264,7 @@ public static class RadialSolids
         baseVerts.Reverse();
         poly.Faces.Insert(0, baseVerts);
         poly.FaceRoles.Insert(0, Roles.Existing);
-        poly.FaceTags.Insert(0, new HashSet<Tuple<string, TagType>>());
+        poly.FaceTags.Insert(0, new HashSet<string>());
         poly.Halfedges.MatchPairs();
         return poly;
     }
@@ -376,7 +376,7 @@ public static class RadialSolids
             };
             poly.Faces.Add(side1);
             poly.FaceRoles.Add(Roles.New);
-            poly.FaceTags.Add(new HashSet<Tuple<string, TagType>>());
+            poly.FaceTags.Add(new HashSet<string>());
 
             var side2 = new List<Vertex>
             {
@@ -387,7 +387,7 @@ public static class RadialSolids
             };
             poly.Faces.Add(side2);
             poly.FaceRoles.Add(Roles.NewAlt);
-            poly.FaceTags.Add(new HashSet<Tuple<string, TagType>>());
+            poly.FaceTags.Add(new HashSet<string>());
 
             i++;
             edge2 = edge2.Next;
@@ -435,7 +435,7 @@ public static class RadialSolids
             };
             poly.Faces.Add(side1);
             poly.FaceRoles.Add(Roles.New);
-            poly.FaceTags.Add(new HashSet<Tuple<string, TagType>>());
+            poly.FaceTags.Add(new HashSet<string>());
 
             var side2 = new List<Vertex>
             {
@@ -446,7 +446,7 @@ public static class RadialSolids
             };
             poly.Faces.Add(side2);
             poly.FaceRoles.Add(Roles.NewAlt);
-            poly.FaceTags.Add(new HashSet<Tuple<string, TagType>>());
+            poly.FaceTags.Add(new HashSet<string>());
 
             i++;
             edge2 = edge2.Next;
@@ -489,7 +489,7 @@ public static class RadialSolids
             };
             poly.Faces.Add(side1);
             poly.FaceRoles.Add(Roles.New);
-            poly.FaceTags.Add(new HashSet<Tuple<string, TagType>>());
+            poly.FaceTags.Add(new HashSet<string>());
             var side2 = new List<Vertex>
             {
                 middleVerts[PolyMesh.ActualMod(i * 2 + indexOffset, sides * 2)],
@@ -499,7 +499,7 @@ public static class RadialSolids
             };
             poly.Faces.Add(side2);
             poly.FaceRoles.Add(Roles.NewAlt);
-            poly.FaceTags.Add(new HashSet<Tuple<string, TagType>>());
+            poly.FaceTags.Add(new HashSet<string>());
 
             i++;
             edge2 = edge2.Next;

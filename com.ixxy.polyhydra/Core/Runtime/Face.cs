@@ -99,8 +99,8 @@ namespace Polyhydra.Core
         {
             get
             {
-                Vector3 avg = new Vector3();
                 List<Vertex> vertices = GetVertices();
+                Vector3 avg = new Vector3();
                 var vcount = vertices.Count;
                 for (var i = 0; i < vcount; i++)
                 {
@@ -109,13 +109,72 @@ namespace Polyhydra.Core
                     avg.y += v.Position.y;
                     avg.z += v.Position.z;
                 }
-
+                
                 avg.x /= vcount;
                 avg.y /= vcount;
                 avg.z /= vcount;
                 
                 return avg;
             }
+        }
+
+        public (Vector3, Vector3) GetTangents()
+        {
+            Vector3 tangentLeft, tangentUp, t1, t2;
+
+            var faceNormal = Normal;
+            t1 = Vector3.Cross(faceNormal, Vector3.forward);
+            t2 = Vector3.Cross(faceNormal, Vector3.left);
+            
+            if (t1.magnitude > t2.magnitude)
+            {
+                tangentUp = t1;
+            }
+            else
+            {
+                tangentUp = t2;
+            }
+
+            t2 = Vector3.Cross(faceNormal, Vector3.up);
+            if (t1.magnitude > t2.magnitude)
+            {
+                tangentLeft = t1;
+            }
+            else
+            {
+                tangentLeft = t2;
+            }
+
+            return (tangentLeft, tangentUp);
+        }
+
+        public Vector3 GetInteriorCentroid()
+        {
+            // WIP - not currently correct.
+            // See https://stackoverflow.com/questions/9692448/how-can-you-find-the-centroid-of-a-concave-irregular-polygon-in-javascript
+            
+            
+            List<Vector2> vertices = Get2DVertices();
+            vertices.Add(vertices[0]);
+            float twicearea = 0;
+            float x = 0, y = 0;
+            int nPts = vertices.Count;
+            Vector3 p1, p2;
+            float f;
+            for (int i = 0, j = nPts - 1; i < nPts; j = i++)
+            {
+                p1 = vertices[i];
+                p2 = vertices[j];
+                f = p1.x * p2.y - p2.x * p1.y;
+                twicearea += f;
+                x += (p1.x + p2.x) * f;
+                y += (p1.y + p2.y) * f;
+            }
+            f = twicearea * 3f;
+            var centroid2D = new Vector3(x / f, y / f);
+            var (tangentLeft, tangentUp) = GetTangents();
+            var centroid = -(tangentUp * centroid2D.y) + (tangentLeft * centroid2D.x);
+            return centroid;
         }
 
         /// <summary>
@@ -175,21 +234,21 @@ namespace Polyhydra.Core
             return Vector3toVector2(v.Position - offset, GetTangent(Normal));
         }
         
-        public Vector2 PositionOnFace(Vector3 p)
+        public Vector3 FaceOffsetToVector3(Vertex v, Vector3 offset)
         {
-            return Vector3toVector2(p, GetTangent(Normal));
+            return Vector3toVector2(v.Position - offset, GetTangent(Normal));
         }
 
         // Gets the vertices of this face as a list of Vector2s
         // in the plane of the face relative to it's centroid
-        private List<Vector2> Get2DVertices()
+        public List<Vector2> Get2DVertices()
         {
             var centroid = Centroid;
             var verts = GetVertices();
             return verts.Select(v=>PositionOnFace(v, centroid))
             .ToList();
         }
-        
+
         public bool IsClockwise
         {
             get

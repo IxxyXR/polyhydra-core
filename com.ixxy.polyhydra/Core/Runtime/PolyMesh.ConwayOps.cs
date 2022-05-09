@@ -10,7 +10,7 @@ namespace Polyhydra.Core
         
         public PolyMesh Dual()
         {
-            var newFaceTags = new List<HashSet<Tuple<string, TagType>>>();
+            var newFaceTags = new List<HashSet<string>>();
             var faceRoles = new List<Roles>();
             var vertexRoles = new List<Roles>();
 
@@ -109,8 +109,8 @@ namespace Polyhydra.Core
                     }
                     var vertexFaceIndices = vertexFaces.Select(f => Faces.IndexOf(f));
                     var existingTagSets =
-                        vertexFaceIndices.Select(fi => FaceTags[fi].Where(t => t.Item2 == TagType.Extrovert));
-                    var newFaceTagSet = existingTagSets.Aggregate(new HashSet<Tuple<string, TagType>>(), (rs, i) =>
+                        vertexFaceIndices.Select(fi => FaceTags[fi]);
+                    var newFaceTagSet = existingTagSets.Aggregate(new HashSet<string>(), (rs, i) =>
                     {
                         rs.UnionWith(i);
                         return rs;
@@ -140,7 +140,7 @@ namespace Polyhydra.Core
 
         public PolyMesh Zip(OpParams o)
         {
-            var newFaceTags = new List<HashSet<Tuple<string, TagType>>>();
+            var newFaceTags = new List<HashSet<string>>();
 
             var faceRoles = new List<Roles>();
             var vertexRoles = new List<Roles>();
@@ -166,7 +166,7 @@ namespace Polyhydra.Core
 
                 faceIndices.Add(face.GetHalfedges().Select(edge => newInnerVerts[edge.Name]));
                 faceRoles.Add(Roles.Existing);
-                newFaceTags.Add(new HashSet<Tuple<string, TagType>>(prevFaceTagSet));
+                newFaceTags.Add(new HashSet<string>(prevFaceTagSet));
             }
 
             // vertices to faces
@@ -196,8 +196,8 @@ namespace Polyhydra.Core
 
                 var vertexFaceIndices = vertex.GetVertexFaces().Select(f => Faces.IndexOf(f));
                 var existingTagSets =
-                    vertexFaceIndices.Select(fi => FaceTags[fi].Where(t => t.Item2 == TagType.Extrovert));
-                var newFaceTagSet = existingTagSets.Aggregate(new HashSet<Tuple<string, TagType>>(), (rs, i) =>
+                    vertexFaceIndices.Select(fi => FaceTags[fi]);
+                var newFaceTagSet = existingTagSets.Aggregate(new HashSet<string>(), (rs, i) =>
                 {
                     rs.UnionWith(i);
                     return rs;
@@ -214,7 +214,7 @@ namespace Polyhydra.Core
         /// <returns>the ambo as a new mesh</returns>
         public PolyMesh Ambo()
         {
-            var newFaceTags = new List<HashSet<Tuple<string, TagType>>>();
+            var newFaceTags = new List<HashSet<string>>();
 
             var faceRoles = new List<Roles>();
             var vertexRoles = new List<Roles>();
@@ -248,7 +248,7 @@ namespace Polyhydra.Core
                 var face = Faces[faceIndex];
                 faceIndices.Add(face.GetHalfedges().Select(edge => hlookup[edge.Name]));
                 faceRoles.Add(Roles.Existing);
-                newFaceTags.Add(new HashSet<Tuple<string, TagType>>(prevFaceTagSet));
+                newFaceTags.Add(new HashSet<string>(prevFaceTagSet));
             }
 
             // vertices to faces
@@ -271,8 +271,8 @@ namespace Polyhydra.Core
                     faceIndices.Add(newHalfedges);
                     faceRoles.Add(Roles.New);
                     var vertexFaceIndices = vertex.GetVertexFaces().Select(f => Faces.IndexOf(f)).Where(x=>x!=-1);  // No idea why IndexOf is failing to match
-                    var existingTagSets = vertexFaceIndices.Select(fi => FaceTags[fi].Where(t => t.Item2 == TagType.Extrovert));
-                    var newFaceTagSet = existingTagSets.Aggregate(new HashSet<Tuple<string, TagType>>(), (rs, i) =>
+                    var existingTagSets = vertexFaceIndices.Select(fi => FaceTags[fi]);
+                    var newFaceTagSet = existingTagSets.Aggregate(new HashSet<string>(), (rs, i) =>
                     {
                         rs.UnionWith(i);
                         return rs;
@@ -291,7 +291,7 @@ namespace Polyhydra.Core
                 return Vertices.FindIndex(a => a == v);
             }
 
-            var newFaceTags = new List<HashSet<Tuple<string, TagType>>>();
+            var newFaceTags = new List<HashSet<string>>();
 
             var faceRoles = new List<Roles>();
             var vertexRoles = new List<Roles>();
@@ -370,7 +370,7 @@ namespace Polyhydra.Core
                 {
                     faceIndices.Add(centerFace);
                     faceRoles.Add(Roles.Existing);
-                    newFaceTags.Add(new HashSet<Tuple<string, TagType>>(prevFaceTagSet));
+                    newFaceTags.Add(new HashSet<string>(prevFaceTagSet));
                 }
             }
 
@@ -411,8 +411,8 @@ namespace Polyhydra.Core
 
                     var vertexFaceIndices = vertex.GetVertexFaces().Select(f => Faces.IndexOf(f));
                     var existingTagSets =
-                        vertexFaceIndices.Select(fi => FaceTags[fi].Where(t => t.Item2 == TagType.Extrovert));
-                    var newFaceTagSet = existingTagSets.Aggregate(new HashSet<Tuple<string, TagType>>(), (rs, i) =>
+                        vertexFaceIndices.Select(fi => FaceTags[fi]);
+                    var newFaceTagSet = existingTagSets.Aggregate(new HashSet<string>(), (rs, i) =>
                     {
                         rs.UnionWith(i);
                         return rs;
@@ -432,7 +432,7 @@ namespace Polyhydra.Core
 
         public PolyMesh Bevel(OpParams o, bool useExtraParam, float extraParam = 0)
         {
-            var newFaceTags = new List<HashSet<Tuple<string, TagType>>>();
+            var newFaceTags = new List<HashSet<string>>();
 
             var faceRoles = new List<Roles>();
             var vertexRoles = new List<Roles>();
@@ -486,7 +486,7 @@ namespace Polyhydra.Core
 
                 faceIndices.Add(newFace);
                 faceRoles.Add(Roles.Existing);
-                newFaceTags.Add(new HashSet<Tuple<string, TagType>>(prevFaceTagSet));
+                newFaceTags.Add(new HashSet<string>(prevFaceTagSet));
             }
 
             for (var vertIndex = 0; vertIndex < Vertices.Count; vertIndex++)
@@ -513,8 +513,8 @@ namespace Polyhydra.Core
 
                 var vertexFaceIndices = Vertices[vertIndex].GetVertexFaces().Select(f => Faces.IndexOf(f));
                 var existingTagSets =
-                    vertexFaceIndices.Select(fi => FaceTags[fi].Where(t => t.Item2 == TagType.Extrovert));
-                var newFaceTagSet = existingTagSets.Aggregate(new HashSet<Tuple<string, TagType>>(), (rs, i) =>
+                    vertexFaceIndices.Select(fi => FaceTags[fi]);
+                var newFaceTagSet = existingTagSets.Aggregate(new HashSet<string>(), (rs, i) =>
                 {
                     rs.UnionWith(i);
                     return rs;
@@ -538,10 +538,10 @@ namespace Polyhydra.Core
                 faceRoles.Add(Roles.NewAlt);
                 edgeFlags.Add(edge.PairedName);
 
-                var newFaceTagSet = new HashSet<Tuple<string, TagType>>();
-                newFaceTagSet.UnionWith(FaceTags[Faces.IndexOf(edge.Face)].Where(t => t.Item2 == TagType.Extrovert));
+                var newFaceTagSet = new HashSet<string>();
+                newFaceTagSet.UnionWith(FaceTags[Faces.IndexOf(edge.Face)]);
                 newFaceTagSet.UnionWith(
-                    FaceTags[Faces.IndexOf(edge.Pair.Face)].Where(t => t.Item2 == TagType.Extrovert));
+                    FaceTags[Faces.IndexOf(edge.Pair.Face)]);
                 newFaceTags.Add(newFaceTagSet);
             }
 
@@ -550,7 +550,7 @@ namespace Polyhydra.Core
 
         public PolyMesh Ortho(OpParams o)
         {
-            var newFaceTags = new List<HashSet<Tuple<string, TagType>>>();
+            var newFaceTags = new List<HashSet<string>>();
 
             var existingVerts = new Dictionary<string, int>();
             var newVerts = new Dictionary<string, int>();
@@ -643,7 +643,7 @@ namespace Polyhydra.Core
                         faceRoles.Add(Roles.NewAlt);
                     }
 
-                    newFaceTags.Add(new HashSet<Tuple<string, TagType>>(prevFaceTagSet));
+                    newFaceTags.Add(new HashSet<string>(prevFaceTagSet));
                 }
             }
 
@@ -653,7 +653,7 @@ namespace Polyhydra.Core
 
         public PolyMesh Expand(OpParams o)
         {
-            var newFaceTags = new List<HashSet<Tuple<string, TagType>>>();
+            var newFaceTags = new List<HashSet<string>>();
 
             var faceIndices = new List<int[]>();
             var vertexPoints = new List<Vector3>();
@@ -690,7 +690,7 @@ namespace Polyhydra.Core
 
                 faceIndices.Add(newInsetFace);
                 faceRoles.Add(Roles.Existing);
-                newFaceTags.Add(new HashSet<Tuple<string, TagType>>(prevFaceTagSet));
+                newFaceTags.Add(new HashSet<string>(prevFaceTagSet));
             }
 
             // Add edge faces
@@ -710,11 +710,9 @@ namespace Polyhydra.Core
                         faceIndices.Add(edgeFace);
                         faceRoles.Add(Roles.New);
 
-                        var newFaceTagSet = new HashSet<Tuple<string, TagType>>();
-                        newFaceTagSet.UnionWith(FaceTags[Faces.IndexOf(edge.Face)]
-                            .Where(t => t.Item2 == TagType.Extrovert));
-                        newFaceTagSet.UnionWith(FaceTags[Faces.IndexOf(edge.Pair.Face)]
-                            .Where(t => t.Item2 == TagType.Extrovert));
+                        var newFaceTagSet = new HashSet<string>();
+                        newFaceTagSet.UnionWith(FaceTags[Faces.IndexOf(edge.Face)]);
+                        newFaceTagSet.UnionWith(FaceTags[Faces.IndexOf(edge.Pair.Face)]);
                         newFaceTags.Add(newFaceTagSet);
                     }
 
@@ -739,8 +737,8 @@ namespace Polyhydra.Core
 
                     var vertexFaceIndices = vertex.GetVertexFaces().Select(f => Faces.IndexOf(f));
                     var existingTagSets =
-                        vertexFaceIndices.Select(fi => FaceTags[fi].Where(t => t.Item2 == TagType.Extrovert));
-                    var newFaceTagSet = existingTagSets.Aggregate(new HashSet<Tuple<string, TagType>>(), (rs, i) =>
+                        vertexFaceIndices.Select(fi => FaceTags[fi]);
+                    var newFaceTagSet = existingTagSets.Aggregate(new HashSet<string>(), (rs, i) =>
                     {
                         rs.UnionWith(i);
                         return rs;
@@ -755,7 +753,7 @@ namespace Polyhydra.Core
 
         public PolyMesh Chamfer(OpParams o)
         {
-            var newFaceTags = new List<HashSet<Tuple<string, TagType>>>();
+            var newFaceTags = new List<HashSet<string>>();
 
             var faceIndices = new List<int[]>();
             var vertexPoints = new List<Vector3>();
@@ -800,13 +798,13 @@ namespace Polyhydra.Core
 
                 faceIndices.Add(newInsetFace);
                 faceRoles.Add(Roles.Existing);
-                newFaceTags.Add(new HashSet<Tuple<string, TagType>>(prevFaceTagSet));
+                newFaceTags.Add(new HashSet<string>(prevFaceTagSet));
             }
 
             // Add edge faces
             foreach (var edge in Halfedges)
             {
-                var newFaceTagSet = new HashSet<Tuple<string, TagType>>();
+                var newFaceTagSet = new HashSet<string>();
                 if (!edgeFaceFlags.ContainsKey(edge.PairedName))
                 {
                     edgeFaceFlags[edge.PairedName] = true;
@@ -823,10 +821,8 @@ namespace Polyhydra.Core
                         };
                         faceIndices.Add(edgeFace);
                         faceRoles.Add(Roles.New);
-                        newFaceTagSet.UnionWith(FaceTags[Faces.IndexOf(edge.Face)]
-                            .Where(t => t.Item2 == TagType.Extrovert));
-                        newFaceTagSet.UnionWith(FaceTags[Faces.IndexOf(edge.Pair.Face)]
-                            .Where(t => t.Item2 == TagType.Extrovert));
+                        newFaceTagSet.UnionWith(FaceTags[Faces.IndexOf(edge.Face)]);
+                        newFaceTagSet.UnionWith(FaceTags[Faces.IndexOf(edge.Pair.Face)]);
                         newFaceTags.Add(newFaceTagSet);
                     }
                 }
@@ -868,7 +864,7 @@ namespace Polyhydra.Core
 
         public PolyMesh Join(OpParams o)
         {
-            var newFaceTags = new List<HashSet<Tuple<string, TagType>>>();
+            var newFaceTags = new List<HashSet<string>>();
 
             var faceIndices = new List<int[]>();
             var vertexPoints = new List<Vector3>();
@@ -916,11 +912,9 @@ namespace Polyhydra.Core
                         faceIndices.Add(rhombus);
                         faceRoles.Add(i % 2 == 0 ? Roles.New : Roles.NewAlt);
 
-                        var newFaceTagSet = new HashSet<Tuple<string, TagType>>();
-                        newFaceTagSet.UnionWith(FaceTags[Faces.IndexOf(edge.Face)]
-                            .Where(t => t.Item2 == TagType.Extrovert));
-                        newFaceTagSet.UnionWith(FaceTags[Faces.IndexOf(edge.Pair.Face)]
-                            .Where(t => t.Item2 == TagType.Extrovert));
+                        var newFaceTagSet = new HashSet<string>();
+                        newFaceTagSet.UnionWith(FaceTags[Faces.IndexOf(edge.Face)]);
+                        newFaceTagSet.UnionWith(FaceTags[Faces.IndexOf(edge.Pair.Face)]);
                         newFaceTags.Add(newFaceTagSet);
                     }
 
@@ -933,7 +927,7 @@ namespace Polyhydra.Core
 
         public PolyMesh Needle(OpParams o)
         {
-            var newFaceTags = new List<HashSet<Tuple<string, TagType>>>();
+            var newFaceTags = new List<HashSet<string>>();
 
             var faceIndices = new List<int[]>();
             var vertexPoints = new List<Vector3>();
@@ -982,11 +976,9 @@ namespace Polyhydra.Core
                         faceIndices.Add(tri1);
                         faceRoles.Add( Roles.New);
 
-                        var newFaceTagSet1 = new HashSet<Tuple<string, TagType>>();
-                        newFaceTagSet1.UnionWith(FaceTags[Faces.IndexOf(edge.Face)]
-                            .Where(t => t.Item2 == TagType.Extrovert));
-                        newFaceTagSet1.UnionWith(FaceTags[Faces.IndexOf(edge.Pair.Face)]
-                            .Where(t => t.Item2 == TagType.Extrovert));
+                        var newFaceTagSet1 = new HashSet<string>();
+                        newFaceTagSet1.UnionWith(FaceTags[Faces.IndexOf(edge.Face)]);
+                        newFaceTagSet1.UnionWith(FaceTags[Faces.IndexOf(edge.Pair.Face)]);
                         newFaceTags.Add(newFaceTagSet1);
 
                         var tri2 = new[]
@@ -998,11 +990,9 @@ namespace Polyhydra.Core
                         faceIndices.Add(tri2);
                         faceRoles.Add(Roles.NewAlt);
 
-                        var newFaceTagSet2 = new HashSet<Tuple<string, TagType>>();
-                        newFaceTagSet2.UnionWith(FaceTags[Faces.IndexOf(edge.Face)]
-                            .Where(t => t.Item2 == TagType.Extrovert));
-                        newFaceTagSet2.UnionWith(FaceTags[Faces.IndexOf(edge.Pair.Face)]
-                            .Where(t => t.Item2 == TagType.Extrovert));
+                        var newFaceTagSet2 = new HashSet<string>();
+                        newFaceTagSet2.UnionWith(FaceTags[Faces.IndexOf(edge.Face)]);
+                        newFaceTagSet2.UnionWith(FaceTags[Faces.IndexOf(edge.Pair.Face)]);
                         newFaceTags.Add(newFaceTagSet2);
                     }
                     rhombusFlags[edge.PairedName] = true;
@@ -1015,7 +1005,7 @@ namespace Polyhydra.Core
 
         public PolyMesh Kis(OpParams o, List<int> selectedFaces = null, bool scalebyArea = false)
         {
-            var newFaceTags = new List<HashSet<Tuple<string, TagType>>>();
+            var newFaceTags = new List<HashSet<string>>();
             // vertices and faces to vertices
             var vertexRoles = Enumerable.Repeat(Roles.Existing, Vertices.Count).ToList();
             List<Vector3> vertexPoints = Vertices.Select(v => v.Position).ToList();
@@ -1065,14 +1055,14 @@ namespace Polyhydra.Core
                             faceRoles.Add(Roles.NewAlt);
                         }
 
-                        newFaceTags.Add(new HashSet<Tuple<string, TagType>>(prevFaceTagSet));
+                        newFaceTags.Add(new HashSet<string>(prevFaceTagSet));
                     }
                 }
                 else
                 {
                     faceIndices.Add(ListFacesByVertexIndices()[faceIndex]);
                     faceRoles.Add(Roles.Ignored);
-                    newFaceTags.Add(new HashSet<Tuple<string, TagType>>(prevFaceTagSet));
+                    newFaceTags.Add(new HashSet<string>(prevFaceTagSet));
                 }
             }
 
@@ -1083,7 +1073,7 @@ namespace Polyhydra.Core
         {
             // Happy accidents - skip n new faces - offset just the centroid?
 
-            var newFaceTags = new List<HashSet<Tuple<string, TagType>>>();
+            var newFaceTags = new List<HashSet<string>>();
 
             var existingVerts = new Dictionary<string, int>();
             var newVerts = new Dictionary<string, int>();
@@ -1210,7 +1200,7 @@ namespace Polyhydra.Core
                         faceRoles.Add(Roles.NewAlt);
                     }
 
-                    newFaceTags.Add(new HashSet<Tuple<string, TagType>>(prevFaceTagSet));
+                    newFaceTags.Add(new HashSet<string>(prevFaceTagSet));
                 }
             }
 
@@ -1220,7 +1210,7 @@ namespace Polyhydra.Core
         
         public PolyMesh Subdivide(OpParams o)
         {
-            var newFaceTags = new List<HashSet<Tuple<string, TagType>>>();
+            var newFaceTags = new List<HashSet<string>>();
 
             var faceIndices = new List<int[]>();
             var vertexPoints = new List<Vector3>();
@@ -1264,7 +1254,7 @@ namespace Polyhydra.Core
 
                 faceIndices.Add(newFace);
                 faceRoles.Add(Roles.Existing);
-                newFaceTags.Add(new HashSet<Tuple<string, TagType>>(prevFaceTagSet));
+                newFaceTags.Add(new HashSet<string>(prevFaceTagSet));
             }
 
             // Create new faces for each vertex
@@ -1285,9 +1275,8 @@ namespace Polyhydra.Core
                     faceRoles.Add(Roles.New);
 
                     var vertexFaceIndices = vertex.GetVertexFaces().Select(f => Faces.IndexOf(f));
-                    var existingTagSets =
-                        vertexFaceIndices.Select(fi => FaceTags[fi].Where(t => t.Item2 == TagType.Extrovert));
-                    var newFaceTagSet = existingTagSets.Aggregate(new HashSet<Tuple<string, TagType>>(), (rs, i) =>
+                    var existingTagSets = vertexFaceIndices.Select(fi => FaceTags[fi]);
+                    var newFaceTagSet = existingTagSets.Aggregate(new HashSet<string>(), (rs, i) =>
                     {
                         rs.UnionWith(i);
                         return rs;
@@ -1302,7 +1291,7 @@ namespace Polyhydra.Core
 
         public PolyMesh Loft(OpParams o)
         {
-            var newFaceTags = new List<HashSet<Tuple<string, TagType>>>();
+            var newFaceTags = new List<HashSet<string>>();
             var faceIndices = new List<int[]>();
             var vertexPoints = new List<Vector3>();
             var existingVertices = new Dictionary<Vector3, int>();
@@ -1325,7 +1314,7 @@ namespace Polyhydra.Core
             {
                 float ratio = o.GetValueA(this, faceIndex);
                 float offset = o.GetValueB(this, faceIndex);
-                var prevExtrovertTags = FaceTags[faceIndex].Where(x=>x.Item2==TagType.Extrovert);
+                var prevExtrovertTags = FaceTags[faceIndex];
                 var prevFaceTags = FaceTags[faceIndex];
                 var face = Faces[faceIndex];
                 var offsetVector = face.Normal * offset;
@@ -1372,7 +1361,7 @@ namespace Polyhydra.Core
                                 faceRoles.Add(Roles.NewAlt);
                             }
 
-                            newFaceTags.Add(new HashSet<Tuple<string, TagType>>(prevExtrovertTags));
+                            newFaceTags.Add(new HashSet<string>(prevExtrovertTags));
                         }
 
                         prevNewV = newV;
@@ -1391,12 +1380,12 @@ namespace Polyhydra.Core
                     };
                     faceIndices.Add(finalFace);
                     faceRoles.Add(Roles.New);
-                    newFaceTags.Add(new HashSet<Tuple<string, TagType>>(prevExtrovertTags));
+                    newFaceTags.Add(new HashSet<string>(prevExtrovertTags));
 
                     // Inner face
                     faceIndices.Add(newInsetFace);
                     faceRoles.Add(Roles.Existing);
-                    newFaceTags.Add(new HashSet<Tuple<string, TagType>>(prevFaceTags));
+                    newFaceTags.Add(new HashSet<string>(prevFaceTags));
                 }
                 else
                 {
@@ -1405,7 +1394,7 @@ namespace Polyhydra.Core
                             x => existingVertices[x.Vertex.Position]
                         ).ToArray());
                     faceRoles.Add(Roles.Ignored);
-                    newFaceTags.Add(new HashSet<Tuple<string, TagType>>(prevFaceTags));
+                    newFaceTags.Add(new HashSet<string>(prevFaceTags));
                 }
             }
 
@@ -1415,7 +1404,7 @@ namespace Polyhydra.Core
 
         public PolyMesh Quinto(OpParams o)
         {
-            var newFaceTags = new List<HashSet<Tuple<string, TagType>>>();
+            var newFaceTags = new List<HashSet<string>>();
 
             var faceIndices = new List<int[]>();
             var vertexPoints = new List<Vector3>();
@@ -1493,7 +1482,7 @@ namespace Polyhydra.Core
                             faceRoles.Add(Roles.NewAlt);
                         }
 
-                        newFaceTags.Add(new HashSet<Tuple<string, TagType>>(prevFaceTagSet));
+                        newFaceTags.Add(new HashSet<string>(prevFaceTagSet));
                     }
 
                     prevNewEdgeVertex = newEdgeVertices[edge.PairedName];
@@ -1503,7 +1492,7 @@ namespace Polyhydra.Core
 
                 faceIndices.Add(newInsetFace);
                 faceRoles.Add(Roles.Existing);
-                newFaceTags.Add(new HashSet<Tuple<string, TagType>>(prevFaceTagSet));
+                newFaceTags.Add(new HashSet<string>(prevFaceTagSet));
 
                 // Add the final missing new edge face
                 var finalFace = new[]
@@ -1525,7 +1514,7 @@ namespace Polyhydra.Core
                     faceRoles.Add(Roles.NewAlt);
                 }
 
-                newFaceTags.Add(new HashSet<Tuple<string, TagType>>(prevFaceTagSet));
+                newFaceTags.Add(new HashSet<string>(prevFaceTagSet));
             }
 
             var poly = new PolyMesh(vertexPoints, faceIndices, faceRoles, vertexRoles, newFaceTags);
@@ -1549,7 +1538,7 @@ namespace Polyhydra.Core
 
         private PolyMesh _Lace(OpParams o, bool joined, bool opposite)
         {
-            var newFaceTags = new List<HashSet<Tuple<string, TagType>>>();
+            var newFaceTags = new List<HashSet<string>>();
 
             var faceIndices = new List<int[]>();
             var vertexPoints = new List<Vector3>();
@@ -1612,7 +1601,7 @@ namespace Polyhydra.Core
                         };
                         faceIndices.Add(largeTriangle);
                         faceRoles.Add(Roles.NewAlt);
-                        newFaceTags.Add(new HashSet<Tuple<string, TagType>>(prevFaceTagSet));
+                        newFaceTags.Add(new HashSet<string>(prevFaceTagSet));
 
                         if (!joined && !opposite)
                         {
@@ -1624,7 +1613,7 @@ namespace Polyhydra.Core
                             };
                             faceIndices.Add(smallTriangle);
                             faceRoles.Add(Roles.New);
-                            newFaceTags.Add(new HashSet<Tuple<string, TagType>>(prevFaceTagSet));
+                            newFaceTags.Add(new HashSet<string>(prevFaceTagSet));
                         }
 
                         edge = edge.Next;
@@ -1632,7 +1621,7 @@ namespace Polyhydra.Core
 
                     faceIndices.Add(innerFace);
                     faceRoles.Add(Roles.Existing);
-                    newFaceTags.Add(new HashSet<Tuple<string, TagType>>(prevFaceTagSet));
+                    newFaceTags.Add(new HashSet<string>(prevFaceTagSet));
                 }
                 else
                 {
@@ -1641,7 +1630,7 @@ namespace Polyhydra.Core
                             x => existingVertices[x.Vertex.Position]
                         ).ToArray());
                     faceRoles.Add(Roles.Ignored);
-                    newFaceTags.Add(new HashSet<Tuple<string, TagType>>(prevFaceTagSet));
+                    newFaceTags.Add(new HashSet<string>(prevFaceTagSet));
                 }
             }
 
@@ -1666,11 +1655,9 @@ namespace Polyhydra.Core
                             faceIndices.Add(rhombus);
                             faceRoles.Add(Roles.New);
 
-                            var newFaceTagSet = new HashSet<Tuple<string, TagType>>();
-                            newFaceTagSet.UnionWith(FaceTags[Faces.IndexOf(edge.Face)]
-                                .Where(t => t.Item2 == TagType.Extrovert));
-                            newFaceTagSet.UnionWith(FaceTags[Faces.IndexOf(edge.Pair.Face)]
-                                .Where(t => t.Item2 == TagType.Extrovert));
+                            var newFaceTagSet = new HashSet<string>();
+                            newFaceTagSet.UnionWith(FaceTags[Faces.IndexOf(edge.Face)]);
+                            newFaceTagSet.UnionWith(FaceTags[Faces.IndexOf(edge.Pair.Face)]);
                             newFaceTags.Add(newFaceTagSet);
                         }
 
@@ -1696,11 +1683,9 @@ namespace Polyhydra.Core
                             faceIndices.Add(tri1);
                             faceRoles.Add(Roles.New);
 
-                            var newFaceTagSet1 = new HashSet<Tuple<string, TagType>>();
-                            newFaceTagSet1.UnionWith(FaceTags[Faces.IndexOf(edge.Face)]
-                                .Where(t => t.Item2 == TagType.Extrovert));
-                            newFaceTagSet1.UnionWith(FaceTags[Faces.IndexOf(edge.Pair.Face)]
-                                .Where(t => t.Item2 == TagType.Extrovert));
+                            var newFaceTagSet1 = new HashSet<string>();
+                            newFaceTagSet1.UnionWith(FaceTags[Faces.IndexOf(edge.Face)]);
+                            newFaceTagSet1.UnionWith(FaceTags[Faces.IndexOf(edge.Pair.Face)]);
                             newFaceTags.Add(newFaceTagSet1);
 
                             var tri2 = new[]
@@ -1712,11 +1697,9 @@ namespace Polyhydra.Core
                             faceIndices.Add(tri2);
                             faceRoles.Add(Roles.New);
 
-                            var newFaceTagSet2 = new HashSet<Tuple<string, TagType>>();
-                            newFaceTagSet2.UnionWith(FaceTags[Faces.IndexOf(edge.Face)]
-                                .Where(t => t.Item2 == TagType.Extrovert));
-                            newFaceTagSet2.UnionWith(FaceTags[Faces.IndexOf(edge.Pair.Face)]
-                                .Where(t => t.Item2 == TagType.Extrovert));
+                            var newFaceTagSet2 = new HashSet<string>();
+                            newFaceTagSet2.UnionWith(FaceTags[Faces.IndexOf(edge.Face)]);
+                            newFaceTagSet2.UnionWith(FaceTags[Faces.IndexOf(edge.Pair.Face)]);
                             newFaceTags.Add(newFaceTagSet2);
                         }
 
@@ -1730,7 +1713,7 @@ namespace Polyhydra.Core
 
         public PolyMesh Stake(OpParams o, bool join = false)
         {
-            var newFaceTags = new List<HashSet<Tuple<string, TagType>>>();
+            var newFaceTags = new List<HashSet<string>>();
 
             var faceIndices = new List<int[]>();
             var vertexPoints = new List<Vector3>();
@@ -1803,7 +1786,7 @@ namespace Polyhydra.Core
                                 faceRoles.Add(Roles.NewAlt);
                             }
 
-                            newFaceTags.Add(new HashSet<Tuple<string, TagType>>(prevFaceTagSet));
+                            newFaceTags.Add(new HashSet<string>(prevFaceTagSet));
                         }
 
                         var quad = new[]
@@ -1824,7 +1807,7 @@ namespace Polyhydra.Core
                             faceRoles.Add(Roles.ExistingAlt);
                         }
 
-                        newFaceTags.Add(new HashSet<Tuple<string, TagType>>(prevFaceTagSet));
+                        newFaceTags.Add(new HashSet<string>(prevFaceTagSet));
 
                         edge = edge.Next;
                     }
@@ -1837,7 +1820,7 @@ namespace Polyhydra.Core
                         ).ToArray()
                     );
                     faceRoles.Add(Roles.Ignored);
-                    newFaceTags.Add(new HashSet<Tuple<string, TagType>>(prevFaceTagSet));
+                    newFaceTags.Add(new HashSet<string>(prevFaceTagSet));
                 }
             }
 
@@ -1861,11 +1844,9 @@ namespace Polyhydra.Core
                         faceRoles.Add(Roles.New);
                         edgeFlags.Add(edge.PairedName);
 
-                        var newFaceTagSet = new HashSet<Tuple<string, TagType>>();
-                        newFaceTagSet.UnionWith(FaceTags[Faces.IndexOf(edge.Face)]
-                            .Where(t => t.Item2 == TagType.Extrovert));
-                        newFaceTagSet.UnionWith(FaceTags[Faces.IndexOf(edge.Pair.Face)]
-                            .Where(t => t.Item2 == TagType.Extrovert));
+                        var newFaceTagSet = new HashSet<string>();
+                        newFaceTagSet.UnionWith(FaceTags[Faces.IndexOf(edge.Face)]);
+                        newFaceTagSet.UnionWith(FaceTags[Faces.IndexOf(edge.Pair.Face)]);
                         newFaceTags.Add(newFaceTagSet);
                     }
                 }
@@ -1876,7 +1857,7 @@ namespace Polyhydra.Core
 
         public PolyMesh JoinKisKis(OpParams o)
         {
-            var newFaceTags = new List<HashSet<Tuple<string, TagType>>>();
+            var newFaceTags = new List<HashSet<string>>();
 
             var faceIndices = new List<int[]>();
             var vertexPoints = new List<Vector3>();
@@ -1936,7 +1917,7 @@ namespace Polyhydra.Core
                     };
                     faceIndices.Add(triangle1);
                     faceRoles.Add(Roles.New);
-                    newFaceTags.Add(new HashSet<Tuple<string, TagType>>(prevFaceTagSet));
+                    newFaceTags.Add(new HashSet<string>(prevFaceTagSet));
 
                     var triangle2 = new[]
                     {
@@ -1946,7 +1927,7 @@ namespace Polyhydra.Core
                     };
                     faceIndices.Add(triangle2);
                     faceRoles.Add(Roles.NewAlt);
-                    newFaceTags.Add(new HashSet<Tuple<string, TagType>>(prevFaceTagSet));
+                    newFaceTags.Add(new HashSet<string>(prevFaceTagSet));
                 }
             }
 
@@ -1969,11 +1950,9 @@ namespace Polyhydra.Core
                         faceIndices.Add(rhombus);
                         faceRoles.Add(Roles.Existing);
 
-                        var newFaceTagSet = new HashSet<Tuple<string, TagType>>();
-                        newFaceTagSet.UnionWith(FaceTags[Faces.IndexOf(edge.Face)]
-                            .Where(t => t.Item2 == TagType.Extrovert));
-                        newFaceTagSet.UnionWith(FaceTags[Faces.IndexOf(edge.Pair.Face)]
-                            .Where(t => t.Item2 == TagType.Extrovert));
+                        var newFaceTagSet = new HashSet<string>();
+                        newFaceTagSet.UnionWith(FaceTags[Faces.IndexOf(edge.Face)]);
+                        newFaceTagSet.UnionWith(FaceTags[Faces.IndexOf(edge.Pair.Face)]);
                         newFaceTags.Add(newFaceTagSet);
                     }
 
@@ -2000,13 +1979,13 @@ namespace Polyhydra.Core
             subdivisions = subdivisions < 1 ? 1 : subdivisions;
             subdivisions = subdivisions > 64 ? 64 : subdivisions;
 
-            var newFaceTags = new List<HashSet<Tuple<string, TagType>>>();
+            var newFaceTags = new List<HashSet<string>>();
 
             var faceIndices = new List<int[]>();
             var vertexPoints = new List<Vector3>();
             var existingVertices = new Dictionary<Vector3, int>();
             var newEdgeVertices = new Dictionary<(Guid, Guid)?, int[]>();
-            var prevFaceTagSets = new Dictionary<string, HashSet<Tuple<string, TagType>>>();
+            var prevFaceTagSets = new Dictionary<string, HashSet<string>>();
             var newCentroidVertices = new Dictionary<string, int>();
             var faceRoles = new List<Roles>();
             var vertexRoles = new List<Roles>();
@@ -2084,7 +2063,7 @@ namespace Polyhydra.Core
                             };
                         faceIndices.Add(triangle1);
                         faceRoles.Add(Roles.Existing);
-                        newFaceTags.Add(new HashSet<Tuple<string, TagType>>(prevFaceTagSet));
+                        newFaceTags.Add(new HashSet<string>(prevFaceTagSet));
 
                         var triangle2 = flip ?
                             new[] {
@@ -2099,7 +2078,7 @@ namespace Polyhydra.Core
                             };
                         faceIndices.Add(triangle2);
                         faceRoles.Add(Roles.Existing);
-                        newFaceTags.Add(new HashSet<Tuple<string, TagType>>(prevFaceTagSet));
+                        newFaceTags.Add(new HashSet<string>(prevFaceTagSet));
                     }
 
                     // Create new triangular faces at edges
@@ -2126,7 +2105,7 @@ namespace Polyhydra.Core
 
                         faceIndices.Add(edgeTriangle);
                         faceRoles.Add(j % 2 == 0 ? Roles.New : Roles.NewAlt);
-                        newFaceTags.Add(new HashSet<Tuple<string, TagType>>(prevFaceTagSet));
+                        newFaceTags.Add(new HashSet<string>(prevFaceTagSet));
                     }
 
                     edge = edge.Next;
@@ -2184,7 +2163,7 @@ namespace Polyhydra.Core
 
                         faceIndices.Add(quad);
                         faceRoles.Add(Roles.Existing);
-                        newFaceTags.Add(new HashSet<Tuple<string, TagType>>(prevFaceTagSet));
+                        newFaceTags.Add(new HashSet<string>(prevFaceTagSet));
 
                         edge = edge.Next;
                     }
@@ -2196,7 +2175,7 @@ namespace Polyhydra.Core
 
         public PolyMesh Propeller(OpParams o)
         {
-            var newFaceTags = new List<HashSet<Tuple<string, TagType>>>();
+            var newFaceTags = new List<HashSet<string>>();
 
             var faceIndices = new List<int[]>();
             var vertexPoints = new List<Vector3>();
@@ -2287,7 +2266,7 @@ namespace Polyhydra.Core
                         faceRoles.Add(Roles.NewAlt);
                     }
 
-                    newFaceTags.Add(new HashSet<Tuple<string, TagType>>(prevFaceTagSet));
+                    newFaceTags.Add(new HashSet<string>(prevFaceTagSet));
 
                     centralFace[i] = newEdgeVertices[edgePairName];
                     edge = edge.Next;
@@ -2295,7 +2274,7 @@ namespace Polyhydra.Core
 
                 faceIndices.Add(centralFace);
                 faceRoles.Add(Roles.Existing);
-                newFaceTags.Add(new HashSet<Tuple<string, TagType>>(prevFaceTagSet));
+                newFaceTags.Add(new HashSet<string>(prevFaceTagSet));
             }
 
             return new PolyMesh(vertexPoints, faceIndices, faceRoles, vertexRoles, newFaceTags);
@@ -2303,7 +2282,7 @@ namespace Polyhydra.Core
 
         public PolyMesh Whirl(OpParams o)
         {
-            var newFaceTags = new List<HashSet<Tuple<string, TagType>>>();
+            var newFaceTags = new List<HashSet<string>>();
 
             var faceIndices = new List<int[]>();
             var vertexPoints = new List<Vector3>();
@@ -2401,7 +2380,7 @@ namespace Polyhydra.Core
                         faceRoles.Add(Roles.NewAlt);
                     }
 
-                    newFaceTags.Add(new HashSet<Tuple<string, TagType>>(prevFaceTagSet));
+                    newFaceTags.Add(new HashSet<string>(prevFaceTagSet));
 
                     centralFace[i] = newInnerVertices[edge.Name.ToString()];
                     edge = edge.Next;
@@ -2409,7 +2388,7 @@ namespace Polyhydra.Core
 
                 faceIndices.Add(centralFace);
                 faceRoles.Add(Roles.Existing);
-                newFaceTags.Add(new HashSet<Tuple<string, TagType>>(prevFaceTagSet));
+                newFaceTags.Add(new HashSet<string>(prevFaceTagSet));
             }
 
             return new PolyMesh(vertexPoints, faceIndices, faceRoles, vertexRoles, newFaceTags);
@@ -2422,7 +2401,7 @@ namespace Polyhydra.Core
 
         public PolyMesh Meta(OpParams o)
         {
-            var newFaceTags = new List<HashSet<Tuple<string, TagType>>>();
+            var newFaceTags = new List<HashSet<string>>();
 
             var vertexPoints = new List<Vector3>();
             var faceIndices = new List<IEnumerable<int>>();
@@ -2480,7 +2459,7 @@ namespace Polyhydra.Core
                     };
                     faceIndices.Add(edgeFace1);
                     faceRoles.Add(Roles.New);
-                    newFaceTags.Add(new HashSet<Tuple<string, TagType>>(prevFaceTagSet));
+                    newFaceTags.Add(new HashSet<string>(prevFaceTagSet));
 
                     var edgeFace2 = new List<int>
                     {
@@ -2490,7 +2469,7 @@ namespace Polyhydra.Core
                     };
                     faceIndices.Add(edgeFace2);
                     faceRoles.Add(Roles.NewAlt);
-                    newFaceTags.Add(new HashSet<Tuple<string, TagType>>(prevFaceTagSet));
+                    newFaceTags.Add(new HashSet<string>(prevFaceTagSet));
                 }
             }
 
@@ -2499,7 +2478,7 @@ namespace Polyhydra.Core
 
         public PolyMesh Cross(OpParams o)
         {
-            var newFaceTags = new List<HashSet<Tuple<string, TagType>>>();
+            var newFaceTags = new List<HashSet<string>>();
 
             var vertexPoints = new List<Vector3>();
             var faceIndices = new List<IEnumerable<int>>();
@@ -2561,7 +2540,7 @@ namespace Polyhydra.Core
                     };
                     faceIndices.Add(innerFace);
                     faceRoles.Add((j % 2) == 1 && (edges.Count % 2) == 0 ? Roles.ExistingAlt : Roles.Existing);
-                    newFaceTags.Add(new HashSet<Tuple<string, TagType>>(prevFaceTagSet));
+                    newFaceTags.Add(new HashSet<string>(prevFaceTagSet));
 
                     var edgeFace1 = new List<int>
                     {
@@ -2571,7 +2550,7 @@ namespace Polyhydra.Core
                     };
                     faceIndices.Add(edgeFace1);
                     faceRoles.Add(Roles.New);
-                    newFaceTags.Add(new HashSet<Tuple<string, TagType>>(prevFaceTagSet));
+                    newFaceTags.Add(new HashSet<string>(prevFaceTagSet));
 
                     var edgeFace2 = new List<int>
                     {
@@ -2581,7 +2560,7 @@ namespace Polyhydra.Core
                     };
                     faceIndices.Add(edgeFace2);
                     faceRoles.Add(Roles.NewAlt);
-                    newFaceTags.Add(new HashSet<Tuple<string, TagType>>(prevFaceTagSet));
+                    newFaceTags.Add(new HashSet<string>(prevFaceTagSet));
                 }
             }
 
@@ -2590,7 +2569,7 @@ namespace Polyhydra.Core
 
         public PolyMesh Squall(OpParams o, bool join = true)
         {
-            var newFaceTags = new List<HashSet<Tuple<string, TagType>>>();
+            var newFaceTags = new List<HashSet<string>>();
 
             var vertexPoints = new List<Vector3>();
             var faceIndices = new List<IEnumerable<int>>();
@@ -2649,7 +2628,7 @@ namespace Polyhydra.Core
                     };
                     faceIndices.Add(innerFace);
                     faceRoles.Add(Roles.New);
-                    newFaceTags.Add(new HashSet<Tuple<string, TagType>>(prevFaceTagSet));
+                    newFaceTags.Add(new HashSet<string>(prevFaceTagSet));
 
                     if (!join)
                     {
@@ -2662,7 +2641,7 @@ namespace Polyhydra.Core
                         };
                         faceIndices.Add(vertexFace);
                         faceRoles.Add(Roles.NewAlt);
-                        newFaceTags.Add(new HashSet<Tuple<string, TagType>>(prevFaceTagSet));
+                        newFaceTags.Add(new HashSet<string>(prevFaceTagSet));
                     }
                 }
 
@@ -2675,7 +2654,7 @@ namespace Polyhydra.Core
 
                 faceIndices.Add(existingFace);
                 faceRoles.Add(Roles.Existing);
-                newFaceTags.Add(new HashSet<Tuple<string, TagType>>(prevFaceTagSet));
+                newFaceTags.Add(new HashSet<string>(prevFaceTagSet));
             }
 
             if (join)
@@ -2698,8 +2677,8 @@ namespace Polyhydra.Core
                     faceRoles.Add(Roles.NewAlt);
 
                     var vertexFaceIndices = vertex.GetVertexFaces().Select(f => Faces.IndexOf(f));
-                    var existingTagSets = vertexFaceIndices.Select(fi => FaceTags[fi].Where(t => t.Item2 == TagType.Extrovert));
-                    var newFaceTagSet = existingTagSets.Aggregate(new HashSet<Tuple<string, TagType>>(), (rs, i) =>
+                    var existingTagSets = vertexFaceIndices.Select(fi => FaceTags[fi]);
+                    var newFaceTagSet = existingTagSets.Aggregate(new HashSet<string>(), (rs, i) =>
                     {
                         rs.UnionWith(i);
                         return rs;
@@ -2733,7 +2712,7 @@ namespace Polyhydra.Core
         
         public PolyMesh Gable(OpParams o, int edgeOffset=0)
         {
-            var newFaceTags = new List<HashSet<Tuple<string, TagType>>>();
+            var newFaceTags = new List<HashSet<string>>();
             // vertices and faces to vertices
             var vertexRoles = Enumerable.Repeat(Roles.Existing, Vertices.Count).ToList();
             List<Vector3> vertexPoints = Vertices.Select(v => v.Position).ToList();
@@ -2785,7 +2764,7 @@ namespace Polyhydra.Core
                         }
                     );
                     faceRoles.Add(Roles.NewAlt);
-                    newFaceTags.Add(new HashSet<Tuple<string, TagType>>(prevFaceTagSet));
+                    newFaceTags.Add(new HashSet<string>(prevFaceTagSet));
                     
                     faceIndices.Add(
                         new[]
@@ -2796,7 +2775,7 @@ namespace Polyhydra.Core
                         }
                     );
                     faceRoles.Add(Roles.NewAlt);
-                    newFaceTags.Add(new HashSet<Tuple<string, TagType>>(prevFaceTagSet));
+                    newFaceTags.Add(new HashSet<string>(prevFaceTagSet));
 
                     var newFace1 = new List<int>();
                     for (var edgeIndex = initialEdgeIndex; edgeIndex != oppositeEdgeIndex; edgeIndex=(edgeIndex+1)%edges.Count)
@@ -2808,7 +2787,7 @@ namespace Polyhydra.Core
                     newFace1.Add(initialVertIndex);
                     faceIndices.Add(newFace1);
                     faceRoles.Add(Roles.New);
-                    newFaceTags.Add(new HashSet<Tuple<string, TagType>>(prevFaceTagSet));
+                    newFaceTags.Add(new HashSet<string>(prevFaceTagSet));
                     
                     var newFace2 = new List<int>();
                     for (var edgeIndex = oppositeEdgeIndex; edgeIndex != initialEdgeIndex; edgeIndex=(edgeIndex+1)%edges.Count)
@@ -2820,13 +2799,13 @@ namespace Polyhydra.Core
                     newFace2.Add(oppositeVertIndex);
                     faceIndices.Add(newFace2);
                     faceRoles.Add(Roles.New);
-                    newFaceTags.Add(new HashSet<Tuple<string, TagType>>(prevFaceTagSet));
+                    newFaceTags.Add(new HashSet<string>(prevFaceTagSet));
                 }
                 else
                 {
                     faceIndices.Add(ListFacesByVertexIndices()[faceIndex]);
                     faceRoles.Add(Roles.Ignored);
-                    newFaceTags.Add(new HashSet<Tuple<string, TagType>>(prevFaceTagSet));
+                    newFaceTags.Add(new HashSet<string>(prevFaceTagSet));
                 }
             }
 
@@ -2835,7 +2814,7 @@ namespace Polyhydra.Core
 
         public PolyMesh SplitFaces(OpParams o, int vertexOffset=0)
         {
-            var newFaceTags = new List<HashSet<Tuple<string, TagType>>>();
+            var newFaceTags = new List<HashSet<string>>();
             // vertices and faces to vertices
             var vertexRoles = Enumerable.Repeat(Roles.Existing, Vertices.Count).ToList();
             List<Vector3> vertexPoints = Vertices.Select(v => v.Position).ToList();
@@ -2869,7 +2848,7 @@ namespace Polyhydra.Core
                     newFace1.Add(vlookup[edges[oppositeVertexIndex].Vertex.Name]);
                     faceIndices.Add(newFace1);
                     faceRoles.Add(Roles.New);
-                    newFaceTags.Add(new HashSet<Tuple<string, TagType>>(prevFaceTagSet));
+                    newFaceTags.Add(new HashSet<string>(prevFaceTagSet));
                     
                     var newFace2 = new List<int>();
                     for (var edgeIndex = oppositeVertexIndex; edgeIndex != vertexOffset; edgeIndex=(edgeIndex+1)%face.Sides)
@@ -2880,13 +2859,13 @@ namespace Polyhydra.Core
                     newFace2.Add(vlookup[edges[vertexOffset].Vertex.Name]);
                     faceIndices.Add(newFace2);
                     faceRoles.Add(Roles.NewAlt);
-                    newFaceTags.Add(new HashSet<Tuple<string, TagType>>(prevFaceTagSet));
+                    newFaceTags.Add(new HashSet<string>(prevFaceTagSet));
                 }
                 else
                 {
                     faceIndices.Add(ListFacesByVertexIndices()[faceIndex]);
                     faceRoles.Add(Roles.Ignored);
-                    newFaceTags.Add(new HashSet<Tuple<string, TagType>>(prevFaceTagSet));
+                    newFaceTags.Add(new HashSet<string>(prevFaceTagSet));
                 }
             }
 
