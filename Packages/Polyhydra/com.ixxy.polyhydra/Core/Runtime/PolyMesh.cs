@@ -303,12 +303,12 @@ namespace Polyhydra.Core
                         op==Operation.Kis || op==Operation.Lace || op==Operation.Stake)
                     {
                         int sides = Mathf.FloorToInt(tokens[i].Item2);
-                        filter = Filter.Sides(sides);
+                        filter = Filter.NumberOfSides(sides);
                     }
                     else if (op==Operation.Truncate)
                     {
                         int vertexEdges = Mathf.FloorToInt(tokens[i].Item2);
-                        filter = Filter.VertexEdges(vertexEdges);
+                        filter = Filter.EdgesPerVertex(vertexEdges);
                     }
                 }
                 
@@ -1261,6 +1261,8 @@ namespace Polyhydra.Core
 
         public PolyMesh AppyOperation(Operation op, OpParams p)
         {
+
+            p.filter.eval(new FilterParams(this, 0));
 
             if (Faces.Count != FaceTags.Count)
             {

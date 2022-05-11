@@ -22,8 +22,11 @@ namespace Polyhydra.Core
     public class Filter
     {
         public static Filter All = new Filter(p => true);
+        public static Filter None = new Filter(p => false);
         public static Filter Outer = new Filter(p => p.poly.Faces[p.index].HasNakedEdge());
         public static Filter Inner = new Filter(p => !p.poly.Faces[p.index].HasNakedEdge());
+        public static Filter EvenSided = new Filter(p => p.poly.Faces[p.index].Sides % 2 != 0);
+        public static Filter OddSided = new Filter(p => p.poly.Faces[p.index].Sides % 2 == 0);
         
         public Func<FilterParams, bool> eval;
 
@@ -34,7 +37,7 @@ namespace Polyhydra.Core
             Center
         }
 
-        public static Filter Position(PositionType type, Axis axis, float min=-1f, float max=1f, bool inside=true)
+        public static Filter Position(PositionType type, Axis axis, float min=-1f, float max=1f, bool not = false)
         {
             return new Filter(p =>
             {
@@ -57,53 +60,101 @@ namespace Polyhydra.Core
                             .Any(c=> c > min && c < max);
                         break;
                 }
-                return inside ? result : !result;
+                return not ? !result : result;
             });
-
         }
 
-        public static Filter Facing(Vector3 direction, float range=0.1f)
+        public static Filter RadialDistance(float min=-1f, float max=1f, bool not = false)
+        {
+            return new Filter(p =>
+            {
+                float distance = p.poly.Faces[p.index].Centroid.magnitude;
+                var result = distance > min && distance < max;
+                return not ? !result : result;
+            });        
+        }
+
+        public static Filter FacingDirection(Vector3 direction, float range=0.1f, bool includeOpposite = false, bool not = false)
         {
             return new Filter(p =>
             {
                 float angle = Vector3.Angle(direction, p.poly.Faces[p.index].Normal);
-                return angle < range;
+                float oppositeAngle = 180f - angle;
+                if (includeOpposite)
+                {
+                    return angle < range || oppositeAngle < range;
+                }
+                var result = angle < range;
+                return not ? !result : result;
             });
         }
         
-        public static Filter Index(int index)
+        public static Filter OnlyNth(int index, bool not=false)
         {
             return new Filter(p =>
             {
                 if (index < 0) index = p.poly.Faces.Count - Mathf.Abs(index);
-                return p.index == index;
+                var result = not ? p.index != index : p.index == index;
+                return not ? !result : result;
             });
         }
         
-        public static Filter Sides(int sides)
+        public static Filter EveryNth(int index, bool not=false)
         {
             return new Filter(p =>
             {
-                return p.poly.Faces[p.index].Sides == sides;
+                if (index < 0) index = p.poly.Faces.Count - Mathf.Abs(index);
+                return not ? p.index % index == 0 : p.index % index != 0;
             });
         }
         
-        public static Filter VertexEdges(int vertexOrder)
+        public static Filter LastN(int index, bool not=false)
         {
             return new Filter(p =>
             {
-                return p.poly.Vertices[p.index].Halfedges.Count == vertexOrder;
+                if (index < 0) index = p.poly.Faces.Count - Mathf.Abs(index);
+                return not ? p.index > index : p.index < index;
             });
         }
         
-        public static Filter Role(Roles role)
+        public static Filter NumberOfSides(int sides, bool not = false)
         {
             return new Filter(p =>
             {
-                return p.poly.FaceRoles[p.index] == role;
+                var result = p.poly.Faces[p.index].Sides == sides;
+                return not ? !result : result;
             });
         }
         
+        public static Filter EdgesPerVertex(int vertexOrder, bool not = false)
+        {
+            return new Filter(p =>
+            {
+                var result = p.poly.Vertices[p.index].Halfedges.Count == vertexOrder;
+                return not ? !result : result;
+            });
+        }
+        
+        public static Filter Random(float cutoff=0.5f, bool not = false)
+        {
+            return new Filter(p =>
+            {
+                var result = UnityEngine.Random.value < cutoff;
+                return not ? !result : result;
+            });
+        }
+
+        public static Filter Role(Roles role, bool not=false)
+        {
+            return new Filter(p =>
+            {
+                var result = p.poly.FaceRoles[p.index] == role;
+                return not ? !result : result;
+            });
+        }
+        
+        // Utils
+        /////////////////////////////////////////////////
         private static Func<Vector3, float> GetVectorComponent(Axis axis)
         {
             Func<Vector3, float> getComponent = null;

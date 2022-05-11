@@ -286,7 +286,7 @@ public static class RadialSolids
     public static PolyMesh ElongatedPyramid(int sides, float height, float capHeight)
     {
         PolyMesh poly = _MakePrism(sides, height);
-        poly = poly.Kis(new OpParams(capHeight, Filter.Facing(Vector3.up)));
+        poly = poly.Kis(new OpParams(capHeight, Filter.FacingDirection(Vector3.up)));
         return poly;
     }
 
@@ -298,7 +298,7 @@ public static class RadialSolids
     public static PolyMesh ElongatedDipyramid(int sides, float height, float capHeight)
     {
         PolyMesh poly = ElongatedPyramid(sides, height, capHeight);
-        poly = poly.Kis(new OpParams(capHeight, Filter.Facing(Vector3.down)));
+        poly = poly.Kis(new OpParams(capHeight, Filter.FacingDirection(Vector3.down)));
         poly.Transform(Vector3.down * height/2f);
         return poly;
     }
@@ -312,7 +312,7 @@ public static class RadialSolids
     public static PolyMesh GyroelongatedPyramid(int sides, float height, float capHeight)
     {
         PolyMesh poly = Antiprism(sides, height);
-        poly = poly.Kis(new OpParams(capHeight, Filter.Facing(Vector3.up)));
+        poly = poly.Kis(new OpParams(capHeight, Filter.FacingDirection(Vector3.up)));
         return poly;
     }
 
@@ -324,7 +324,7 @@ public static class RadialSolids
     public static PolyMesh GyroelongatedDipyramid(int sides, float height, float capHeight)
     {
         PolyMesh poly = GyroelongatedPyramid(sides, height, capHeight);
-        poly = poly.Kis(new OpParams(capHeight , Filter.Facing(Vector3.down)));
+        poly = poly.Kis(new OpParams(capHeight , Filter.FacingDirection(Vector3.down)));
         poly.Transform(Vector3.down * height/2f);
         return poly;
     }
@@ -337,7 +337,7 @@ public static class RadialSolids
     public static PolyMesh ElongatedCupola(int sides, float height, float capHeight)
     {
         PolyMesh poly = Cupola(sides, capHeight);
-        poly = poly.Loft(new OpParams(0, height, Filter.Facing(Vector3.down)));
+        poly = poly.Loft(new OpParams(0, height, Filter.FacingDirection(Vector3.down)));
         poly.Transform(Vector3.up * height);
         return poly;
     }
