@@ -37,7 +37,7 @@ namespace Polyhydra.Core
         {
             var shape = Grids.Build(GridEnums.GridTypes.K_4_4_4_4, GridEnums.GridShapes.Plane, x, z);
 
-            shape = shape.LayeredExtrude(y);
+            shape = shape.LayeredExtrude(y, 1.4142f);
 
             // Nice patterns
             var capRoles = new List<Roles>();
