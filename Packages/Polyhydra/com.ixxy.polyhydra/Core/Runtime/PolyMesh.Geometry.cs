@@ -3204,5 +3204,30 @@ namespace Polyhydra.Core
 	        return polyMesh;
         }
 
+        private void AddTag(OpParams o)
+        {
+            for (var i = 0; i < FaceTags.Count; i++)
+            {
+                HashSet<string> tagSet = FaceTags[i];
+                if (IncludeFace(i, o.filter)) tagSet.Add(o.stringParam);
+            }
+        }
+        
+        private void RemoveTag(OpParams o)
+        {
+            for (var i = 0; i < FaceTags.Count; i++)
+            {
+                HashSet<string> tagSet = FaceTags[i];
+                if (IncludeFace(i, o.filter)) tagSet.Remove(o.stringParam);
+            }
+        }
+        
+        private void ClearTags(OpParams o)
+        {
+            for (var i = 0; i < FaceTags.Count; i++)
+            {
+                if (IncludeFace(i, o.filter)) FaceTags[i].Clear();
+            }
+        }
     }
 }

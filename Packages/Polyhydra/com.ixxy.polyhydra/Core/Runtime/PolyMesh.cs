@@ -1256,8 +1256,9 @@ namespace Polyhydra.Core
             // Unstash = 75,
             // UnstashToVerts = 76,
             // UnstashToFaces = 77,
-            // TagFaces = 78,
-        }
+            AddTag = 90,
+            RemoveTag = 91,
+            ClearTags = 92,        }
 
         public PolyMesh AppyOperation(Operation op, OpParams p)
         {
@@ -1545,9 +1546,15 @@ namespace Polyhydra.Core
                     polyMesh.PerlinNoise(Vector3.forward,p.OriginalParamA, p.OriginalParamB);
                     break;
 
-                // case Operation.TagFaces:
-                //     polyMesh = polyMesh.TagFaces()
-                //     break;
+                case Operation.AddTag:
+                    polyMesh.AddTag(p);
+                    break;
+                case Operation.RemoveTag:
+                    polyMesh.RemoveTag(p);
+                    break;
+                case Operation.ClearTags:
+                    polyMesh.ClearTags(p);
+                    break;
                 
                 default:
                     Debug.LogError($"Unrecognised operation: {op}");
