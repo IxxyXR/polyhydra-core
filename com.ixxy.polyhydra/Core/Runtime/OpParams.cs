@@ -203,6 +203,8 @@ namespace Polyhydra.Core
 
         public float OriginalParamA => _OriginalParamA;
         public float OriginalParamB => _OriginalParamB;
+        public string stringParam;
+        
         private float _OriginalParamA;
         private float _OriginalParamB;
 
@@ -219,6 +221,16 @@ namespace Polyhydra.Core
         {
             _OriginalParamA = a;
             funcA = new OpFunc(a);
+            this.filter = filter;
+        }
+        
+        public OpParams(float a, float b, string s, Filter filter=null)
+        {
+            _OriginalParamA = a;
+            _OriginalParamB = b;
+            funcA = new OpFunc(a);
+            funcB = new OpFunc(b);
+            this.stringParam = s;
             this.filter = filter;
         }
 
