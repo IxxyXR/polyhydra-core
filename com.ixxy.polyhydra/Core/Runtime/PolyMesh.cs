@@ -988,7 +988,7 @@ namespace Polyhydra.Core
                         case ColorMethods.ByTags:
                             if (FaceTags[i].Count > 0)
                             {
-                                string htmlColor = FaceTags[i].First(t => t.StartsWith("#"));
+                                string htmlColor = FaceTags[i].Last(t => t.StartsWith("#"));
                                 int uniqueTagIndex = uniqueTags.IndexOf(htmlColor);
                                 submeshTriangles[uniqueTagIndex + 1].AddRange(faceTris);
                             }
@@ -1116,8 +1116,8 @@ namespace Polyhydra.Core
                     var c = Color.white;
                     if (i < FaceTags.Count && FaceTags[i].Count > 0)
                     {
-                        string htmlColor = FaceTags[i].First(t => t.StartsWith("#"));
-                        if (!(ColorUtility.TryParseHtmlString(htmlColor, out c)))
+                        string htmlColor = FaceTags[i].Last(t => t.StartsWith("#"));
+                        if (!ColorUtility.TryParseHtmlString(htmlColor, out c))
                         {
                             ColorUtility.TryParseHtmlString(htmlColor.Replace("#", ""), out c);
                         }
@@ -1296,7 +1296,8 @@ namespace Polyhydra.Core
             // UnstashToFaces = 77,
             AddTag = 90,
             RemoveTag = 91,
-            ClearTags = 92,        }
+            ClearTags = 92,
+        }
 
         public PolyMesh AppyOperation(Operation op, OpParams p)
         {
