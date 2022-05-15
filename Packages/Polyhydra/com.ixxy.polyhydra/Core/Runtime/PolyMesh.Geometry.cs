@@ -3212,7 +3212,7 @@ namespace Polyhydra.Core
                 if (IncludeFace(i, o.filter)) tagSet.Add(o.stringParam);
             }
         }
-        
+
         private void RemoveTag(OpParams o)
         {
             for (var i = 0; i < FaceTags.Count; i++)
