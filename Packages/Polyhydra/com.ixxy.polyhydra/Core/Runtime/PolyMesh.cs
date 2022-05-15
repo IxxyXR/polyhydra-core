@@ -753,7 +753,7 @@ namespace Polyhydra.Core
             return bounds;
         }
 
-        public Mesh BuildUnityMesh(
+        public MeshData BuildMeshData(
             bool generateSubmeshes = false,
             Color[] colors = null,
             ColorMethods colorMethod = ColorMethods.ByRole,
@@ -771,11 +771,6 @@ namespace Polyhydra.Core
             }
 
             if (colors == null) colors = DefaultFaceColors;
-            var target = new Mesh();
-            if (largeMeshFormat)
-            {
-                target.indexFormat = IndexFormat.UInt32;
-            }
 
             var meshTriangles = new List<int>();
             var meshVertices = new List<Vector3>();
@@ -791,7 +786,7 @@ namespace Polyhydra.Core
             List<string> uniqueTags = null;
 
             var submeshTriangles = new List<List<int>>();
-            
+
             // Strip down to Face-Vertex structure
             var points = ListVerticesByPoints();
             var faceIndices = ListFacesByVertexIndices();
@@ -896,19 +891,19 @@ namespace Polyhydra.Core
                             faceTris.Add(index++);
                             edgeUVs.Add(new Vector2(0, 0));
                             barycentricUVs.Add(new Vector3(0, 0, 1));
-                        
+
                             meshVertices.Add(points[faceIndex[edgeIndex]]);
                             meshUVs.Add(calcUV(meshVertices[index], xAxis, yAxis));
                             faceTris.Add(index++);
                             edgeUVs.Add(new Vector2(1, 1));
                             barycentricUVs.Add(new Vector3(0, 1, 0));
-                        
+
                             meshVertices.Add(points[faceIndex[(edgeIndex + 1) % face.Sides]]);
                             meshUVs.Add(calcUV(meshVertices[index], xAxis, yAxis));
                             faceTris.Add(index++);
                             edgeUVs.Add(new Vector2(1, 1));
                             barycentricUVs.Add(new Vector3(1, 0, 0));
-                        
+
                             meshNormals.AddRange(Enumerable.Repeat(faceNormal, 3));
                             meshColors.AddRange(Enumerable.Repeat(color, 3));
                             miscUVs1.AddRange(Enumerable.Repeat(miscUV1, 3));
@@ -930,19 +925,19 @@ namespace Polyhydra.Core
                             faceTris.Add(index++);
                             edgeUVs.Add(new Vector2(0, 0));
                             barycentricUVs.Add(new Vector3(0, 0, 1));
-                        
+
                             meshVertices.Add(newTris[t].v2.Position);
                             meshUVs.Add(calcUV(meshVertices[index], xAxis, yAxis));
                             faceTris.Add(index++);
                             edgeUVs.Add(new Vector2(1, 1));
                             barycentricUVs.Add(new Vector3(0, 1, 0));
-                        
+
                             meshVertices.Add(newTris[t].v3.Position);
                             meshUVs.Add(calcUV(meshVertices[index], xAxis, yAxis));
                             faceTris.Add(index++);
                             edgeUVs.Add(new Vector2(1, 1));
                             barycentricUVs.Add(new Vector3(1, 0, 0));
-                        
+
                             meshNormals.AddRange(Enumerable.Repeat(faceNormal, 3));
                             meshColors.AddRange(Enumerable.Repeat(color, 3));
                             miscUVs1.AddRange(Enumerable.Repeat(miscUV1, 3));
@@ -950,7 +945,7 @@ namespace Polyhydra.Core
                         }
 
                         faceTris.Reverse();
-                    } 
+                    }
                 }
                 else
                 {
@@ -1010,33 +1005,76 @@ namespace Polyhydra.Core
                     meshTriangles.AddRange(faceTris);
                 }
             }
-            
+
+            var meshData = new MeshData
+            {
+                meshVertices = meshVertices,
+                meshNormals = meshNormals,
+                submeshTriangles = submeshTriangles,
+                meshTriangles = meshTriangles,
+                meshColors = meshColors,
+                generateSubmeshes = generateSubmeshes,
+                largeMeshFormat = largeMeshFormat,
+                meshUVs = meshUVs,
+                edgeUVs = edgeUVs,
+                barycentricUVs = barycentricUVs,
+                miscUVs1 = miscUVs1,
+                miscUVs2 = miscUVs2
+            };
+
+            return meshData;
+        }
+
+        public struct MeshData
+        {
+            public List<Vector3> meshVertices;
+            public List<Vector3> meshNormals;
+            public List<List<int>> submeshTriangles;
+            public List<int> meshTriangles;
+            public List<Color32> meshColors;
+            public bool generateSubmeshes;
+            public bool largeMeshFormat;
+            public List<Vector2> meshUVs;
+            public List<Vector2> edgeUVs;
+            public List<Vector3> barycentricUVs;
+            public List<Vector4> miscUVs1;
+            public List<Vector4> miscUVs2;
+        }
+        
+        public Mesh BuildUnityMesh(MeshData meshData)
+        {
+            var target = new Mesh();
+            if (meshData.largeMeshFormat)
+            {
+                target.indexFormat = IndexFormat.UInt32;
+            }
+
             // TODO Do we really want to jitter verts here?
             // It was a quick fix for z-fighting but I haven't really tested how effective it is
             // or looked into alternatives
-            target.vertices = meshVertices.Select(x => Jitter(x)).ToArray();
+            target.vertices = meshData.meshVertices.Select(x => Jitter(x)).ToArray();
             
-            target.normals = meshNormals.ToArray();
+            target.normals = meshData.meshNormals.ToArray();
             
-            if (generateSubmeshes)
+            if (meshData.generateSubmeshes)
             {
-                target.subMeshCount = submeshTriangles.Count;
-                for (var i = 0; i < submeshTriangles.Count; i++)
+                target.subMeshCount = meshData.submeshTriangles.Count;
+                for (var i = 0; i < meshData.submeshTriangles.Count; i++)
                 {
-                    target.SetTriangles(submeshTriangles[i], i);
+                    target.SetTriangles(meshData.submeshTriangles[i], i);
                 }
             }
             else
             {
-                target.triangles = meshTriangles.ToArray();
+                target.triangles = meshData.meshTriangles.ToArray();
             }
 
-            target.colors32 = meshColors.ToArray();
-            target.SetUVs(0, meshUVs);
-            target.SetUVs(1, edgeUVs);
-            target.SetUVs(2, barycentricUVs);
-            target.SetUVs(3, miscUVs1);
-            target.SetUVs(4, miscUVs2);
+            target.colors32 = meshData.meshColors.ToArray();
+            target.SetUVs(0, meshData.meshUVs);
+            target.SetUVs(1, meshData.edgeUVs);
+            target.SetUVs(2, meshData.barycentricUVs);
+            target.SetUVs(3, meshData.miscUVs1);
+            target.SetUVs(4, meshData.miscUVs2);
 
             target.RecalculateTangents();
             return target;
