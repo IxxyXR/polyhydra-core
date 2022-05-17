@@ -64,7 +64,8 @@ namespace Polyhydra.Core
         {
             return (x % m + m) % m;
         }
-        
+
+        public float ScalingFactor = 1f;
         public List<Roles> FaceRoles;
         public List<Roles> VertexRoles;
         public List<HashSet<string>> FaceTags;
@@ -1049,11 +1050,21 @@ namespace Polyhydra.Core
                 target.indexFormat = IndexFormat.UInt32;
             }
 
+            // Scale verts by scaling factor and apply some jitter to reduce z-fighting
             // TODO Do we really want to jitter verts here?
             // It was a quick fix for z-fighting but I haven't really tested how effective it is
             // or looked into alternatives
-            target.vertices = meshData.meshVertices.Select(x => Jitter(x)).ToArray();
-            
+            const float jitter = 0.0002f;
+            for (var i = 0; i < target.vertices.Length; i++)
+            {
+                var v = target.vertices[i];
+                target.vertices[i] = v * ScalingFactor + new Vector3(
+                                                            Random.value * jitter, 
+                                                            Random.value * jitter, 
+                                                            Random.value * jitter
+                                                        );
+            }
+
             target.normals = meshData.meshNormals.ToArray();
             
             if (meshData.generateSubmeshes)
@@ -1130,13 +1141,6 @@ namespace Polyhydra.Core
             }
 
             return color;
-        }
-        
-        private static Vector3 Jitter(Vector3 val)
-        {
-            // Used to reduce Z fighting for coincident faces
-            float jitter = 0.0002f;
-            return val + new Vector3(Random.value * jitter, Random.value * jitter, Random.value * jitter);
         }
 
         public void InitTags(Color color)
@@ -1301,8 +1305,6 @@ namespace Polyhydra.Core
 
         public PolyMesh AppyOperation(Operation op, OpParams p)
         {
-
-            p.filter.eval(new FilterParams(this, 0));
 
             if (Faces.Count != FaceTags.Count)
             {
