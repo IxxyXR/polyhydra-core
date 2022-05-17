@@ -1055,16 +1055,18 @@ namespace Polyhydra.Core
             // It was a quick fix for z-fighting but I haven't really tested how effective it is
             // or looked into alternatives
             const float jitter = 0.0002f;
-            for (var i = 0; i < target.vertices.Length; i++)
+            for (var i = 0; i < meshData.meshVertices.Count; i++)
             {
-                var v = target.vertices[i];
-                target.vertices[i] = v * ScalingFactor + new Vector3(
-                                                            Random.value * jitter, 
-                                                            Random.value * jitter, 
-                                                            Random.value * jitter
-                                                        );
+                meshData.meshVertices[i] = meshData.meshVertices[i]
+                    * ScalingFactor
+                    + new Vector3(
+                        Random.value * jitter, 
+                        Random.value * jitter, 
+                        Random.value * jitter
+                    );
             }
 
+            target.vertices = meshData.meshVertices.ToArray();
             target.normals = meshData.meshNormals.ToArray();
             
             if (meshData.generateSubmeshes)
