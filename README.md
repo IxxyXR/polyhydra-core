@@ -13,9 +13,9 @@ Polyhydra is a toolkit for the procedural generation of geometric forms in Unity
 
 # Getting Started
 
-This repo is a cleanup and an attempt to extract the core functionality for reuse in other apps.
+This is a cleanup and refactor of https://github.com/IxxyXR/polyhydra-upm which itself was extracted from https://github.com/IxxyXR/polyhydra
 
-Right now you are better off using the repo here instead: https://github.com/IxxyXR/polyhydra-upm
+This is where active development is taking place but the other two repos might be worth looking at if you want to see more usage examples and sample files.
 
 # Credits
 
