@@ -59,6 +59,7 @@ public static class RadialSolids
 
             poly.Faces.Remove(bottom);
             poly.FaceRoles.RemoveAt(0);
+            poly.FaceTags.RemoveAt(0);
 
             edge2 = poly.Faces.Last().Halfedge.Prev;
             int indexOffset = capGyro ? 0 : -1;
