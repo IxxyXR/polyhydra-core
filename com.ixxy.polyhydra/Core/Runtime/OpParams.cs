@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using UnityEngine;
+using Random = System.Random;
 
 namespace Polyhydra.Core
 {
@@ -28,6 +29,8 @@ namespace Polyhydra.Core
         public static Filter OddSided = new Filter(p => p.poly.Faces[p.index].Sides % 2 == 0);
         
         public Func<FilterParams, bool> eval;
+
+        public static readonly Random _random = new Random();
 
         public enum PositionType
         {
@@ -63,7 +66,7 @@ namespace Polyhydra.Core
             });
         }
 
-        public static Filter RadialDistance(float min=-1f, float max=1f, bool not = false)
+        public static Filter RadialDistance(float min=0f, float max=1f, bool not = false)
         {
             return new Filter(p =>
             {
@@ -138,7 +141,8 @@ namespace Polyhydra.Core
         {
             return new Filter(p =>
             {
-                var result = UnityEngine.Random.value < cutoff;
+                // Can't use Unity random off the main thread
+                var result = _random.NextDouble() < cutoff;
                 return not ? !result : result;
             });
         }
