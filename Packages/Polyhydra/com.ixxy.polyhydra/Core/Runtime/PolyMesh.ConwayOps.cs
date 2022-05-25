@@ -2871,6 +2871,5 @@ namespace Polyhydra.Core
 
             return new PolyMesh(vertexPoints, faceIndices, faceRoles, vertexRoles, newFaceTags);
         }
-        
     }
 }

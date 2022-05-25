@@ -11,11 +11,17 @@ public class TestBase : MonoBehaviour
     public float Op1Parameter1 = .3f;
     public float Op1Parameter2 = 0;
     public int Op1Iterations = 1;
+    public FilterTypes Op1FilterType;
+    public float Op1FilterParam;
+    public bool Op1FilterFlip;
     public float MergeThreshold;
     public PolyMesh.Operation op2;
     public float Op2Parameter1 = .3f;
     public float Op2Parameter2 = 0;
     public int Op2Iterations = 1;
+    public FilterTypes Op2FilterType;
+    public float Op2FilterParam;
+    public bool Op2FilterFlip;
     public int CanonicalizeIterations = 0;
     [Range(.1f, 1f)] public float FaceScale = .99f;
     
@@ -25,12 +31,14 @@ public class TestBase : MonoBehaviour
     {
         for (int i1 = 0; i1 < Op1Iterations; i1++)
         {
-            poly = poly.AppyOperation(op1, new OpParams(Op1Parameter1, Op1Parameter2));
+            var op1Filter = Filter.GetFilter(Op1FilterType, Op1FilterParam, Mathf.FloorToInt(Op1FilterParam), Op1FilterFlip);
+            poly = poly.AppyOperation(op1, new OpParams(Op1Parameter1, Op1Parameter2, op1Filter));
         }
         if (MergeThreshold > 0) poly.MergeCoplanarFaces(MergeThreshold);
         for (int i2 = 0; i2 < Op2Iterations; i2++)
-        {
-            poly = poly.AppyOperation(op2, new OpParams(Op2Parameter1, Op2Parameter2));
+        {   
+            var op2Filter = Filter.GetFilter(Op2FilterType, Op2FilterParam, Mathf.FloorToInt(Op2FilterParam), Op2FilterFlip);
+            poly = poly.AppyOperation(op2, new OpParams(Op2Parameter1, Op2Parameter2, op2Filter));
         }
         if (CanonicalizeIterations > 0) poly = poly.Canonicalize(CanonicalizeIterations, CanonicalizeIterations);
         if (FaceScale<1f) poly = poly.FaceScale(new OpParams(FaceScale));
