@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using AsImpL;
 using Polyhydra.Wythoff;
 using UnityEngine;
@@ -193,7 +194,8 @@ namespace Polyhydra.Core
         public static PolyMesh FromConwayString(string conwayString)
         {
             // Seed types
-            var seedMap = new Dictionary<string, SeedShape>{
+            var seedMap = new Dictionary<string, SeedShape>
+            {
               {"T",  SeedShape.Tetrahedron},
               {"O",  SeedShape.Octahedron},
               {"C",  SeedShape.Cube},
@@ -209,7 +211,8 @@ namespace Polyhydra.Core
               {"K",  SeedShape.Grid},
             };
             
-            var operatorMap = new Dictionary<string, Operation>{
+            var operatorMap = new Dictionary<string, Operation>
+            {
                 
                 {"a", Operation.Ambo},
                 {"b", Operation.Bevel},
@@ -390,27 +393,27 @@ namespace Polyhydra.Core
             switch (seedShape)
             {
                 case SeedShape.Tetrahedron:
-                    wythoff = new WythoffPoly(Wythoff.UniformTypes.Tetrahedron);
+                    wythoff = new WythoffPoly(UniformTypes.Tetrahedron);
                     wythoff.Build();
                     poly = wythoff.Build();
                     break;
                 case SeedShape.Octahedron:
-                    wythoff = new WythoffPoly(Wythoff.UniformTypes.Octahedron);
+                    wythoff = new WythoffPoly(UniformTypes.Octahedron);
                     wythoff.Build();
                     poly = wythoff.Build();
                     break;
                 case SeedShape.Cube:
-                    wythoff = new WythoffPoly(Wythoff.UniformTypes.Cube);
+                    wythoff = new WythoffPoly(UniformTypes.Cube);
                     wythoff.Build();
                     poly = wythoff.Build();
                     break;
                 case SeedShape.Icosahedron:
-                    wythoff = new WythoffPoly(Wythoff.UniformTypes.Icosahedron);
+                    wythoff = new WythoffPoly(UniformTypes.Icosahedron);
                     wythoff.Build();
                     poly = wythoff.Build();
                     break;
                 case SeedShape.Dodecahedron:
-                    wythoff = new WythoffPoly(Wythoff.UniformTypes.Dodecahedron);
+                    wythoff = new WythoffPoly(UniformTypes.Dodecahedron);
                     wythoff.Build();
                     poly = wythoff.Build();
                     break;
@@ -494,7 +497,7 @@ namespace Polyhydra.Core
                 .Where(line => !(string.IsNullOrWhiteSpace(line) || line.StartsWith("#")))
                 .ToList();
 
-            var metrics = System.Text.RegularExpressions.Regex.Split(lines[1], "\\s+");
+            var metrics = Regex.Split(lines[1], "\\s+");
             int NVertices = int.Parse(metrics[0]);
             int NFaces = int.Parse(metrics[1]);
 
@@ -502,7 +505,7 @@ namespace Polyhydra.Core
             for (int i = 2; i < NVertices + 2; i++)
             {
                 // Split on any whitespace
-                string[] vertex = System.Text.RegularExpressions.Regex.Split(lines[i], "\\s+");
+                string[] vertex = Regex.Split(lines[i], "\\s+");
                 
                 var v = new Vector3(
                     float.Parse(vertex[0]),
@@ -520,7 +523,7 @@ namespace Polyhydra.Core
             {
                 
                 // Split on any whitespace
-                var faceString = System.Text.RegularExpressions.Regex.Split(lines[i], "\\s+");
+                var faceString = Regex.Split(lines[i], "\\s+");
                 int sides = int.Parse(faceString[0]);
                 if (sides < 3) continue;
                 var face = new int[sides];
@@ -1236,9 +1239,9 @@ namespace Polyhydra.Core
 
             FaceOffset = 39,
             FaceScale = 40,
-            FaceRotate = 41,
-            FaceRotateX = 42,
-            FaceRotateY = 43,
+            FaceRotateX = 41,
+            FaceRotateY = 42,
+            FaceRotateZ = 43,
             FaceSlide = 44,
             // Hinge = 48,
             
@@ -1266,14 +1269,7 @@ namespace Polyhydra.Core
             // Face/Vertex Deletion            
 
             FaceRemove = 56,
-            FaceKeep = 57,
-            // FaceRemoveX = 82,
-            // FaceRemoveY = 67,
-            // FaceRemoveZ = 83,
-            // FaceRemoveDistance = 84,
-            // FaceRemovePolar = 85,
             VertexRemove = 58,
-            VertexKeep = 59,
             
             // Topology Manipulation
             
@@ -1390,7 +1386,7 @@ namespace Polyhydra.Core
                     polyMesh = polyMesh.Stake(p);
                     break;
                 case Operation.JoinStake:
-                    polyMesh = polyMesh.Stake(p, join: true);
+                    polyMesh = polyMesh.Stake(p, @join: true);
                     break;
                 case Operation.Medial:
                     polyMesh = polyMesh.Medial(p);
@@ -1417,7 +1413,7 @@ namespace Polyhydra.Core
                     polyMesh = polyMesh.Squall(p);
                     break;
                 case Operation.JoinSquall:
-                    polyMesh = polyMesh.Squall(p, join: true);
+                    polyMesh = polyMesh.Squall(p, @join: true);
                     break;
                 case Operation.Cross:
                     polyMesh = polyMesh.Cross(p);
@@ -1461,19 +1457,19 @@ namespace Polyhydra.Core
                 // Face Transforms
 
                 case Operation.FaceOffset:
-                    polyMesh = polyMesh.Offset(p);
+                    polyMesh = polyMesh.FaceOffset(p);
                     break;
                 case Operation.FaceScale:
                     polyMesh = polyMesh.FaceScale(p);
-                    break;
-                case Operation.FaceRotate:
-                    polyMesh = polyMesh.FaceRotate(p);
                     break;
                 case Operation.FaceRotateX:
                     polyMesh = polyMesh.FaceRotate(p, (int)Axis.X);
                     break;
                 case Operation.FaceRotateY:
-                    polyMesh = polyMesh.FaceRotate(p, (int)Axis.Z);
+                    polyMesh = polyMesh.FaceRotate(p, (int)Axis.Y);
+                    break;
+                case Operation.FaceRotateZ:
+                    polyMesh = polyMesh.FaceRotate(p,  (int)Axis.Z);
                     break;
                 case Operation.FaceSlide:
                     polyMesh = polyMesh.FaceSlide(p);
@@ -1534,14 +1530,8 @@ namespace Polyhydra.Core
                 case Operation.FaceRemove:
                     polyMesh = polyMesh.FaceRemove(p);
                     break;
-                case Operation.FaceKeep:
-                    polyMesh = polyMesh.FaceKeep(p);
-                    break;
                 case Operation.VertexRemove:
                     polyMesh = polyMesh.VertexRemove(p, false);
-                    break;
-                case Operation.VertexKeep:
-                    polyMesh = polyMesh.VertexRemove(p, invertLogic: true);
                     break;
 
                 // Topology Manipulation
@@ -1580,13 +1570,13 @@ namespace Polyhydra.Core
                 //     polyMesh = polyMesh.Canonicalize(p);
                 //     break;
                 case Operation.PerlinNoiseX:
-                    polyMesh.PerlinNoise(Vector3.left, p.OriginalParamA, p.OriginalParamB);
+                    polyMesh.PerlinNoise(Vector3.left, p.OriginalParamA, p.OriginalParamB, p.OriginalParamB);
                     break;
                 case Operation.PerlinNoiseY:
-                    polyMesh.PerlinNoise(Vector3.up, p.OriginalParamA, p.OriginalParamB);
+                    polyMesh.PerlinNoise(Vector3.up, p.OriginalParamA, p.OriginalParamB, p.OriginalParamB);
                     break;
                 case Operation.PerlinNoiseZ:
-                    polyMesh.PerlinNoise(Vector3.forward,p.OriginalParamA, p.OriginalParamB);
+                    polyMesh.PerlinNoise(Vector3.forward,p.OriginalParamA, p.OriginalParamB, p.OriginalParamB);
                     break;
 
                 case Operation.AddTag:
