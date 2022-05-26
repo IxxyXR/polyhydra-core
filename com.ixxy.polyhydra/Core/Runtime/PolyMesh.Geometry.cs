@@ -3157,8 +3157,57 @@ namespace Polyhydra.Core
                 );
                 v.Position += axis * offset * strength;
             }
-        }	
+        }
+        
+        public void Bulge(Vector3 axis, float strength, float frequency)
+        {
+            foreach (var v in Vertices)
+            {
+                var resultant = Vector3.ProjectOnPlane(v.Position, axis);
+                Vector2 projected;
+                if (resultant.x == 0)
+                {
+                    projected = new Vector2(resultant.y, resultant.z);
+                }
+                else if (resultant.y == 0)
+                {
+                    projected = new Vector2(resultant.x, resultant.z);
+                }
+                else
+                {
+                    projected = new Vector2(resultant.x, resultant.y);
+                }
 
+                float halfWavelength = (1f / frequency) / 2f;
+                var offset = Mathf.Sign(strength) * Mathf.SmoothStep(strength, 0, projected.magnitude * halfWavelength);
+                
+                v.Position += axis * offset * strength;
+            }
+        }	
+        public void Wave(Vector3 axis, float strength, float frequency)
+        {
+            foreach (var v in Vertices)
+            {
+                var resultant = Vector3.ProjectOnPlane(v.Position, axis);
+                Vector2 projected;
+                if (resultant.x == 0)
+                {
+                    projected = new Vector2(resultant.y, resultant.z);
+                }
+                else if (resultant.y == 0)
+                {
+                    projected = new Vector2(resultant.x, resultant.z);
+                }
+                else
+                {
+                    projected = new Vector2(resultant.x, resultant.y);
+                }
+
+                var offset = Mathf.Cos(projected.magnitude * frequency * Mathf.PI) * strength;
+                
+                v.Position += axis * offset * strength;
+            }
+        }	
         public PolyMesh Spherize(OpParams o)
         {
             var vertexPoints = new List<Vector3>();

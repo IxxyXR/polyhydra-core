@@ -756,6 +756,26 @@ namespace Polyhydra.Core
                         amountSafeMax = 2f
                     }
                 },
+                {
+                    PolyMesh.Operation.Bulge,
+                    new OpConfig
+                    {
+                        usesFilter = true,
+                        amountDefault = .5f, amountMin = -2, amountMax = 2, amountSafeMin = -10, amountSafeMax = 10f,
+                        usesAmount2 = true,
+                        amount2Default = 0.5f,
+                        amount2Min = 0.01f, amount2Max = 4, amount2SafeMin = 0.01f, amount2SafeMax = 10f,                    }
+                },
+                {
+                    PolyMesh.Operation.Wave,
+                    new OpConfig
+                    {
+                        usesFilter = true,
+                        amountDefault = .5f, amountMin = -2, amountMax = 2, amountSafeMin = -10, amountSafeMax = 10f,
+                        usesAmount2 = true,
+                        amount2Default = 0.5f,
+                        amount2Min = 0.01f, amount2Max = 4, amount2SafeMin = 0.01f, amount2SafeMax = 10f,                    }
+                },
                 // {
                 // 	PolyMesh.Operation.Stretch,
                 // 	new OpConfig
