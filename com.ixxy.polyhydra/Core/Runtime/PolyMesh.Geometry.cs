@@ -3131,7 +3131,7 @@ namespace Polyhydra.Core
 
         public void PerlinNoise(Vector3 axis, float strength=1,
             float xscale=1, float yscale=1,
-            float xoffset=0, float yoffset=0)
+            float xoffset=10, float yoffset=10)
         {
             foreach (var v in Vertices)
             {
