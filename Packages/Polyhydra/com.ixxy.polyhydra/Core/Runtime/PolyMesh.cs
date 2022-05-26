@@ -1285,6 +1285,8 @@ namespace Polyhydra.Core
             // Stretch = 66,
             Spherize = 69,
             Cylinderize = 70,
+            Bulge = 93,
+            Wave = 94,
             Canonicalize = 71,
             PerlinNoiseX = 86,
             PerlinNoiseY = 87,
@@ -1566,9 +1568,15 @@ namespace Polyhydra.Core
                 case Operation.Cylinderize:
                     polyMesh = polyMesh.Cylinderize(p);
                     break;
-                // case Operation.Canonicalize:
-                //     polyMesh = polyMesh.Canonicalize(p);
-                //     break;
+                case Operation.Bulge:
+                    polyMesh.Bulge(Vector3.up, p.OriginalParamA, p.OriginalParamB);
+                    break;
+                case Operation.Wave:
+                    polyMesh.Wave(Vector3.up, p.OriginalParamA, p.OriginalParamB);
+                    break;
+                case Operation.Canonicalize:
+                    polyMesh = polyMesh.Canonicalize(p.OriginalParamA, p.OriginalParamB);
+                    break;
                 case Operation.PerlinNoiseX:
                     polyMesh.PerlinNoise(Vector3.left, p.OriginalParamA, p.OriginalParamB, p.OriginalParamB);
                     break;
