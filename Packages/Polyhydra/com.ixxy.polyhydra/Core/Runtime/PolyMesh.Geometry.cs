@@ -352,7 +352,6 @@ namespace Polyhydra.Core
 
         public PolyMesh FaceScale(OpParams o)
         {
-            
             var vertexPoints = new List<Vector3>();
             var faceIndices = new List<IEnumerable<int>>();
 
