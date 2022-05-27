@@ -491,8 +491,8 @@ namespace Polyhydra.Core
                     new OpConfig
                     {
                         usesFilter = true,
-                        amountDefault = -0.5f,
-                        amountMin = -6, amountMax = 6, amountSafeMin = -1, amountSafeMax = 0
+                        amountDefault = 0.5f,
+                        amountMin = -8, amountMax = 8, amountSafeMin = -4, amountSafeMax = 4
                     }
                 },
                 {
