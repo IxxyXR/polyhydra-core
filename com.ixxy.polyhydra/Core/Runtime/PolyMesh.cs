@@ -1575,7 +1575,7 @@ namespace Polyhydra.Core
                     polyMesh.Wave(Vector3.up, p.OriginalParamA, p.OriginalParamB);
                     break;
                 case Operation.Canonicalize:
-                    polyMesh = polyMesh.Canonicalize(p.OriginalParamA, p.OriginalParamB);
+                    polyMesh = polyMesh.Canonicalize(2, 2);
                     break;
                 case Operation.PerlinNoiseX:
                     polyMesh.PerlinNoise(Vector3.left, p.OriginalParamA, p.OriginalParamB, p.OriginalParamB);
