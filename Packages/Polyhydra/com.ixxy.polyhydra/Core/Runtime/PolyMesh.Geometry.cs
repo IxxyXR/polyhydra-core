@@ -370,9 +370,9 @@ namespace Polyhydra.Core
                     .Select(v =>
                         includeFace ? Vector3.LerpUnclamped(faceCentroid, v.Position, scale) : v.Position));
                 var faceVerts = new List<int>();
-                for (int ii = 0; ii < face.GetVertices().Count; ii++)
+                for (int i = 0; i < face.GetVertices().Count; i++)
                 {
-                    faceVerts.Add(c + ii);
+                    faceVerts.Add(c + i);
                 }
 
                 faceIndices.Add(faceVerts);
