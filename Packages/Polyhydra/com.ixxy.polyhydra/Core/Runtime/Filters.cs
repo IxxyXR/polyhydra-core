@@ -60,47 +60,29 @@ namespace Polyhydra.Core
         public static Filter GetFilter(FilterTypes filterType, float filterParamFloat, int filterParamInt,
             bool filterNot)
         {
-            switch (filterType)
+            return filterType switch
             {
-                case FilterTypes.OnlyNth:
-                    return OnlyNth(filterParamInt, filterNot);
-                case FilterTypes.All:
-                    return filterNot ? None : All;
-                case FilterTypes.Inner:
-                    return filterNot ? Outer : Inner;
-                case FilterTypes.Random:
-                    return Random(filterNot ? 1f - filterParamFloat : filterParamFloat);
-                case FilterTypes.Role:
-                    return Role((Roles)filterParamInt, filterNot);
-                case FilterTypes.FacingVertical:
-                    return FacingDirection(Vector3.up, filterParamFloat, includeOpposite: true, filterNot);
-                case FilterTypes.FacingUp:
-                    return FacingDirection(Vector3.up, filterParamFloat, false, filterNot);
-                case FilterTypes.FacingForward:
-                    return FacingDirection(Vector3.forward, filterParamFloat, false, filterNot);
-                case FilterTypes.FacingRight:
-                    return FacingDirection(Vector3.right, filterParamFloat, false, filterNot);
-                case FilterTypes.NSided:
-                    return NumberOfSides(filterParamInt, filterNot);
-                case FilterTypes.EvenSided:
-                    return filterNot ? EvenSided : OddSided;
-                case FilterTypes.EveryNth:
-                    return EveryNth(filterParamInt, filterNot);
-                case FilterTypes.FirstN:
-                    return Range(filterParamInt, filterNot);
-                case FilterTypes.LastN:
-                    return Range(-filterParamInt, filterNot);
-                case FilterTypes.PositionX:
-                    return Position(PositionType.Center, Axis.X, filterParamFloat, 10f, not: filterNot);
-                case FilterTypes.PositionY:
-                    return Position(PositionType.Center, Axis.Y, filterParamFloat, 10f, not: filterNot);
-                case FilterTypes.PositionZ:
-                    return Position(PositionType.Center, Axis.Z, filterParamFloat, 10f, not: filterNot);
-                case FilterTypes.DistanceFromCenter:
-                    return RadialDistance(0, filterParamFloat, not: filterNot);
-                default:
-                    return All;
-            }
+                FilterTypes.OnlyNth => OnlyNth(filterParamInt, filterNot),
+                FilterTypes.All => filterNot ? None : All,
+                FilterTypes.Inner => filterNot ? Outer : Inner,
+                FilterTypes.Random => Random(filterNot ? 1f - filterParamFloat : filterParamFloat),
+                FilterTypes.Role => Role((Roles)filterParamInt, filterNot),
+                FilterTypes.FacingVertical => FacingDirection(Vector3.up, filterParamFloat, includeOpposite: true,
+                    filterNot),
+                FilterTypes.FacingUp => FacingDirection(Vector3.up, filterParamFloat, false, filterNot),
+                FilterTypes.FacingForward => FacingDirection(Vector3.forward, filterParamFloat, false, filterNot),
+                FilterTypes.FacingRight => FacingDirection(Vector3.right, filterParamFloat, false, filterNot),
+                FilterTypes.NSided => NumberOfSides(filterParamInt, filterNot),
+                FilterTypes.EvenSided => filterNot ? EvenSided : OddSided,
+                FilterTypes.EveryNth => EveryNth(filterParamInt, filterNot),
+                FilterTypes.FirstN => Range(filterParamInt, filterNot),
+                FilterTypes.LastN => Range(-filterParamInt, filterNot),
+                FilterTypes.PositionX => Position(PositionType.Center, Axis.X, filterParamFloat, 10f, not: filterNot),
+                FilterTypes.PositionY => Position(PositionType.Center, Axis.Y, filterParamFloat, 10f, not: filterNot),
+                FilterTypes.PositionZ => Position(PositionType.Center, Axis.Z, filterParamFloat, 10f, not: filterNot),
+                FilterTypes.DistanceFromCenter => RadialDistance(0, filterParamFloat, not: filterNot),
+                _ => throw new ArgumentOutOfRangeException(nameof(filterType), filterType, null)
+            };
         }
 
 
@@ -240,21 +222,7 @@ namespace Polyhydra.Core
         /////////////////////////////////////////////////
         private static Func<Vector3, float> GetVectorComponent(Axis axis)
         {
-            Func<Vector3, float> getComponent = null;
-            switch (axis)
-            {
-                case Axis.X:
-                    getComponent = vec => vec.x;
-                    break;
-                case Axis.Y:
-                    getComponent = vec => vec.y;
-                    break;
-                case Axis.Z:
-                    getComponent = vec => vec.z;
-                    break;
-            }
-
-            return getComponent;
+            return vec => vec[(int)axis];
         }
 
         public Filter(Func<FilterParams, bool> func)

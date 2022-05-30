@@ -442,18 +442,12 @@ namespace Polyhydra.Core
                 
                 var pivot = face.Centroid;
                 
-                Vector3 direction = face.Normal;
-                switch (axis)
+                Vector3 direction = axis switch
                 {
-                    case 0:
-                        direction = Vector3.Cross(face.Normal, Vector3.up);
-                        break;
-                    case 1:
-                        direction = Vector3.Cross(face.Normal, Vector3.forward);
-                        break;
-                    case 2:
-                        break;
-                }
+                    0 => Vector3.Cross(face.Normal, Vector3.up),
+                    1 => Vector3.Cross(face.Normal, Vector3.forward),
+                    2 => face.Normal
+                };
 
                 var rot = Quaternion.AngleAxis(_angle, direction);
 
@@ -3285,11 +3279,13 @@ namespace Polyhydra.Core
         {
             for (var i = 0; i < FaceTags.Count; i++)
             {
-                HashSet<string> tagSet = FaceTags[i];
-                if (IncludeFace(i, o.filter)) tagSet.Add(o.stringParam);
+                if (IncludeFace(i, o.filter))
+                {
+                    FaceTags[i].Add(o.stringParam);
+                }
             }
         }
-
+        
         private void RemoveTag(OpParams o)
         {
             for (var i = 0; i < FaceTags.Count; i++)

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -542,7 +543,7 @@ namespace Polyhydra.Core
                         float.Parse(faceString[sides + 3])
                     );
                     var tags = new HashSet<string>();
-                    tags.Add($"#{ColorUtility.ToHtmlStringRGB(faceColor)}");
+                    tags.Add($"#{faceColor.r:X2}{faceColor.g:X2}{faceColor.b:X2}");
                     FaceTags.Add(tags);
                 }
 
@@ -1114,7 +1115,7 @@ namespace Polyhydra.Core
 
         public Color32 CalcFaceColor(Color[] colors, ColorMethods colorMethod, int i)
         {
-            Color32 color;
+            Color32 color = Color.white;
             var face = Faces[i];
             var faceRole = FaceRoles[i];
             switch (colorMethod)
@@ -1129,23 +1130,25 @@ namespace Polyhydra.Core
                     color = colors[CalcDirectionIndex(face, colors.Length - 1)];
                     break;
                 case ColorMethods.ByTags:
-                    var c = Color.white;
                     if (i < FaceTags.Count && FaceTags[i].Count > 0)
                     {
-                        string htmlColor = FaceTags[i].Last(t => t.StartsWith("#"));
-                        if (!ColorUtility.TryParseHtmlString(htmlColor, out c))
-                        {
-                            ColorUtility.TryParseHtmlString(htmlColor.Replace("#", ""), out c);
-                        }
+                        string htmlColor = FaceTags[i].LastOrDefault(t => t!=null && t.StartsWith("#"));
+                        color = htmlColor != null ? ParseHexColor(htmlColor) : Color.white;
                     }
-                    color = c;
-                    break;
-                default:
-                    color = Color.white;
                     break;
             }
 
             return color;
+        }
+
+        private Color ParseHexColor(string htmlColor)
+        {
+            int hex = Int32.Parse(htmlColor.Replace("#", ""), NumberStyles.HexNumber);
+            return new Color(
+                (hex & 0xff0000)>> 0x10,
+                (hex & 0xff00)>> 8,
+                hex & 0xff
+            );
         }
 
         public void InitTags(Color color)
@@ -1155,12 +1158,11 @@ namespace Polyhydra.Core
 
         public void InitTags(string tag=null)
         {
-            var tagset = new HashSet<string>();
-            if (!string.IsNullOrEmpty(tag))
+            FaceTags = new List<HashSet<string>>();
+            for (var i = 0; i < Faces.Count; i++)
             {
-                tagset.Add(tag);
+                FaceTags.Add(new HashSet<string> { string.IsNullOrEmpty(tag) ? null : tag });
             }
-            FaceTags = Enumerable.Repeat(tagset, Faces.Count).ToList();
         }
 
         // For a given number of vertices, returns the face index data structure
