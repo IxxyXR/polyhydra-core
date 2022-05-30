@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Polyhydra.Core;
@@ -598,123 +599,51 @@ public static class RadialSolids
 
     public static PolyMesh Build(RadialPolyType type, int sides)
     {
-          PolyMesh poly;
-
-        switch (type)
-        {
-            case RadialPolyType.Prism:
-                poly = Prism(sides);
-                break;
-            case RadialPolyType.Antiprism:
-                poly = Antiprism(sides);
-                break;
-            case RadialPolyType.Pyramid:
-                poly = Pyramid(sides);
-                break;
-            case RadialPolyType.ElongatedPyramid:
-                poly = ElongatedPyramid(sides);
-                break;
-            case RadialPolyType.GyroelongatedPyramid:
-                poly = GyroelongatedPyramid(sides);
-                break;
-            case RadialPolyType.Dipyramid:
-                poly = Dipyramid(sides);
-                break;
-            case RadialPolyType.ElongatedDipyramid:
-                poly = ElongatedDipyramid(sides);
-                break;
-            case RadialPolyType.GyroelongatedDipyramid:
-                poly = GyroelongatedDipyramid(sides);
-                break;
-            case RadialPolyType.Cupola:
-                poly = Cupola(sides);
-                break;
-            case RadialPolyType.ElongatedCupola:
-                poly = ElongatedCupola(sides);
-                break;
-            case RadialPolyType.GyroelongatedCupola:
-                poly = GyroelongatedCupola(sides);
-                break;
-            case RadialPolyType.OrthoBicupola:
-                poly = OrthoBicupola(sides);
-                break;
-            case RadialPolyType.GyroBicupola:
-                poly = GyroBicupola(sides);
-                break;
-            case RadialPolyType.ElongatedOrthoBicupola:
-                poly = ElongatedBicupola(sides, false);
-                break;
-            case RadialPolyType.ElongatedGyroBicupola:
-                poly = ElongatedBicupola(sides, true);
-                break;
-            case RadialPolyType.GyroelongatedBicupola:
-                poly = GyroelongatedBicupola(sides, false);
-                break;
-            default:
-                poly = new PolyMesh();
-                break;
-        }
+          PolyMesh poly = type switch
+          {
+              RadialPolyType.Prism => Prism(sides),
+              RadialPolyType.Antiprism => Antiprism(sides),
+              RadialPolyType.Pyramid => Pyramid(sides),
+              RadialPolyType.ElongatedPyramid => ElongatedPyramid(sides),
+              RadialPolyType.GyroelongatedPyramid => GyroelongatedPyramid(sides),
+              RadialPolyType.Dipyramid => Dipyramid(sides),
+              RadialPolyType.ElongatedDipyramid => ElongatedDipyramid(sides),
+              RadialPolyType.GyroelongatedDipyramid => GyroelongatedDipyramid(sides),
+              RadialPolyType.Cupola => Cupola(sides),
+              RadialPolyType.ElongatedCupola => ElongatedCupola(sides),
+              RadialPolyType.GyroelongatedCupola => GyroelongatedCupola(sides),
+              RadialPolyType.OrthoBicupola => OrthoBicupola(sides),
+              RadialPolyType.GyroBicupola => GyroBicupola(sides),
+              RadialPolyType.ElongatedOrthoBicupola => ElongatedBicupola(sides, false),
+              RadialPolyType.ElongatedGyroBicupola => ElongatedBicupola(sides, true),
+              RadialPolyType.GyroelongatedBicupola => GyroelongatedBicupola(sides, false),
+              _ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
+          };
         return poly;
     }
 
     public static PolyMesh Build(RadialPolyType type, int sides, float height, float capHeight)
     {
-        PolyMesh poly;
-
-        switch (type)
+        PolyMesh poly = type switch
         {
-            case RadialPolyType.Prism:
-                poly = Prism(sides, height);
-                break;
-            case RadialPolyType.Antiprism:
-                poly = Antiprism(sides, height);
-                break;
-            case RadialPolyType.Pyramid:
-                poly = Pyramid(sides, capHeight);
-                break;
-            case RadialPolyType.ElongatedPyramid:
-                poly = ElongatedPyramid(sides, height, capHeight);
-                break;
-            case RadialPolyType.GyroelongatedPyramid:
-                poly = GyroelongatedPyramid(sides, height, capHeight);
-                break;
-            case RadialPolyType.Dipyramid:
-                poly = Dipyramid(sides, capHeight);
-                break;
-            case RadialPolyType.ElongatedDipyramid:
-                poly = ElongatedDipyramid(sides, height, capHeight);
-                break;
-            case RadialPolyType.GyroelongatedDipyramid:
-                poly = GyroelongatedDipyramid(sides, height, capHeight);
-                break;
-            case RadialPolyType.Cupola:
-                poly = Cupola(sides, capHeight);
-                break;
-            case RadialPolyType.ElongatedCupola:
-                poly = ElongatedCupola(sides, height, capHeight);
-                break;
-            case RadialPolyType.GyroelongatedCupola:
-                poly = GyroelongatedCupola(sides, height, capHeight);
-                break;
-            case RadialPolyType.OrthoBicupola:
-                poly = OrthoBicupola(sides, capHeight);
-                break;
-            case RadialPolyType.GyroBicupola:
-                poly = GyroBicupola(sides, capHeight);
-                break;
-            case RadialPolyType.ElongatedOrthoBicupola:
-                poly = ElongatedBicupola(sides, height, capHeight, false);
-                break;
-            case RadialPolyType.ElongatedGyroBicupola:
-                poly = ElongatedBicupola(sides, height, capHeight, true);
-                break;
-            case RadialPolyType.GyroelongatedBicupola:
-                poly = GyroelongatedBicupola(sides, height, capHeight, true);
-                break;
-            default:
-                poly = new PolyMesh();
-                break;
-        }
+            RadialPolyType.Prism => Prism(sides, height),
+            RadialPolyType.Antiprism => Antiprism(sides, height),
+            RadialPolyType.Pyramid => Pyramid(sides, capHeight),
+            RadialPolyType.ElongatedPyramid => ElongatedPyramid(sides, height, capHeight),
+            RadialPolyType.GyroelongatedPyramid => GyroelongatedPyramid(sides, height, capHeight),
+            RadialPolyType.Dipyramid => Dipyramid(sides, capHeight),
+            RadialPolyType.ElongatedDipyramid => ElongatedDipyramid(sides, height, capHeight),
+            RadialPolyType.GyroelongatedDipyramid => GyroelongatedDipyramid(sides, height, capHeight),
+            RadialPolyType.Cupola => Cupola(sides, capHeight),
+            RadialPolyType.ElongatedCupola => ElongatedCupola(sides, height, capHeight),
+            RadialPolyType.GyroelongatedCupola => GyroelongatedCupola(sides, height, capHeight),
+            RadialPolyType.OrthoBicupola => OrthoBicupola(sides, capHeight),
+            RadialPolyType.GyroBicupola => GyroBicupola(sides, capHeight),
+            RadialPolyType.ElongatedOrthoBicupola => ElongatedBicupola(sides, height, capHeight, false),
+            RadialPolyType.ElongatedGyroBicupola => ElongatedBicupola(sides, height, capHeight, true),
+            RadialPolyType.GyroelongatedBicupola => GyroelongatedBicupola(sides, height, capHeight, true),
+            _ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
+        };
         return poly;
     }
 

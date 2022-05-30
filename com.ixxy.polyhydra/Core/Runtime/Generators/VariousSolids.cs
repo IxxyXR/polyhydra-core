@@ -15,22 +15,12 @@ namespace Polyhydra.Core
     {
         public static PolyMesh Build(VariousSolidTypes type, int x, int y, int z = 0)
         {
-            PolyMesh poly = null;
-
-            switch (type)
+            return type switch
             {
-                case VariousSolidTypes.UvSphere:
-                    poly = UvSphere(x, y);
-                    break;
-                case VariousSolidTypes.UvHemisphere:
-                    poly = UvHemisphere(x, y);
-                    break;
-                case VariousSolidTypes.Box:
-                    poly = Box(x, y, z);
-                    break;
-            }
-
-            return poly;
+                VariousSolidTypes.UvSphere => UvSphere(x, y),
+                VariousSolidTypes.UvHemisphere => UvHemisphere(x, y),
+                VariousSolidTypes.Box => Box(x, y, z),
+            };
         }
 
         public static PolyMesh Box(int x, int y, int z)

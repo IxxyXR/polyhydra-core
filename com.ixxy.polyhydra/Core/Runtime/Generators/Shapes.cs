@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Polyhydra.Core
@@ -16,33 +17,19 @@ namespace Polyhydra.Core
     {
         public static PolyMesh Build(ShapeTypes type, float a=0.5f, float b=0.5f, float c=0.5f)
         {
-            PolyMesh poly = null;
-
-            switch (type)
+            return type switch
             {
-                case ShapeTypes.Polygon:
-                    poly = Polygon(Mathf.FloorToInt(a));
-                    break;
-                case ShapeTypes.Star:
-                    poly = Polygon(Mathf.FloorToInt(a * 2));
-                    poly.VertexStellate(new OpParams(b));
-                    break;
-                case ShapeTypes.C_Shape:
-                    poly = C_Shape(a, b, c);
-                    break;
-                case ShapeTypes.L_Shape:
-                    poly = L_Shape(a, b, c);
-                    break;
-                case ShapeTypes.H_Shape:
-                    poly = H_Shape(a, b, c);
-                    break;
-            }
-
-            return poly;
+                ShapeTypes.Polygon => Polygon(Mathf.FloorToInt(a)),
+                ShapeTypes.Star => Polygon(Mathf.FloorToInt(a * 2), stellate: b),
+                ShapeTypes.C_Shape => C_Shape(a, b, c),
+                ShapeTypes.L_Shape => L_Shape(a, b, c),
+                ShapeTypes.H_Shape => H_Shape(a, b, c),
+                _ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
+            };
         }
 
         public static PolyMesh Polygon(int sides, bool flip = false, float angleOffset = 0,
-            float heightOffset = 0, float radius = 1)
+            float heightOffset = 0, float radius = 1, float stellate = 0)
         {
             var faceIndices = new List<int[]>();
             var vertexPoints = new List<Vector3>();
@@ -73,7 +60,9 @@ namespace Polyhydra.Core
                 faceIndices[0][i] = i;
             }
 
-            return new PolyMesh(vertexPoints, faceIndices);
+            var poly = new PolyMesh(vertexPoints, faceIndices);
+            if (stellate!=0) poly.VertexStellate(new OpParams(stellate));
+            return poly;
         }
 
 
