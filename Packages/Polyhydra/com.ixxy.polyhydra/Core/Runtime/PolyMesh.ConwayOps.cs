@@ -304,30 +304,24 @@ namespace Polyhydra.Core
             {
                 float amount = o.GetValueA(this, vertexIndex);
                 var v = Vertices[vertexIndex];
-                if (IncludeVertex(vertexIndex, o.filter))
+                foreach (var edge in v.Halfedges)
                 {
-                    foreach (var edge in v.Halfedges)
-                    {
-                        Vector3 pos = edge.PointAlongEdge(amount);
-                        vertexPoints.Add(pos);
-                        vertexRoles.Add(Roles.New);
-                        newVerts[pos] = vertexPoints.Count - 1;
+                    Vector3 pos = edge.PointAlongEdge(amount);
+                    vertexPoints.Add(pos);
+                    vertexRoles.Add(Roles.New);
+                    newVerts[pos] = vertexPoints.Count - 1;
 
-                        if (edge.Pair == null)
-                        {
-                            Vector3 pos2 = edge.PointAlongEdge(1 - amount);
-                            vertexPoints.Add(pos2);
-                            vertexRoles.Add(Roles.New);
-                            newVerts[pos2] = vertexPoints.Count - 1;
-                        }
+                    if (edge.Pair == null)
+                    {
+                        Vector3 pos2 = edge.PointAlongEdge(1 - amount);
+                        vertexPoints.Add(pos2);
+                        vertexRoles.Add(Roles.New);
+                        newVerts[pos2] = vertexPoints.Count - 1;
                     }
                 }
-                else
-                {
-                    vertexPoints.Add(v.Position);
-                    vertexRoles.Add(Roles.Ignored);
-                    ignoredVerts[v.Name] = vertexPoints.Count - 1;
-                }
+                vertexPoints.Add(v.Position);
+                vertexRoles.Add(Roles.Ignored);
+                ignoredVerts[v.Name] = vertexPoints.Count - 1;
             }
 
             var faceIndices = new List<IEnumerable<int>>(); // faces as vertex indices
@@ -357,8 +351,8 @@ namespace Polyhydra.Core
 
                     if (IncludeVertex(GetVertID(edge.Vertex), o.filter))
                     {
-                        centerFace.Add(newVerts[pos1]);
-                        centerFace.Add(newVerts[pos2]);
+                        try {centerFace.Add(newVerts[pos1]);} catch (Exception e){}
+                        try {centerFace.Add(newVerts[pos2]);} catch (Exception e){}
                     }
                     else
                     {

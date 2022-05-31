@@ -10,12 +10,12 @@ namespace Polyhydra.Core
     {
         public bool IncludeFace(int faceIndex, Filter filter = null)
         {
-            return filter == null || filter.eval(new FilterParams(this, faceIndex));
+            return filter == null || filter.evalFace(new FilterParams(this, faceIndex));
         }
 
         public bool IncludeVertex(int vertexIndex, Filter filter = null)
         {
-            return filter == null || filter.eval(new FilterParams(this, vertexIndex));
+            return filter == null || filter.evalVertex(new FilterParams(this, vertexIndex));
         }
 
         public PolyMesh AddMirrored(OpParams o, Vector3 axis)
@@ -207,7 +207,7 @@ namespace Polyhydra.Core
 
         public PolyMesh FaceSlide(OpParams o)
         {
-            var poly = Duplicate();
+            var poly = FaceScale(new OpParams(1f)); // Splits faces
             for (var faceIndex = 0; faceIndex < Faces.Count; faceIndex++)
             {
                 var face = poly.Faces[faceIndex];
@@ -308,19 +308,11 @@ namespace Polyhydra.Core
         public PolyMesh VertexOffset(OpParams o)
         {
             var poly = Duplicate();
-            for (var faceIndex = 0; faceIndex < Faces.Count; faceIndex++)
+            for (var vertexIndex = 0; vertexIndex < Vertices.Count; vertexIndex++)
             {
-                var face = poly.Faces[faceIndex];
-                if (!IncludeFace(faceIndex, o.filter)) continue;
-                var faceCentroid = face.Centroid;
-                var faceVerts = face.GetVertices();
-                for (var vertexIndex = 0; vertexIndex < faceVerts.Count; vertexIndex++)
-                {
-                    float scale = o.GetValueA(this, vertexIndex);
-                    var vertexPos = faceVerts[vertexIndex].Position;
-                    var newPos = vertexPos + (vertexPos - faceCentroid) * scale;
-                    faceVerts[vertexIndex].Position = newPos;
-                }
+                if (!IncludeVertex(vertexIndex, o.filter)) continue;
+                var offset = Vertices[vertexIndex].Normal * o.GetValueA(this, vertexIndex);
+                poly.Vertices[vertexIndex].Position += offset;
             }
 
             return poly;
@@ -476,6 +468,7 @@ namespace Polyhydra.Core
             var allFaceIndices = new List<List<int>>();
             var faceRoles = new List<Roles>();
             var vertexRoles = new List<Roles>();
+            var faceTags = new List<HashSet<string>>();
 
             int vertexCount = 0;
 
@@ -499,12 +492,13 @@ namespace Polyhydra.Core
                 if (newFaceIndices.Count > 2)
                 {
                     allFaceIndices.Add(newFaceIndices);
+                    faceTags.Add(FaceTags[i]);
                 }
             }
 
             faceRoles.AddRange(Enumerable.Repeat(Roles.Existing, allFaceIndices.Count));
             vertexRoles.AddRange(Enumerable.Repeat(Roles.Existing, vertexCount));
-            return new PolyMesh(Vertices.Select(x => x.Position), allFaceIndices, faceRoles, vertexRoles, FaceTags);
+            return new PolyMesh(Vertices.Select(x => x.Position), allFaceIndices, faceRoles, vertexRoles, faceTags);
         }
 
         public PolyMesh Collapse(bool invertLogic, Filter filter = null)
@@ -540,9 +534,12 @@ namespace Polyhydra.Core
             return _FaceRemove(new OpParams { filter = filter}, invertLogic);
         }
         
-        public PolyMesh FaceRemove(bool invertLogic, List<int> faceIndices)
+        public PolyMesh FaceRemove(bool invertLogic, List<int> indices)
         {
-            var filter = new Filter(x => faceIndices.Contains(x.index));
+            var filter = new Filter(
+                x => indices.Contains(x.index),
+                x => indices.Contains(x.index)
+            );
             return _FaceRemove(new OpParams(filter), invertLogic);
         }
 

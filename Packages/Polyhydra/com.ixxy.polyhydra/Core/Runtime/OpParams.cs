@@ -92,5 +92,12 @@ namespace Polyhydra.Core
             funcB = b;
             this.filter = filter;
         }
+
+        public OpParams(OpFunc a, OpFunc b, Filter filter=null)
+        {
+            funcA = a;
+            funcB = b;
+            this.filter = filter;
+        }
     }
 }

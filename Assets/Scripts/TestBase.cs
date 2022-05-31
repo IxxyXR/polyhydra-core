@@ -1,6 +1,8 @@
+using System;
 using Polyhydra.Core;
 using UnityEngine;
 using UnityEditor;
+using Random = System.Random;
 
 [ExecuteInEditMode]
 [RequireComponent(typeof(MeshFilter), typeof(MeshRenderer))]
@@ -11,6 +13,8 @@ public class TestBase : MonoBehaviour
     public float Op1Parameter1 = .3f;
     public float Op1Parameter2 = 0;
     public int Op1Iterations = 1;
+    public bool Op1Parameter1Randomize = false;
+    public bool Op1Parameter2Randomize = false;
     public FilterTypes Op1FilterType;
     public float Op1FilterParam;
     public bool Op1FilterFlip;
@@ -29,10 +33,20 @@ public class TestBase : MonoBehaviour
 
     public void Build(ColorMethods colorMethod = ColorMethods.ByRole)
     {
+        var _random = new Random();
         for (int i1 = 0; i1 < Op1Iterations; i1++)
         {
             var op1Filter = Filter.GetFilter(Op1FilterType, Op1FilterParam, Mathf.FloorToInt(Op1FilterParam), Op1FilterFlip);
-            poly = poly.AppyOperation(op1, new OpParams(Op1Parameter1, Op1Parameter2, op1Filter));
+
+            var op1Func1 = Op1Parameter1Randomize ? 
+                new OpFunc(_ => Mathf.Lerp(0, Op1Parameter1, (float)_random.NextDouble())) : 
+                new OpFunc(Op1Parameter1);
+            
+            var op1Func2 = Op1Parameter2Randomize ? 
+                new OpFunc(_ => Mathf.Lerp(0, Op1Parameter1, (float)_random.NextDouble())) : 
+                new OpFunc(Op1Parameter2);
+            
+            poly = poly.AppyOperation(op1, new OpParams(op1Func1, op1Func2, op1Filter));
         }
         if (MergeThreshold > 0) poly.MergeCoplanarFaces(MergeThreshold);
         for (int i2 = 0; i2 < Op2Iterations; i2++)

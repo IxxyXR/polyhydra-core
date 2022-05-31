@@ -313,7 +313,7 @@ namespace Polyhydra.Core
                     else if (op==Operation.Truncate)
                     {
                         int vertexEdges = Mathf.FloorToInt(tokens[i].Item2);
-                        filter = Filter.EdgesPerVertex(vertexEdges);
+                        filter = Filter.NumberOfSides(vertexEdges);
                     }
                 }
                 
@@ -543,6 +543,7 @@ namespace Polyhydra.Core
                         float.Parse(faceString[sides + 3])
                     );
                     var tags = new HashSet<string>();
+                    Debug.Log($"13 = {faceColor.r:x}");
                     tags.Add($"#{faceColor.r:X2}{faceColor.g:X2}{faceColor.b:X2}");
                     FaceTags.Add(tags);
                 }
