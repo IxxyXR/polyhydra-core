@@ -543,8 +543,7 @@ namespace Polyhydra.Core
                         float.Parse(faceString[sides + 3])
                     );
                     var tags = new HashSet<string>();
-                    Debug.Log($"13 = {faceColor.r:x}");
-                    tags.Add($"#{faceColor.r:X2}{faceColor.g:X2}{faceColor.b:X2}");
+                    tags.Add($"#{(int)faceColor.r:X2}{(int)faceColor.g:X2}{(int)faceColor.b:X2}");
                     FaceTags.Add(tags);
                 }
 
