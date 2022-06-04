@@ -73,3 +73,4 @@ crashlytics-build.properties
 .idea/*
 Recordings/*
 
+.DS_Store
