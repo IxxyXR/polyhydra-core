@@ -1577,7 +1577,16 @@ namespace Polyhydra.Core
                     polyMesh.Wave(Vector3.up, p.OriginalParamA, p.OriginalParamB);
                     break;
                 case Operation.Canonicalize:
-                    polyMesh = polyMesh.Canonicalize(Mathf.FloorToInt(p.OriginalParamA));
+                    int intParam = Mathf.FloorToInt(p.OriginalParamA);
+                    // The planarize phase fails in some cases so fall back to just the first phase
+                    try
+                    {
+                        polyMesh = polyMesh.Canonicalize(intParam, intParam);
+                    }
+                    catch (Exception e)
+                    {
+                        polyMesh = polyMesh.Canonicalize(intParam, 0);
+                    }
                     break;
                 case Operation.PerlinNoiseX:
                     polyMesh.PerlinNoise(Vector3.left, p.OriginalParamA, p.OriginalParamB, p.OriginalParamB);
