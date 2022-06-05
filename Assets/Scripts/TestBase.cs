@@ -46,13 +46,13 @@ public class TestBase : MonoBehaviour
                 new OpFunc(_ => Mathf.Lerp(0, Op1Parameter1, (float)_random.NextDouble())) : 
                 new OpFunc(Op1Parameter2);
             
-            poly = poly.AppyOperation(op1, new OpParams(op1Func1, op1Func2, op1Filter));
+            poly = poly.AppyOperation(op1, new OpParams(op1Func1, op1Func2, filter: op1Filter));
         }
         if (MergeThreshold > 0) poly.MergeCoplanarFaces(MergeThreshold);
         for (int i2 = 0; i2 < Op2Iterations; i2++)
         {   
             var op2Filter = Filter.GetFilter(Op2FilterType, Op2FilterParam, Mathf.FloorToInt(Op2FilterParam), Op2FilterFlip);
-            poly = poly.AppyOperation(op2, new OpParams(Op2Parameter1, Op2Parameter2, op2Filter));
+            poly = poly.AppyOperation(op2, new OpParams(Op2Parameter1, Op2Parameter2, filter: op2Filter));
         }
         if (CanonicalizeIterations > 0) poly = poly.Canonicalize(CanonicalizeIterations, CanonicalizeIterations);
         if (FaceScale<1f) poly = poly.FaceScale(new OpParams(FaceScale));
