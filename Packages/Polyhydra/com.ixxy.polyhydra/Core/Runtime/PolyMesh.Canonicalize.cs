@@ -276,6 +276,11 @@ namespace Polyhydra.Core
             return canonicalized;
         }
 
+        public PolyMesh Canonicalize(int iterations)
+        {
+            return Canonicalize(iterations, iterations);
+        }
+
         /**
 		 * Canonicalizes this polyhedron until the change in position does not
 		 * exceed the given threshold. That is, the algorithm terminates when no vertex
@@ -297,6 +302,11 @@ namespace Polyhydra.Core
             canonicalized.FaceRoles = previousFaceRoles;
             canonicalized.VertexRoles = previousVertexRoles;
             return canonicalized;
+        }
+
+        public PolyMesh Canonicalize(double threshold)
+        {
+            return Canonicalize(threshold, threshold);
         }
 
     }

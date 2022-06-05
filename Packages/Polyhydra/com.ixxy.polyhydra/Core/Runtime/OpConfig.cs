@@ -727,7 +727,8 @@ namespace Polyhydra.Core
                     PolyMesh.Operation.Canonicalize,
                     new OpConfig
                     {
-                        usesAmount = false,
+                        amountDefault = 3,
+                        amountMin = 1, amountSafeMin = 1, amountSafeMax = 16, amountMax = 30,
                     }
                 },
                 {
