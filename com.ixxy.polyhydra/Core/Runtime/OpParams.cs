@@ -76,14 +76,22 @@ namespace Polyhydra.Core
             this.filter = filter;
         }
 
-        public OpParams(float a, OpFunc b, Filter filter=null)
+        public OpParams(OpFunc a, float b, string s=null, Filter filter=null)
+        {
+            _OriginalParamB = b;
+            funcA = a;
+            funcB = new OpFunc(b);
+            this.filter = filter;
+        }
+
+        public OpParams(float a, OpFunc b, string s=null, Filter filter=null)
         {
             _OriginalParamA = a;
             funcA = new OpFunc(a);
             funcB = b;
             this.filter = filter;
         }
-
+        
         public OpParams(OpFunc a, OpFunc b, string s=null, Filter filter=null)
         {
             funcA = a;
@@ -91,5 +99,6 @@ namespace Polyhydra.Core
             stringParam = s;
             this.filter = filter;
         }
+        
     }
 }
