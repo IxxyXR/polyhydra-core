@@ -172,14 +172,29 @@ namespace Polyhydra.Core
 		 */
         public static void Adjust(PolyMesh poly, int numIterations)
         {
-            var dual = poly.Dual();
-
             for (int i = 0; i < numIterations; i++)
             {
-                var newDualPositions = ReciprocalCenters(poly);
-                dual.SetVertexPositions(newDualPositions);
-                var newPositions = ReciprocalCenters(dual);
-                poly.SetVertexPositions(newPositions);
+                for (var j = 0; j < poly.Vertices.Count; j++)
+                {
+                    var vert = poly.Vertices[j];
+                    var edges = vert.Halfedges;
+                    // I got quite interesting results skipping edges
+                    // But it was more generally useful to not do so
+                    // Might investigate further at some point.
+                    // nb Checking for edge boundaries is probably better than just doing >=3 
+                    // if (edges.Count >= 3)
+                    // {
+                        var adjoiningFaces = edges.Select(e => e.Face);
+                        var sum = Vector3.zero;
+                        foreach (var face in adjoiningFaces)
+                        {
+                            sum += face.Centroid;
+                        }
+                        var newCenter = sum / edges.Count();
+                        newCenter *= 1.0f / Mathf.Pow(newCenter.magnitude, 2);
+                        poly.Vertices[j].Position = newCenter;
+                    // }
+                }
             }
         }
 
@@ -276,11 +291,6 @@ namespace Polyhydra.Core
             return canonicalized;
         }
 
-        public PolyMesh Canonicalize(int iterations)
-        {
-            return Canonicalize(iterations, iterations);
-        }
-
         /**
 		 * Canonicalizes this polyhedron until the change in position does not
 		 * exceed the given threshold. That is, the algorithm terminates when no vertex
@@ -303,11 +313,5 @@ namespace Polyhydra.Core
             canonicalized.VertexRoles = previousVertexRoles;
             return canonicalized;
         }
-
-        public PolyMesh Canonicalize(double threshold)
-        {
-            return Canonicalize(threshold, threshold);
-        }
-
     }
 }
