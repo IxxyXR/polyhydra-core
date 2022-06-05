@@ -338,7 +338,7 @@ public static class RadialSolids
     public static PolyMesh ElongatedCupola(int sides, float height, float capHeight)
     {
         PolyMesh poly = Cupola(sides, capHeight);
-        poly = poly.Loft(new OpParams(0, height, Filter.FacingDirection(Vector3.down)));
+        poly = poly.Loft(new OpParams(0, height, filter: Filter.FacingDirection(Vector3.down)));
         poly.Transform(Vector3.up * height);
         return poly;
     }
