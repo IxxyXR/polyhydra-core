@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using GK;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 namespace Polyhydra.Core
 {
@@ -3298,6 +3299,75 @@ namespace Polyhydra.Core
             {
                 if (IncludeFace(i, o.filter)) FaceTags[i].Clear();
             }
+        }
+
+        public PolyMesh Sweep(OpParams o)
+        {
+            return Sweep(Mathf.FloorToInt(o.OriginalParamA), Mathf.FloorToInt(o.OriginalParamB));
+        }
+
+        public PolyMesh Sweep(int pathIndex, int shapeIndex)
+        {
+            var path = Faces[pathIndex].Get2DVertices();
+            var face = Faces[shapeIndex];
+            var centroid = face.Centroid;
+            var shape = face.Get2DVertices();
+            return Sweep(path, shape);
+            
+        }
+
+        public PolyMesh Sweep(List<Vector2> path, List<Vector2> shape)
+        {
+            var faceIndices = new List<int[]>();
+            var vertexPoints = new List<Vector3>();
+            var faceRoles = new List<Roles>();
+            var vertexRoles = new List<Roles>();
+
+            Vector2 prevVector = path[0] - path[path.Count - 1];
+            
+            Vector3 rotate(Vector3 point, Vector3 v1, Vector3 v2)
+            {
+                float angle = Vector3.Angle(v1, v2);
+                point = Quaternion.Euler(0, -angle, 0) * point;
+                return point;
+            }
+            
+            for (var i = 1; i < path.Count; i++)
+            {
+                Vector2 pathVector = path[i - 1] - path[i];
+                Vector2 pointVector = (pathVector + prevVector) / 2f;
+                Vector2 pathPoint = path[i - 1];
+                vertexPoints.AddRange(shape.Select(v=>rotate(v, pathVector, prevVector) + new Vector3(pathPoint.x, 0, pathPoint.y)));
+                prevVector = pathVector;
+            }
+            
+            int checker = 0;
+            for (var pathStep = 0; pathStep < path.Count - 2; pathStep++)
+            {
+                for (var shapeStep = 0; shapeStep < shape.Count; shapeStep++)
+                {
+                    int initialVertexIndex = pathStep * shape.Count + shapeStep;
+                    int rowCount = shape.Count;
+                    int nextRowIndex = shapeStep + 1 < shape.Count ? 1 : -(shape.Count-1);
+                    var newFace = new[]
+                    {
+                        initialVertexIndex,
+                        initialVertexIndex + nextRowIndex,
+                        initialVertexIndex + rowCount + nextRowIndex,
+                        initialVertexIndex + rowCount,
+                    };
+                    var parity = pathStep + shapeStep + checker % 2;
+                    faceIndices.Add(newFace);
+                    //Debug.Log($"loop {pathStep}: {newFace[0]}={vertexPoints[newFace[0]]} {newFace[1]}={vertexPoints[newFace[1]]} {newFace[2]}={vertexPoints[newFace[2]]} {newFace[3]}={vertexPoints[newFace[3]]}");
+                    faceRoles.Add(parity == 0 ? Roles.New : Roles.NewAlt);
+                    vertexRoles.AddRange(Enumerable.Repeat(Roles.New, 4));
+                }
+                checker = (checker == 0) ? 1 : 0;
+            }
+
+            var poly = new PolyMesh(vertexPoints, faceIndices, faceRoles, vertexRoles);
+            poly.InitTags();
+            return poly;
         }
     }
 }
