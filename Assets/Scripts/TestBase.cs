@@ -37,16 +37,34 @@ public class TestBase : MonoBehaviour
         for (int i1 = 0; i1 < Op1Iterations; i1++)
         {
             var op1Filter = Filter.GetFilter(Op1FilterType, Op1FilterParam, Mathf.FloorToInt(Op1FilterParam), Op1FilterFlip);
+            
+            var op1Func1 = new OpFunc(_ => Mathf.Lerp(0, Op1Parameter1, (float)_random.NextDouble()));
+            var op1Func2 = new OpFunc(_ => Mathf.Lerp(0, Op1Parameter2, (float)_random.NextDouble()));
 
-            var op1Func1 = Op1Parameter1Randomize ? 
-                new OpFunc(_ => Mathf.Lerp(0, Op1Parameter1, (float)_random.NextDouble())) : 
-                new OpFunc(Op1Parameter1);
-            
-            var op1Func2 = Op1Parameter2Randomize ? 
-                new OpFunc(_ => Mathf.Lerp(0, Op1Parameter1, (float)_random.NextDouble())) : 
-                new OpFunc(Op1Parameter2);
-            
-            poly = poly.AppyOperation(op1, new OpParams(op1Func1, op1Func2, filter: op1Filter));
+            OpParams op1Params = (Op1Parameter1Randomize, Op1Parameter2Randomize) switch
+            {
+                (false, false) => new OpParams(
+                    Op1Parameter1,
+                    Op1Parameter2,
+                    filter: op1Filter
+                ),
+                (true, false) => new OpParams(
+                    op1Func1,
+                    Op1Parameter2,
+                    filter: op1Filter
+                ),
+                (false, true) => new OpParams(
+                    Op1Parameter1,
+                    op1Func2,
+                    filter: op1Filter
+                ),
+                (true, true) => new OpParams(
+                    op1Func1,
+                    op1Func2,
+                    filter: op1Filter
+                ),
+            };
+            poly = poly.AppyOperation(op1, op1Params);
         }
         if (MergeThreshold > 0) poly.MergeCoplanarFaces(MergeThreshold);
         for (int i2 = 0; i2 < Op2Iterations; i2++)

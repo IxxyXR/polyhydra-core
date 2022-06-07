@@ -326,6 +326,17 @@ namespace Polyhydra.Core
                     }
                 },
                 {
+                    PolyMesh.Operation.Sweep,
+                    new OpConfig
+                    {
+                	    amountDefault = 0,
+                	    amountMin=0, amountMax=100, amountSafeMin=0, amountSafeMax=100,
+                	    usesAmount2 = true,
+                        amount2Default = 1,
+                        amount2Min=0, amount2Max=100, amount2SafeMin=0, amount2SafeMax=100,
+                    }
+                },
+                {
                     PolyMesh.Operation.Volute,
                     new OpConfig
                     {

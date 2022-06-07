@@ -1303,6 +1303,10 @@ namespace Polyhydra.Core
             AddTag = 90,
             RemoveTag = 91,
             ClearTags = 92,
+            
+            // Generator Ops
+            
+            Sweep = 95
         }
 
         public PolyMesh AppyOperation(Operation op, OpParams p)
@@ -1606,6 +1610,10 @@ namespace Polyhydra.Core
                     break;
                 case Operation.ClearTags:
                     polyMesh.ClearTags(p);
+                    break;
+                
+                case Operation.Sweep:
+                    polyMesh = polyMesh.Sweep(p);
                     break;
                 
                 default:
