@@ -9,6 +9,7 @@ namespace Polyhydra.Core
         UvSphere,
         UvHemisphere,
         Box,
+        Stairs,
     }
 
     public static class VariousSolids
@@ -20,6 +21,7 @@ namespace Polyhydra.Core
                 VariousSolidTypes.UvSphere => UvSphere(x, y),
                 VariousSolidTypes.UvHemisphere => UvHemisphere(x, y),
                 VariousSolidTypes.Box => Box(x, y, z),
+                VariousSolidTypes.Stairs => Stairs(x, y, z)
             };
         }
 
@@ -113,6 +115,26 @@ namespace Polyhydra.Core
             var poly = UvSphere(verticalLines, horizontalLines, 0.5f);
             poly = poly.FillHoles();
             return poly;
+        }
+
+        public static PolyMesh Stairs(int steps, int width, float height, bool splitAlongWidth=false)
+        {
+            PolyMesh poly;
+            OpFunc func;
+            if (splitAlongWidth)
+            {
+                poly = Grids.Build(GridEnums.GridTypes.K_4_4_4_4, GridEnums.GridShapes.Plane, width, steps);
+                func = new(
+                    x => x.index / width / (1f / height) + height
+                );
+            }
+            else
+            {
+                poly = Grids.Build(GridEnums.GridTypes.K_4_4_4_4, GridEnums.GridShapes.Plane, 1, steps);
+                poly.Transform(Vector3.zero, scale: new Vector3(width, 1, 1));
+                func = new OpFunc(x => x.index / (1f / height) + height);
+            }
+            return poly.Extrude(new OpParams(func));
         }
     }
 }
