@@ -2806,7 +2806,7 @@ namespace Polyhydra.Core
             return new PolyMesh(vertexPoints, faceIndices, faceRoles, vertexRoles, newFaceTags);
         }
 
-        public PolyMesh SplitFaces(OpParams o, int vertexOffset=0)
+        public PolyMesh SplitFaces(OpParams o)
         {
             var newFaceTags = new List<HashSet<string>>();
             // vertices and faces to vertices
@@ -2827,6 +2827,7 @@ namespace Polyhydra.Core
             for (int faceIndex = 0; faceIndex < Faces.Count; faceIndex++)
             {
                 var face = Faces[faceIndex];
+                int vertexOffset = Mathf.FloorToInt(Mathf.Lerp(0, face.Sides, o.GetValueA(this, faceIndex) % 0.5f));
                 var edges = face.GetHalfedges();
                 int oppositeVertexIndex = (vertexOffset + (face.Sides / 2) % face.Sides);
                 var prevFaceTagSet = FaceTags[faceIndex];
