@@ -396,11 +396,23 @@ namespace Polyhydra.Core
                     }
                 },
                 {
+                    PolyMesh.Operation.Subdiv,
+                    new OpConfig
+                    {
+                        amountDefault = 1,
+                        amountMin = -1, amountMax = 2, amountSafeMin = 0, amountSafeMax = 1,
+                        matrix = new[,] { { 1, 1, 1 }, { 0, 4, 0 }, { 0, 2, 0 } }
+                    }
+                },
+                
+                
+                {
                     PolyMesh.Operation.SplitFaces,
                     new OpConfig
                     {
                         usesFilter = true,
-                        usesAmount = false,
+                        amountDefault = 0,
+                        amountMin = 0, amountMax = 1, amountSafeMin = 0, amountSafeMax = 1,
                     }
                 },
                 {
@@ -738,8 +750,11 @@ namespace Polyhydra.Core
                     PolyMesh.Operation.Canonicalize,
                     new OpConfig
                     {
-                        amountDefault = 3,
-                        amountMin = 1, amountSafeMin = 1, amountSafeMax = 16, amountMax = 30,
+                        amountDefault = .1f,
+                        amountMin = 0, amountSafeMin = 0, amountSafeMax = 500, amountMax = 500,
+                        usesAmount2 = true,
+                        amount2Default = .1f,
+                        amount2Min = 0, amount2SafeMin = 0, amount2SafeMax = 500, amount2Max = 500,
                     }
                 },
                 {

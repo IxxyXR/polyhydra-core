@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Xml.Schema;
 using UnityEngine;
 
 namespace Polyhydra.Core
@@ -542,12 +543,34 @@ namespace Polyhydra.Core
             return new PolyMesh(newVertexPoints, faceIndices, faceRoles, vertexRoles, newFaceTags);
         }
 
-        public PolyMesh Ortho(OpParams o)
+        public PolyMesh Ortho(OpParams o, bool catmullClarke = false)
         {
+
+            Vector3 calcEdgePos(Halfedge e)
+            {
+                Vector3 pos;
+                float count = 0;
+                        
+                pos = e.Midpoint;
+                count++;
+                        
+                pos += e.Face.Centroid;
+                count++;
+                        
+                if (e.Pair != null)
+                {
+                    pos += e.Pair.Face.Centroid;
+                    count++;
+                }
+                        
+                pos /= count;
+                return pos;
+            }
+            
             var newFaceTags = new List<HashSet<string>>();
 
             var existingVerts = new Dictionary<string, int>();
-            var newVerts = new Dictionary<string, int>();
+            var newEdgeVertsLookup = new Dictionary<string, int>();
             var vertexPoints = new List<Vector3>();
             var faceIndices = new List<IEnumerable<int>>();
 
@@ -557,10 +580,24 @@ namespace Polyhydra.Core
             // Loop through old faces
             for (int faceIndex = 0; faceIndex < Faces.Count; faceIndex++)
             {
-                float offset = o.GetValueA(this, faceIndex);
                 var prevFaceTagSet = FaceTags[faceIndex];
                 var oldFace = Faces[faceIndex];
-                vertexPoints.Add(oldFace.Centroid + oldFace.Normal * offset);
+                
+                float param1 = o.GetValueA(this, faceIndex);
+                
+                Vector3 facePos;
+                if (catmullClarke)
+                {
+                    // Catmull-Clarke style
+                    facePos = oldFace.Centroid;
+                }
+                else
+                {
+                    // Explicit offset
+                    facePos = oldFace.Centroid + oldFace.Normal * param1;
+                }
+                
+                vertexPoints.Add(facePos);
                 vertexRoles.Add(Roles.New);
                 int centroidIndex = vertexPoints.Count - 1;
 
@@ -568,8 +605,8 @@ namespace Polyhydra.Core
                 for (int j = 0; j < oldFace.GetHalfedges().Count; j++)
                 {
                     int seedVertexIndex;
-                    int midpointIndex;
-                    int prevMidpointIndex;
+                    int edgeIndex;
+                    int prevEdgeIndex;
 
                     string keyName;
 
@@ -584,47 +621,98 @@ namespace Polyhydra.Core
                     }
                     else
                     {
-                        vertexPoints.Add(seedVertex.Position - seedVertex.Normal * offset);
+                        Vector3 seedVertexPos;
+                        if (catmullClarke)
+                        {
+                            // Catmull-Clarke style
+                            
+                            var Q = Vector3.zero;
+                            var sharedFaces = seedVertex.GetVertexFaces();
+                            
+                            foreach (var face in sharedFaces)
+                            {
+                                Q += face.Centroid;
+                            }
+                            Q /= (float)sharedFaces.Count;
+                            
+                            var R = Vector3.zero;
+                            var sharedEdges = seedVertex.Halfedges;
+                            foreach (var edge in sharedEdges)
+                            {
+                                R += edge.Midpoint;
+                            }
+                            R /= sharedEdges.Count;
+                            
+                            float n = sharedFaces.Count;
+                            
+                            seedVertexPos = (Q + (R * 2) + (seedVertex.Position * (n - 3)))/n;
+                            seedVertexPos = Vector3.LerpUnclamped(seedVertex.Position, seedVertexPos, param1);
+                        }
+                        else
+                        {
+                            // Explicit offset
+                            seedVertexPos = seedVertex.Position - seedVertex.Normal * param1;
+                        }
+                        vertexPoints.Add(seedVertexPos);
                         vertexRoles.Add(Roles.Existing);
                         seedVertexIndex = vertexPoints.Count - 1;
                         existingVerts[keyName] = seedVertexIndex;
                     }
 
-
-                    var midpointVertex = edges[j].Midpoint;
-                    keyName = edges[j].PairedName.ToString();
-                    if (newVerts.ContainsKey(keyName))
+                    Vector3 edgePos;
+                    
+                    if (catmullClarke)
                     {
-                        midpointIndex = newVerts[keyName];
+                        edgePos = calcEdgePos(edges[j]);
+                        edgePos = Vector3.LerpUnclamped(edges[j].Midpoint, edgePos, param1);
                     }
                     else
                     {
-                        vertexPoints.Add(midpointVertex);
-                        vertexRoles.Add(Roles.NewAlt);
-                        midpointIndex = vertexPoints.Count - 1;
-                        newVerts[keyName] = midpointIndex;
+                        // Maintain a fixed point
+                        edgePos = edges[j].Midpoint;
                     }
 
+                    keyName = edges[j].PairedName.ToString();
+                    if (newEdgeVertsLookup.ContainsKey(keyName))
+                    {
+                        edgeIndex = newEdgeVertsLookup[keyName];
+                    }
+                    else
+                    {
+                        vertexPoints.Add(edgePos);
+                        vertexRoles.Add(Roles.NewAlt);
+                        edgeIndex = vertexPoints.Count - 1;
+                        newEdgeVertsLookup[keyName] = edgeIndex;
+                    }
 
-                    var prevMidpointVertex = edges[j].Next.Midpoint;
+                    Vector3 prevMidpointVertex;
+                    if (catmullClarke)
+                    {
+                        prevMidpointVertex = calcEdgePos(edges[j].Next);
+                        prevMidpointVertex = Vector3.LerpUnclamped(edges[j].Next.Midpoint, prevMidpointVertex, param1);
+                    }
+                    else
+                    {
+                        prevMidpointVertex = edges[j].Next.Midpoint;
+                    }
                     keyName = edges[j].Next.PairedName.ToString();
 
-                    if (newVerts.ContainsKey(keyName))
+                    if (newEdgeVertsLookup.ContainsKey(keyName))
                     {
-                        prevMidpointIndex = newVerts[keyName];
+                        prevEdgeIndex = newEdgeVertsLookup[keyName];
                     }
                     else
                     {
                         vertexPoints.Add(prevMidpointVertex);
                         vertexRoles.Add(Roles.NewAlt);
-                        prevMidpointIndex = vertexPoints.Count - 1;
-                        newVerts[keyName] = prevMidpointIndex;
+                        prevEdgeIndex = vertexPoints.Count - 1;
+                        newEdgeVertsLookup[keyName] = prevEdgeIndex;
                     }
 
                     thisFaceIndices.Add(centroidIndex);
-                    thisFaceIndices.Add(midpointIndex);
+                    thisFaceIndices.Add(edgeIndex);
                     thisFaceIndices.Add(seedVertexIndex);
-                    thisFaceIndices.Add(prevMidpointIndex);
+                    thisFaceIndices.Add(prevEdgeIndex);
 
                     faceIndices.Add(thisFaceIndices);
                     // Alternate roles but only for faces with an even number of sides

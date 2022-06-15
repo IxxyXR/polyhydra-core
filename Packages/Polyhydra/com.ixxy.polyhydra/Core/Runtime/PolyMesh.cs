@@ -62,10 +62,9 @@ namespace Polyhydra.Core
             new Color(1.0f, 0.5f, 1.0f),
         };
         
-        public static int ActualMod(int x, int m) // Fuck C# deciding that mod isn't actually mod
-        {
-            return (x % m + m) % m;
-        }
+        // Mod functions that treat negative values sanely
+        public static int ActualMod(int x, int m) => (x % m + m) % m;
+        public static float ActualMod(float x, float m) => (x % m + m) % m;
 
         public float ScalingFactor = 1f;
         public List<Roles> FaceRoles;
@@ -579,7 +578,7 @@ namespace Polyhydra.Core
                 if (vertex.Halfedge != null)
                 {
                     Vertices.Add(vertex);
-                    VertexRoles.Add(origVertexRoles[vertIndex]);
+                    VertexRoles.Add(vertIndex < origVertexRoles.Count ? origVertexRoles[vertIndex]: Roles.Ignored);
                 }
             }
 
@@ -1219,7 +1218,8 @@ namespace Polyhydra.Core
             Squall = 31,
             JoinSquall = 32,
             Cross = 33,
-            
+            Subdiv = 96,
+
             // Alternating Operators
             
             SplitFaces = 34,
@@ -1306,7 +1306,7 @@ namespace Polyhydra.Core
             
             // Generator Ops
             
-            Sweep = 95
+            Sweep = 95,
         }
 
         public PolyMesh AppyOperation(Operation op, OpParams p)
@@ -1349,6 +1349,9 @@ namespace Polyhydra.Core
                     break;
                 case Operation.Ortho:
                     polyMesh = polyMesh.Ortho(p);
+                    break;
+                case Operation.Subdiv:
+                    polyMesh = polyMesh.Ortho(p, true);
                     break;
                 case Operation.Meta:
                     polyMesh = polyMesh.Meta(p);
@@ -1581,16 +1584,13 @@ namespace Polyhydra.Core
                     polyMesh.Wave(Vector3.up, p.OriginalParamA, p.OriginalParamB);
                     break;
                 case Operation.Canonicalize:
-                    int intParam = Mathf.FloorToInt(p.OriginalParamA);
-                    // The planarize phase fails in some cases so fall back to just the first phase
-                    try
-                    {
-                        polyMesh = polyMesh.Canonicalize(intParam, intParam);
-                    }
-                    catch (Exception e)
-                    {
-                        polyMesh = polyMesh.Canonicalize(intParam, 0);
-                    }
+                    polyMesh = polyMesh.Canonicalize(
+                        // TODO - iterations or tolerance?
+                        // Mathf.FloorToInt(p.OriginalParamA),
+                        // Mathf.FloorToInt(p.OriginalParamB)
+                        p.OriginalParamA,
+                        p.OriginalParamB
+                    );
                     break;
                 case Operation.PerlinNoiseX:
                     polyMesh.PerlinNoise(Vector3.left, p.OriginalParamA, p.OriginalParamB, p.OriginalParamB);
