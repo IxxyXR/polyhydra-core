@@ -170,30 +170,47 @@ namespace Polyhydra.Core
 		 * @param poly          The polyhedron whose vertices to adjust.
 		 * @param numIterations The number of iterations to adjust for.
 		 */
-        public static void Adjust(PolyMesh poly, int numIterations)
+        public static void Adjust(PolyMesh poly, int numIterations, bool OldMethod = false)
         {
+            PolyMesh dual = new PolyMesh();
+            if (OldMethod)
+            {
+                dual = poly.Dual();
+            }
+
             for (int i = 0; i < numIterations; i++)
             {
-                for (var j = 0; j < poly.Vertices.Count; j++)
+                if (OldMethod)
                 {
-                    var vert = poly.Vertices[j];
-                    var edges = vert.Halfedges;
-                    // I got quite interesting results skipping edges
-                    // But it was more generally useful to not do so
-                    // Might investigate further at some point.
-                    // nb Checking for edge boundaries is probably better than just doing >=3 
-                    // if (edges.Count >= 3)
-                    // {
+                    var newDualPositions = ReciprocalCenters(poly);
+                    dual.SetVertexPositions(newDualPositions);
+                    var newPositions = ReciprocalCenters(dual);
+                    poly.SetVertexPositions(newPositions);
+                }
+                else
+                {
+                    for (var j = 0; j < poly.Vertices.Count; j++)
+                    {
+                        var vert = poly.Vertices[j];
+                        var edges = vert.Halfedges;
+                        // I got quite interesting results skipping edges
+                        // But it was more generally useful to not do so
+                        // Might investigate further at some point.
+                        // nb Checking for edge boundaries is probably better than just doing >=3 
+                        // if (edges.Count >= 3)
+                        // {
                         var adjoiningFaces = edges.Select(e => e.Face);
                         var sum = Vector3.zero;
                         foreach (var face in adjoiningFaces)
                         {
                             sum += face.Centroid;
                         }
-                        var newCenter = sum / edges.Count();
+
+                        var newCenter = sum / edges.Count;
                         newCenter *= 1.0f / Mathf.Pow(newCenter.magnitude, 2);
                         poly.Vertices[j].Position = newCenter;
-                    // }
+                        // }
+                    }
                 }
             }
         }
