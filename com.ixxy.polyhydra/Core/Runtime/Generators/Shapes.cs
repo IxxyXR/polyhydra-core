@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace Polyhydra.Core
@@ -70,19 +71,16 @@ namespace Polyhydra.Core
         {
             var verts = new List<Vector3>
             {
-                new Vector3(0, 0, 0),
-                new Vector3(b, 0, 0),
-                new Vector3(b, 0, -c),
-                new Vector3(-c, 0, -c),
-                new Vector3(-c, 0, a),
-                new Vector3(0, 0, a),
+                new (0, 0, 0),
+                new (b, 0, 0),
+                new (b, 0, -c),
+                new (-c, 0, -c),
+                new (-c, 0, a),
+                new (0, 0, a),
             };
 
-            var faces = new List<List<int>>
-            {
-                new List<int> { 0, 1, 2, 3, 4, 5 }
-            };
-
+            var faces = new List<List<int>>();
+            faces.Add(Enumerable.Range(0, verts.Count).ToList());
             return new PolyMesh(verts, faces);
         }
 
@@ -90,21 +88,18 @@ namespace Polyhydra.Core
         {
             var verts = new List<Vector3>
             {
-                new Vector3(a, 0, -b),
-                new Vector3(a, 0, -(b+c)),
-                new Vector3(-c, 0, -(b+c)),
-                new Vector3(-c, 0, b+c),
-                new Vector3(a, 0, b+c),
-                new Vector3(a, 0, b),
-                new Vector3(0, 0, b),
-                new Vector3(0, 0, -b),
+                new (a, 0, -b),
+                new (a, 0, -(b+c)),
+                new (-c, 0, -(b+c)),
+                new (-c, 0, b+c),
+                new (a, 0, b+c),
+                new (a, 0, b),
+                new (0, 0, b),
+                new (0, 0, -b),
             };
 
-            var faces = new List<List<int>>
-            {
-                new List<int> { 0, 1, 2, 3, 4, 5, 6, 7 }
-            };
-
+            var faces = new List<List<int>>();
+            faces.Add(Enumerable.Range(0, verts.Count).ToList());
             return new PolyMesh(verts, faces);
         }
 
@@ -112,26 +107,33 @@ namespace Polyhydra.Core
         {
             var verts = new List<Vector3>
             {
-                new Vector3(a+b, 0, b+c),
-                new Vector3(a, 0, b+c),
-                new Vector3(a, 0, -(b+c)),
-                new Vector3(a+b, 0, -(b+c)),
-                new Vector3(a+b, 0, -b/2f),
-                new Vector3(-(a+b), 0, -b/2f),
-                new Vector3(-(a+b), 0, -(b+c)),
-                new Vector3(-a, 0, -(b+c)),
-                new Vector3(-a, 0, b+c),
-                new Vector3(-(a+b), 0, b+c),
-                new Vector3(-(a+b), 0, b/2f),
-                new Vector3(a+b, 0, b/2f),
+                // Top right
+                new (a, 0, b+c),
+                new (a+b, 0, b+c),
                 
+                // Base right
+                new (a+b, 0, -(b+c)),
+                new (a, 0, -(b+c)),
+                
+                // Crossbar bottom
+                new (a, 0, -b/2f),
+                new (-a, 0, -b/2f),
+                
+                // Base left
+                new (-a, 0, -(b+c)),
+                new (-(a+b), 0, -(b+c)),
+                
+                // Top left
+                new (-(a+b), 0, b+c),
+                new (-a, 0, b+c),
+                
+                // Crossbar top
+                new (-a, 0, b/2f),
+                new (a, 0, b/2f), 
             };
 
-            var faces = new List<List<int>>
-            {
-                new List<int> { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 }
-            };
-
+            var faces = new List<List<int>>();
+            faces.Add(Enumerable.Range(0, verts.Count).ToList());
             return new PolyMesh(verts, faces);
         }
     }
