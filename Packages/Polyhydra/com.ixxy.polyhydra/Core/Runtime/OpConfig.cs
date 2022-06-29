@@ -404,8 +404,20 @@ namespace Polyhydra.Core
                         matrix = new[,] { { 1, 1, 1 }, { 0, 4, 0 }, { 0, 2, 0 } }
                     }
                 },
-                
-                
+                {
+                    PolyMesh.Operation.Ortho3,
+                    new OpConfig
+                    {
+                        amountDefault = 0.5f,
+                        amountMin = -4, amountMax = 4, amountSafeMin = 0.001f, amountSafeMax = 0.999f,
+                        usesAmount2 = true,
+                        amount2Default = 0,
+                        amount2Min = -6, amount2Max = 6, amount2SafeMin = -0.5f, amount2SafeMax = 0.999f,
+                        // What's this?
+                        // matrix = new [,]{{0,3,1},{0,8,0},{1,4,0}}
+                    }
+                },
+
                 {
                     PolyMesh.Operation.SplitFaces,
                     new OpConfig

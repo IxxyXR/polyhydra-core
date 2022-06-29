@@ -2772,6 +2772,158 @@ namespace Polyhydra.Core
             return new PolyMesh(vertexPoints, faceIndices, faceRoles, vertexRoles, newFaceTags);
         }
 
+        public PolyMesh Ortho3(OpParams o)
+        {
+            var newFaceTags = new List<HashSet<string>>();
+
+            var vertexPoints = new List<Vector3>();
+            var faceIndices = new List<IEnumerable<int>>();
+            var existingVertices = new Dictionary<Vector3, int>();
+            var newEdgeVertices = new Dictionary<string, int>();
+            var newNakedEdgeVertices = new Dictionary<(Guid, Guid)?, int>();
+            var newInnerVertices = new Dictionary<string, int>();
+
+            var faceRoles = new List<Roles>();
+            var vertexRoles = new List<Roles>();
+
+            for (var i = 0; i < Vertices.Count; i++)
+            {
+                vertexPoints.Add(Vertices[i].Position);
+                vertexRoles.Add(Roles.Existing);
+                existingVertices[vertexPoints[i]] = i;
+            }
+
+            for (var faceIndex = 0; faceIndex < Faces.Count; faceIndex++)
+            {
+                var face = Faces[faceIndex];
+                var centroid = face.Centroid;
+                var edges = face.GetHalfedges();
+                
+                for (int j = 0; j < edges.Count; j++)
+                {
+                    float amount = o.GetValueA(this, faceIndex);
+                    float edgeAmount = o.GetValueB(this, faceIndex) / 2f;
+                    float offset = 0; // Sigh. Need more params
+                    var edge = edges[j];
+
+                    
+                    var offsetCentroid = offset > 0 ? centroid + (face.Normal * offset) : centroid;
+                    var newVert = Vector3.LerpUnclamped(offsetCentroid, edge.Vertex.Position, amount);
+                    vertexPoints.Add(newVert);
+                    vertexRoles.Add(Roles.NewAlt);
+                    newInnerVertices[face.Name + edge.Vertex.Name] = vertexPoints.Count - 1;
+
+                    if (!newEdgeVertices.ContainsKey(face.Name + edge.Vertex.Name))
+                    {
+                        vertexPoints.Add(edge.PointAlongEdge(edgeAmount));
+                        vertexRoles.Add(Roles.New);
+                        newEdgeVertices[face.Name + edge.Vertex.Name] = vertexPoints.Count - 1;
+                    }
+
+                    if (edge.Pair == null)
+                    {
+                        if (!newNakedEdgeVertices.ContainsKey(edge.Name))
+                        {
+                            vertexPoints.Add(edge.PointAlongEdge(1f - edgeAmount));
+                            vertexRoles.Add(Roles.New);
+                            newNakedEdgeVertices[edge.Name] = vertexPoints.Count - 1;
+                        }
+                    }
+                    else
+                    {
+                        if (!newEdgeVertices.ContainsKey(face.Name + edge.Vertex.Name))
+                        {
+                            vertexPoints.Add(edge.TwoThirdsPoint);
+                            vertexRoles.Add(Roles.New);
+                            newEdgeVertices[face.Name + edge.Pair.Vertex.Name] = vertexPoints.Count - 1;
+                        }
+                    }
+                }
+            }
+
+            for (var faceIndex = 0; faceIndex < Faces.Count; faceIndex++)
+            {
+                var face = Faces[faceIndex];
+                var prevFaceTagSet = FaceTags[faceIndex];
+
+                var edges = face.GetHalfedges();
+                if (edges.Count<3) continue;
+
+                for (int j = 0; j < edges.Count; j++)
+                {
+                    var edge = edges[j];
+
+                    
+                    List<int> innerFace;
+                    if (edge.Pair == null)
+                    {
+                        innerFace = new List<int>
+                        {
+                            newInnerVertices[face.Name + edge.Vertex.Name],
+                            newInnerVertices[face.Name + edge.Prev.Vertex.Name],
+                            newNakedEdgeVertices[edge.Name],
+                            newEdgeVertices[face.Name + edge.Vertex.Name],
+                        };
+                        faceIndices.Add(innerFace);
+                        faceRoles.Add(Roles.New);
+                        newFaceTags.Add(new HashSet<string>(prevFaceTagSet));
+                    }
+                    else
+                    {
+                        innerFace = new List<int>
+                        {
+                            newInnerVertices[face.Name + edge.Vertex.Name],
+                            newInnerVertices[face.Name + edge.Prev.Vertex.Name],
+                            newEdgeVertices[edge.Pair.Face.Name + edge.Pair.Vertex.Name],
+                            newEdgeVertices[face.Name + edge.Vertex.Name],
+                        };
+                        faceIndices.Add(innerFace);
+                        faceRoles.Add(Roles.New);
+                        newFaceTags.Add(new HashSet<string>(prevFaceTagSet));
+                    }
+
+                    List<int> vertexFace;
+                    if (edge.Next.Pair == null)
+                    {
+                        vertexFace = new List<int>
+                        {
+                            existingVertices[edge.Vertex.Position],
+                            newNakedEdgeVertices[edge.Next.Name],
+                            newInnerVertices[face.Name + edge.Vertex.Name],
+                            newEdgeVertices[face.Name + edge.Vertex.Name],
+                        };
+                    }
+                    else
+                    {
+                        vertexFace = new List<int>
+                        {
+                            existingVertices[edge.Vertex.Position],
+                            newEdgeVertices[face.Name + edge.Vertex.Name],
+                            newInnerVertices[face.Name + edge.Vertex.Name],
+                            newEdgeVertices[edge.Next.Pair.Face.Name + edge.Next.Pair.Vertex.Name],
+                        };
+                    }
+                    
+                    faceIndices.Add(vertexFace);
+                    faceRoles.Add(Roles.NewAlt);
+                    newFaceTags.Add(new HashSet<string>(prevFaceTagSet));
+                }
+
+                var existingFace = new List<int>();
+                for (int j = 0; j < edges.Count; j++)
+                {
+                    var edge = edges[j];
+                    existingFace.Add(newInnerVertices[face.Name + edge.Vertex.Name]);
+                }
+
+                faceIndices.Add(existingFace);
+                faceRoles.Add(Roles.Existing);
+                newFaceTags.Add(new HashSet<string>(prevFaceTagSet));
+            }
+
+            return new PolyMesh(vertexPoints, faceIndices, faceRoles, vertexRoles, newFaceTags);
+        }
+
         public PolyMesh Yank(OpParams o)
         {
             var result = Kis(o);

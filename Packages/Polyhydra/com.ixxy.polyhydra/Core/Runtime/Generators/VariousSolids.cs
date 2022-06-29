@@ -10,6 +10,7 @@ namespace Polyhydra.Core
         UvHemisphere,
         Box,
         Stairs,
+        Torus
     }
 
     public static class VariousSolids
@@ -20,9 +21,18 @@ namespace Polyhydra.Core
             {
                 VariousSolidTypes.UvSphere => UvSphere(x, y),
                 VariousSolidTypes.UvHemisphere => UvHemisphere(x, y),
+                VariousSolidTypes.Torus => Torus(x, y, z),
                 VariousSolidTypes.Box => Box(x, y, z),
                 VariousSolidTypes.Stairs => Stairs(x, y, z)
             };
+        }
+
+        private static PolyMesh Torus(int pathSteps, int shapeSides, int scale)
+        {
+            var shape = Shapes.Build(ShapeTypes.Polygon, shapeSides);
+            shape = shape.FaceScale(new OpParams(scale/100f)); 
+            var path = Shapes.Build(ShapeTypes.Polygon, pathSteps);
+            return path.Sweep(path.Faces[0].Get2DVertices(), shape.Faces[0].Get2DVertices(), true);
         }
 
         public static PolyMesh Box(int x, int y, int z)
