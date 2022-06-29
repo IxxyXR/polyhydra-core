@@ -1219,6 +1219,7 @@ namespace Polyhydra.Core
             JoinSquall = 32,
             Cross = 33,
             Subdiv = 96,
+            Ortho3 = 97,
 
             // Alternating Operators
             
@@ -1429,7 +1430,10 @@ namespace Polyhydra.Core
                 case Operation.Cross:
                     polyMesh = polyMesh.Cross(p);
                     break;
-                
+                case Operation.Ortho3:
+                    polyMesh = polyMesh.Ortho3(p);
+                    break;
+
                 // Alternating Operators
                 
                 case Operation.SplitFaces:
