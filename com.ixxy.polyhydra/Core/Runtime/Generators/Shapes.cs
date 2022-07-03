@@ -16,15 +16,21 @@ namespace Polyhydra.Core
 
     public class Shapes
     {
-        public static PolyMesh Build(ShapeTypes type, float a=0.5f, float b=0.5f, float c=0.5f)
+        public enum Method
+        {
+            Concave,
+            Convex,
+            Grid,
+        }
+        public static PolyMesh Build(ShapeTypes type, float a=0.5f, float b=0.5f, float c=0.5f, Method method = Method.Concave)
         {
             return type switch
             {
                 ShapeTypes.Polygon => Polygon(Mathf.FloorToInt(a)),
                 ShapeTypes.Star => Polygon(Mathf.FloorToInt(a * 2), stellate: b),
-                ShapeTypes.C_Shape => C_Shape(a, b, c),
-                ShapeTypes.L_Shape => L_Shape(a, b, c),
-                ShapeTypes.H_Shape => H_Shape(a, b, c),
+                ShapeTypes.C_Shape => C_Shape(a, b, c, method),
+                ShapeTypes.L_Shape => L_Shape(a, b, c, method),
+                ShapeTypes.H_Shape => H_Shape(a, b, c, method),
                 _ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
             };
         }
@@ -66,27 +72,55 @@ namespace Polyhydra.Core
             return poly;
         }
 
-
-        public static PolyMesh L_Shape(float a, float b, float c)
+        public static PolyMesh L_Shape(float a, float b, float c, Method method = Method.Convex)
         {
-            var verts = new List<Vector3>
+
+            if (method == Method.Grid)
             {
-                new (0, 0, 0),
-                new (b, 0, 0),
-                new (b, 0, -c),
-                new (-c, 0, -c),
-                new (-c, 0, a),
-                new (0, 0, a),
+                var poly = Grids.Build(GridEnums.GridTypes.K_4_4_4_4, GridEnums.GridShapes.Plane, 2, 3);
+                poly = poly.FaceRemove(false, new List<int>{0, 2});
+                return poly;
+            }
+            
+            List<List<int>> faces;
+            List<Vector3> verts = new()
+            {
+                // Base
+                new(0, 0, 0),
+                new(b, 0, 0),
+                new(b, 0, -c),
+                new(-c, 0, -c),
+                new(-c, 0, a),
+                new(0, 0, a),
             };
 
-            var faces = new List<List<int>>();
-            faces.Add(Enumerable.Range(0, verts.Count).ToList());
+            if (method == Method.Concave)
+            {
+                faces = new(){ Enumerable.Range(0, verts.Count).ToList() };
+            }
+            else
+            {
+                faces = new()
+                {
+                    new() { 0, 1, 2, 3 },
+                    new() { 0, 3, 4, 5 },
+                };
+            }
             return new PolyMesh(verts, faces);
         }
-
-        public static PolyMesh C_Shape(float a, float b, float c=0.25f)
+        
+        public static PolyMesh C_Shape(float a, float b, float c = 0.25f, Method method = Method.Convex)
         {
-            var verts = new List<Vector3>
+
+            if (method == Method.Grid)
+            {
+                var poly = Grids.Build(GridEnums.GridTypes.K_4_4_4_4, GridEnums.GridShapes.Plane, 2, 3);
+                poly = poly.FaceRemove(false, new List<int>{2});
+                return poly;
+            }
+            
+            List<List<int>> faces;
+            List<Vector3> verts = new()
             {
                 new (a, 0, -b),
                 new (a, 0, -(b+c)),
@@ -98,14 +132,34 @@ namespace Polyhydra.Core
                 new (0, 0, -b),
             };
 
-            var faces = new List<List<int>>();
-            faces.Add(Enumerable.Range(0, verts.Count).ToList());
+            if (method == Method.Concave)
+            {
+                faces = new() { Enumerable.Range(0, verts.Count).ToList() };
+            }
+            else
+            {
+                faces = new()
+                {
+                    new() { 0, 1, 2, 7 },
+                    new() { 2, 3, 6, 7 },
+                    new() {3, 4, 5, 6}
+                };
+            }
             return new PolyMesh(verts, faces);
         }
 
-        public static PolyMesh H_Shape(float a, float b, float c)
+        public static PolyMesh H_Shape(float a, float b, float c, Method method = Method.Convex)
         {
-            var verts = new List<Vector3>
+            
+            if (method == Method.Grid)
+            {
+                var poly = Grids.Build(GridEnums.GridTypes.K_4_4_4_4, GridEnums.GridShapes.Plane, 3, 3);
+                poly = poly.FaceRemove(false, new List<int>{1, 7});
+                return poly;
+            }
+            
+            List<List<int>> faces;
+            List<Vector3> verts = new()
             {
                 // Top right
                 new (a, 0, b+c),
@@ -129,11 +183,22 @@ namespace Polyhydra.Core
                 
                 // Crossbar top
                 new (-a, 0, b/2f),
-                new (a, 0, b/2f), 
+                new (a, 0, b/2f),
             };
 
-            var faces = new List<List<int>>();
-            faces.Add(Enumerable.Range(0, verts.Count).ToList());
+            if (method == Method.Concave)
+            {
+                faces = new() { Enumerable.Range(0, verts.Count).ToList() };
+            }
+            else
+            {
+                faces = new()
+                {
+                    new() { 0, 1, 2, 3, 4, 11 },
+                    new () { 11, 4, 5, 10 },
+                    new() { 5, 6, 7, 8, 9, 10 },
+                };
+            }
             return new PolyMesh(verts, faces);
         }
     }
