@@ -7,7 +7,8 @@ public class ShapesTest : TestBase
 {
     [Header("Base Shape Parameters")]
     public ShapeTypes type;
-
+    public Shapes.Method method;
+    
     [Range(0, 24)] public float A;
     [Range(0, 4)] public float B;
     [Range(0, 4)] public float C;
@@ -16,7 +17,7 @@ public class ShapesTest : TestBase
     
     public override void Go()
     {
-        poly = Shapes.Build(type, A, B, C);
+        poly = Shapes.Build(type, A, B, C, method);
         if (Layers>0) poly = poly.LayeredExtrude(Layers, LayerHeight);
         Build();
     }
