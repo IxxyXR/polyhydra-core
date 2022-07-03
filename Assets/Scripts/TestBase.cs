@@ -27,9 +27,10 @@ public class TestBase : MonoBehaviour
     public float Op2FilterParam;
     public bool Op2FilterFlip;
     public int CanonicalizeIterations = 0;
+    public int PlanarizeIterations = 0;
     [Range(.1f, 1f)] public float FaceScale = .99f;
     
-    protected PolyMesh poly;
+    [NonSerialized] public PolyMesh poly;
 
     public void Build(ColorMethods colorMethod = ColorMethods.ByRole)
     {
@@ -72,7 +73,7 @@ public class TestBase : MonoBehaviour
             var op2Filter = Filter.GetFilter(Op2FilterType, Op2FilterParam, Mathf.FloorToInt(Op2FilterParam), Op2FilterFlip);
             poly = poly.AppyOperation(op2, new OpParams(Op2Parameter1, Op2Parameter2, filter: op2Filter));
         }
-        if (CanonicalizeIterations > 0) poly = poly.Canonicalize(CanonicalizeIterations, CanonicalizeIterations);
+        if (CanonicalizeIterations > 0 || PlanarizeIterations > 0) poly = poly.Canonicalize(CanonicalizeIterations, PlanarizeIterations);
         if (FaceScale<1f) poly = poly.FaceScale(new OpParams(FaceScale));
         var meshData = poly.BuildMeshData(colorMethod: colorMethod);
         var mesh = poly.BuildUnityMesh(meshData);
