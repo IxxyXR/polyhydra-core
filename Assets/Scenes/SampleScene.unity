@@ -187,6 +187,7 @@ MonoBehaviour:
   Op2FilterParam: 0
   Op2FilterFlip: 0
   CanonicalizeIterations: 0
+  PlanarizeIterations: 0
   FaceScale: 1
   type: 2
   X: 2
@@ -338,6 +339,7 @@ MonoBehaviour:
   Op2FilterParam: 8
   Op2FilterFlip: 0
   CanonicalizeIterations: 0
+  PlanarizeIterations: 0
   FaceScale: 1
   type: 0
   Sides: 4
@@ -583,8 +585,10 @@ MonoBehaviour:
   Op2FilterParam: 0
   Op2FilterFlip: 0
   CanonicalizeIterations: 0
+  PlanarizeIterations: 0
   FaceScale: 1
   type: 1
+  method: 0
   A: 8
   B: 0.06
   C: 1.13
@@ -704,6 +708,7 @@ MonoBehaviour:
   Op2FilterParam: 0
   Op2FilterFlip: 0
   CanonicalizeIterations: 0
+  PlanarizeIterations: 0
   FaceScale: 1
   type: 14
   shape: 0
@@ -778,7 +783,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &391507820
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -809,8 +814,10 @@ MonoBehaviour:
   Op2FilterParam: 0
   Op2FilterFlip: 0
   CanonicalizeIterations: 0
+  PlanarizeIterations: 0
   FaceScale: 1
   type: 4
+  method: 0
   A: 0.6
   B: 0.81
   C: 0.44
@@ -946,6 +953,7 @@ MonoBehaviour:
   Op2FilterParam: 0
   Op2FilterFlip: 0
   CanonicalizeIterations: 0
+  PlanarizeIterations: 0
   FaceScale: 0.97
   type: 6
   shape: 0
@@ -1020,7 +1028,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &442627152
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1051,6 +1059,7 @@ MonoBehaviour:
   Op2FilterParam: 0
   Op2FilterFlip: 0
   CanonicalizeIterations: 0
+  PlanarizeIterations: 0
   FaceScale: 0.925
   PolyhedraName: dodecahedron
   type: 28
@@ -1186,6 +1195,7 @@ MonoBehaviour:
   Op2FilterParam: 4
   Op2FilterFlip: 0
   CanonicalizeIterations: 0
+  PlanarizeIterations: 0
   FaceScale: 0.97
   type: 1
   shape: 0
@@ -1344,7 +1354,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &560618256
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1375,6 +1385,7 @@ MonoBehaviour:
   Op2FilterParam: 0
   Op2FilterFlip: 0
   CanonicalizeIterations: 0
+  PlanarizeIterations: 0
   FaceScale: 1
   Root: 35
   C: 5
@@ -1509,6 +1520,7 @@ MonoBehaviour:
   Op2FilterParam: 0
   Op2FilterFlip: 0
   CanonicalizeIterations: 0
+  PlanarizeIterations: 0
   FaceScale: 1
   PolyhedraName: dodecahedron
   type: 28
@@ -1611,6 +1623,7 @@ MonoBehaviour:
   Op2FilterParam: 0
   Op2FilterFlip: 0
   CanonicalizeIterations: 0
+  PlanarizeIterations: 0
   FaceScale: 0.98
   PolyhedraName: cuboctahedron
   type: 12
@@ -1697,7 +1710,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &795958024
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1728,6 +1741,7 @@ MonoBehaviour:
   Op2FilterParam: 0
   Op2FilterFlip: 0
   CanonicalizeIterations: 0
+  PlanarizeIterations: 0
   FaceScale: 1
   type: 2
   shape: 1
@@ -1823,7 +1837,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &836301333
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1854,6 +1868,7 @@ MonoBehaviour:
   Op2FilterParam: 0
   Op2FilterFlip: 0
   CanonicalizeIterations: 0
+  PlanarizeIterations: 0
   FaceScale: 1
   PathSteps: 4
   ShapeSides: 4
@@ -1979,6 +1994,7 @@ MonoBehaviour:
   Op2FilterParam: 0
   Op2FilterFlip: 0
   CanonicalizeIterations: 0
+  PlanarizeIterations: 0
   FaceScale: 0.9
   PolyhedraName: cube
   type: 11
@@ -2065,7 +2081,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &936835588
 Transform:
   m_ObjectHideFlags: 0
@@ -2111,6 +2127,7 @@ MonoBehaviour:
   Op2FilterParam: 0
   Op2FilterFlip: 0
   CanonicalizeIterations: 0
+  PlanarizeIterations: 0
   FaceScale: 1
   Segments: 20
   Rotation: -0.1
@@ -2231,6 +2248,7 @@ MonoBehaviour:
   Op2FilterParam: 0
   Op2FilterFlip: 0
   CanonicalizeIterations: 0
+  PlanarizeIterations: 0
   FaceScale: 1
   type: 2
   X: 2
@@ -2304,7 +2322,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1088448740
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2335,6 +2353,7 @@ MonoBehaviour:
   Op2FilterParam: 0
   Op2FilterFlip: 0
   CanonicalizeIterations: 0
+  PlanarizeIterations: 0
   FaceScale: 1
   filename: Off Files/test.off
 --- !u!23 &1088448741
@@ -2466,6 +2485,7 @@ MonoBehaviour:
   Op2FilterParam: 0
   Op2FilterFlip: 0
   CanonicalizeIterations: 0
+  PlanarizeIterations: 0
   FaceScale: 1
   type: 3
   X: 6
@@ -2585,6 +2605,7 @@ MonoBehaviour:
   Op2FilterParam: 0
   Op2FilterFlip: 0
   CanonicalizeIterations: 0
+  PlanarizeIterations: 0
   FaceScale: 1
   Root: 17
   C: 2
@@ -2657,7 +2678,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1196142463
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2688,6 +2709,7 @@ MonoBehaviour:
   Op2FilterParam: 0
   Op2FilterFlip: 0
   CanonicalizeIterations: 0
+  PlanarizeIterations: 0
   FaceScale: 1
   type: 10
   Sides: 5
@@ -2778,7 +2800,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1219243363
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2809,6 +2831,7 @@ MonoBehaviour:
   Op2FilterParam: 0
   Op2FilterFlip: 0
   CanonicalizeIterations: 0
+  PlanarizeIterations: 0
   FaceScale: 1
   type: 2
   X: 1
@@ -2900,7 +2923,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1228354758
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2931,6 +2954,7 @@ MonoBehaviour:
   Op2FilterParam: 0
   Op2FilterFlip: 0
   CanonicalizeIterations: 0
+  PlanarizeIterations: 0
   FaceScale: 1
   SolidName: Gyroelongated Pentagonal Pyramid
   type: 11
@@ -3063,6 +3087,7 @@ MonoBehaviour:
   Op2FilterParam: 0
   Op2FilterFlip: 0
   CanonicalizeIterations: 0
+  PlanarizeIterations: 0
   FaceScale: 0.97
   type: 1
   shape: 0
@@ -3168,6 +3193,7 @@ MonoBehaviour:
   Op2FilterParam: 0
   Op2FilterFlip: 0
   CanonicalizeIterations: 0
+  PlanarizeIterations: 0
   FaceScale: 1
   command: symmetro -t I[5,3],1,2 -m map_blue:purple:red:orange -r 1.07046626932,1
 --- !u!23 &1446825788
@@ -3237,6 +3263,124 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 11
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1455474645
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1455474649}
+  - component: {fileID: 1455474648}
+  - component: {fileID: 1455474647}
+  - component: {fileID: 1455474646}
+  m_Layer: 0
+  m_Name: Revolve
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1455474646
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1455474645}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 006d8be1bf754dd9b428cd87c3c518cd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  op1: 64
+  Op1Parameter1: -0.08
+  Op1Parameter2: 0.14
+  Op1Iterations: 1
+  Op1Parameter1Randomize: 0
+  Op1Parameter2Randomize: 0
+  Op1FilterType: 0
+  Op1FilterParam: 0.95
+  Op1FilterFlip: 0
+  MergeThreshold: 0
+  op2: 96
+  Op2Parameter1: 1
+  Op2Parameter2: 0
+  Op2Iterations: 3
+  Op2FilterType: 0
+  Op2FilterParam: 0
+  Op2FilterFlip: 0
+  CanonicalizeIterations: 0
+  PlanarizeIterations: 0
+  FaceScale: 1
+  Segments: 8
+  Angle: 360
+--- !u!23 &1455474647
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1455474645}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: b5f1799e9180c164dacd089c250950a7, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &1455474648
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1455474645}
+  m_Mesh: {fileID: 0}
+--- !u!4 &1455474649
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1455474645}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 3, y: 0, z: -0.91}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 14
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1637058898
 GameObject:
   m_ObjectHideFlags: 0
@@ -3301,6 +3445,7 @@ MonoBehaviour:
   Op2FilterParam: 0
   Op2FilterFlip: 0
   CanonicalizeIterations: 0
+  PlanarizeIterations: 0
   FaceScale: 0.97
   type: 1
   shape: 0
@@ -3483,6 +3628,7 @@ MonoBehaviour:
   Op2FilterParam: 0
   Op2FilterFlip: 0
   CanonicalizeIterations: 0
+  PlanarizeIterations: 0
   FaceScale: 0.97
   type: 6
   shape: 0
@@ -3557,7 +3703,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &2043611864
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3588,6 +3734,7 @@ MonoBehaviour:
   Op2FilterParam: 0
   Op2FilterFlip: 0
   CanonicalizeIterations: 0
+  PlanarizeIterations: 0
   FaceScale: 1
   input: atatatC
   results: 1298 faces 2592 edges 1296 vertices

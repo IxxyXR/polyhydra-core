@@ -215,15 +215,15 @@ namespace Polyhydra.Core
                 if (!IncludeFace(faceIndex, o.filter)) continue;
                 //var amount = amount * (float) (randomize ? random.NextDouble() : 1);
                 var faceVerts = face.GetVertices();
-                
+
                 var (tangentLeft, tangentUp) = face.GetTangents();
-                
+
                 for (var vertexIndex = 0; vertexIndex < faceVerts.Count; vertexIndex++)
                 {
                     float amount = o.GetValueA(this, vertexIndex);
                     float direction = o.GetValueB(this, vertexIndex);
                     var vertexPos = faceVerts[vertexIndex].Position;
-                    
+
                     Vector3 tangent = Vector3.SlerpUnclamped(tangentUp, tangentLeft, direction);
 
                     var vector = tangent * amount;
@@ -348,7 +348,7 @@ namespace Polyhydra.Core
                 if (!IncludeFace(faceIndex, o.filter)) continue;
                 var faceCentroid = face.Centroid;
 
-                
+
                 // Hacky but backwards compatible interpretation of "amount"
                 // If vector is zero rotations: "1" is "amount to the next side assuming a regular polygon side"
                 // Otherwise "1" is "360 degrees"
@@ -417,7 +417,7 @@ namespace Polyhydra.Core
 
             var faceRoles = new List<Roles>();
             var vertexRoles = new List<Roles>();
-            
+
             for (var faceIndex = 0; faceIndex < Faces.Count; faceIndex++)
             {
                 var face = Faces[faceIndex];
@@ -428,7 +428,7 @@ namespace Polyhydra.Core
                 var faceVertices = new List<int>();
 
                 var offset = face.Normal * o.GetValueA(this, faceIndex);
- 
+
                 vertexPoints.AddRange(face.GetVertices().Select(
                     v => includeFace ? v.Position + offset : v.Position
                 ));
@@ -466,9 +466,9 @@ namespace Polyhydra.Core
 
                 int c = vertexPoints.Count;
                 var faceVertices = new List<int>();
-                
+
                 var pivot = face.Centroid;
-                
+
                 Vector3 direction = axis switch
                 {
                     0 => Vector3.Cross(face.Normal, Vector3.up),
@@ -568,7 +568,7 @@ namespace Polyhydra.Core
         {
             return _FaceRemove(new OpParams { filter = filter}, invertLogic);
         }
-        
+
         public PolyMesh FaceRemove(bool invertLogic, List<int> indices)
         {
             var filter = new Filter(
@@ -838,7 +838,7 @@ namespace Polyhydra.Core
         }
 
         /// <summary>
-        ///  
+        ///
         /// </summary>
         /// <param name="o"></param>
         /// <param name="symmetric"></param>
@@ -1345,7 +1345,7 @@ namespace Polyhydra.Core
 
                 faceIndices.Add(newFaceVertIndices);
             }
-            
+
             FaceRoles = FaceRoles.GetRange(0, faceIndices.Count);
             FaceTags = FaceTags?.GetRange(0, faceIndices.Count);
             vertexRoles = Vertices.Select(x => FaceRoles[Faces.IndexOf(x.Halfedge.Face)]).ToList();
@@ -1536,7 +1536,7 @@ namespace Polyhydra.Core
 
         public void _ExtendBoundaries(List<List<Halfedge>> boundaries, float scale, Vector3 directionVector, float angle = 0)
         {
-            
+
             FaceRoles = Enumerable.Repeat(Roles.Existing, Faces.Count).ToList();
             var newFaceTags = new List<HashSet<string>>();
             newFaceTags.AddRange(FaceTags);
@@ -1548,7 +1548,7 @@ namespace Polyhydra.Core
                 {
                     Vector3 direction;
                     var edge1 = boundary[edgeIndex];
-                    
+
                     // If directionVector is zero then calculate a direction based on angle and the edge's normal
                     if (directionVector == Vector3.zero)
                     {
@@ -1563,7 +1563,7 @@ namespace Polyhydra.Core
                     {
                         direction = directionVector;
                     }
-                    
+
                     Vertices.Add(new Vertex(edge1.Vertex.Position + direction * scale));
                     VertexRoles.Add(Roles.New);
                 }
@@ -1604,16 +1604,16 @@ namespace Polyhydra.Core
             }
             return poly;
         }
-        
+
         public PolyMesh _ConvexHull(bool splitVerts = false)
         {
-            
+
             var points = Vertices.Select(p => p.Position).ToList();
             var verts = new List<Vector3>();
             var normals = new List<Vector3>();
             var tris = new List<int>();
-            
-        
+
+
             var hull = new ConvexHullCalculator();
             hull.GenerateHull(points, splitVerts, ref verts, ref tris, ref normals);
             var faces = tris.Select((x, i) => new { Index = i, Value = x })
@@ -1678,7 +1678,7 @@ namespace Polyhydra.Core
             float angle = o.GetValueB(this, 0);
             return ExtendBoundaries(amount, angle, directionOverride);
         }
-        
+
         public PolyMesh ExtendBoundaries(float amount, float angle, Vector3 direction)
         {
             var poly = Duplicate();
@@ -2142,7 +2142,7 @@ namespace Polyhydra.Core
                         float profileX = offsetValues[section];
                         float profileY = ratioValues[section];
 
-                        // Create vertices                        
+                        // Create vertices
                         for (int i = 0; i < faceSides; i++)
                         {
                             Vector3 origin = (lace && section % 2 != 0) ? edge.Midpoint : edge.Vertex.Position;
@@ -2539,7 +2539,7 @@ namespace Polyhydra.Core
         //     int faceOneIndex = ActualMod(f1, Faces.Count);
         //     int faceTwoIndex = ActualMod(f2, Faces.Count);
         //
-        //     // Only works if both faces are distinct but have same number of edges 
+        //     // Only works if both faces are distinct but have same number of edges
         //     if (faceOneIndex == faceTwoIndex || Faces[faceOneIndex].Sides != Faces[faceTwoIndex].Sides)
         //     {
         //         Debug.LogError("Failed to connect faces");
@@ -2641,12 +2641,12 @@ namespace Polyhydra.Core
                 CollapseEdge(edge);
             }
         }
-        
+
         public Face CollapseEdge(Halfedge edge)
         {
             if (edge.Pair == null) return null;
             var edgePair = edge.Pair;
-            
+
             var face1 = edge.Face;
             var face1firstEdge = edge;
             var face2firstEdge = face1firstEdge.Pair;
@@ -2658,7 +2658,7 @@ namespace Polyhydra.Core
             var hole2Verts = face2.GetHalfedges().Select(e=>e.Vertex).ToList();
             FaceRoles.RemoveAt(Faces.IndexOf(face2));
             Faces.Remove(face2);
-            
+
             Face newFace = null;
 
             var newFaceVerts = _FillHole(edge, hole1Verts, hole2Verts);
@@ -2674,7 +2674,7 @@ namespace Polyhydra.Core
                     Debug.LogError($"Failed to add new face with {newFaceVerts.Count} verts");
                 }
             }
-            
+
             if (success)
             {
                 newFace = Faces.Last();
@@ -2684,7 +2684,7 @@ namespace Polyhydra.Core
 
             return newFace;
         }
-        
+
         private static List<Vertex> _FillHole(Halfedge edge, List<Vertex> hole1Verts, List<Vertex> hole2Verts)
         {
             var verts = new List<Vertex>();
@@ -3016,13 +3016,13 @@ namespace Polyhydra.Core
         public void MergeCoplanarFaces(float threshold)
         {
             var faceGroups = FindCoplanarFaces(threshold);
-            
+
             foreach (var faces in faceGroups)
             {
                 if (faces.Count < 2) return;
-                
+
                 var boundaryEdges = new HashSet<Halfedge>();
-                
+
                 foreach (var face in faces)
                 {
                     foreach (var edge in face.GetHalfedges())
@@ -3061,7 +3061,7 @@ namespace Polyhydra.Core
                 {
                     Halfedges.MatchPairs();
                     newFaceVerts = GetLoop(boundaryEdges.First());
-                }                
+                }
 
                 foreach (var face in faces)
                 {
@@ -3080,7 +3080,7 @@ namespace Polyhydra.Core
                         Vertices.Add(v);
                     }
                 }
-                                
+
                 // TODO proper debug gizmos
                 // if (DebugVerts==null) DebugVerts = new List<Vector3>();
                 // DebugVerts.Clear();
@@ -3088,7 +3088,7 @@ namespace Polyhydra.Core
                 // {
                 //     DebugVerts.Add(v.Position);
                 // }
-                
+
                 bool success = Faces.Add(newFaceVerts);
                 if (!success)
                 {
@@ -3124,12 +3124,12 @@ namespace Polyhydra.Core
             }
             tt.Remove(f);
         }
-        
+
         public List<HashSet<Face>> FindCoplanarFaces(float threshold)
         {
             var groups = new List<HashSet<Face>>();
             var untestedFaces = new HashSet<Face>(Faces);
-            
+
             while (untestedFaces.Count > 0)
             {
                 var face = untestedFaces.First();
@@ -3138,9 +3138,9 @@ namespace Polyhydra.Core
                 var toCheck = new HashSet<Face>();
                 faceGroup.Add(face);
                 toCheck.Add(face);
-            
+
                 AddNeighbours(face, threshold, ref toCheck, ref faceGroup);
-            
+
                 while (toCheck.Count > 0)
                 {
                     var newCandidate = toCheck.First();
@@ -3174,7 +3174,7 @@ namespace Polyhydra.Core
                 {
                     projected = new Vector2(resultant.x, resultant.y);
                 }
-                
+
                 float offset = Mathf.PerlinNoise(
                     (projected.x + xoffset) * xscale,
                     (projected.y + yoffset) * yscale
@@ -3182,7 +3182,7 @@ namespace Polyhydra.Core
                 v.Position += axis * offset * strength;
             }
         }
-        
+
         public void Bulge(Vector3 axis, float strength, float frequency)
         {
             foreach (var v in Vertices)
@@ -3204,10 +3204,10 @@ namespace Polyhydra.Core
 
                 float halfWavelength = (1f / frequency) / 2f;
                 var offset = Mathf.Sign(strength) * Mathf.SmoothStep(strength, 0, projected.magnitude * halfWavelength);
-                
+
                 v.Position += axis * offset * strength;
             }
-        }	
+        }
         public void Wave(Vector3 axis, float strength, float frequency)
         {
             foreach (var v in Vertices)
@@ -3228,10 +3228,10 @@ namespace Polyhydra.Core
                 }
 
                 var offset = Mathf.Cos(projected.magnitude * frequency * Mathf.PI) * strength;
-                
+
                 v.Position += axis * offset * strength;
             }
-        }	
+        }
         public PolyMesh Spherize(OpParams o)
         {
             var vertexPoints = new List<Vector3>();
@@ -3272,7 +3272,7 @@ namespace Polyhydra.Core
                     flattenVector = Vector3.forward;
                     break;
             }
-            
+
             foreach (var v in Vertices)
             {
                 v.Position = Vector3.Scale(v.Position, flattenVector);
@@ -3316,7 +3316,7 @@ namespace Polyhydra.Core
                 }
             }
         }
-        
+
         private void RemoveTag(OpParams o)
         {
             for (var i = 0; i < FaceTags.Count; i++)
@@ -3325,7 +3325,7 @@ namespace Polyhydra.Core
                 if (IncludeFace(i, o.filter)) tagSet.Remove(o.stringParam);
             }
         }
-        
+
         private void ClearTags(OpParams o)
         {
             for (var i = 0; i < FaceTags.Count; i++)
@@ -3347,7 +3347,7 @@ namespace Polyhydra.Core
             var shape = face.Get2DVertices();
             return Sweep(path, shape, true);  // Always a closed path
         }
-        
+
         // Sweeps a shape around a path.
         // TODO - Fix bugs with concave paths
         public PolyMesh Sweep(List<Vector2> path, List<Vector2> shape, bool closedPath=false)
@@ -3393,7 +3393,7 @@ namespace Polyhydra.Core
                 points = shape.Select(v => rotateY(v, angle) + origin);
                 vertexPoints.AddRange(points.ToList());
             }
-            
+
             int checker = 0;
             for (var pathStep = 0; pathStep < path.Count - (closedPath ? 0 : 1); pathStep++)
             {
@@ -3415,6 +3415,84 @@ namespace Polyhydra.Core
                     vertexRoles.AddRange(Enumerable.Repeat(Roles.New, 4));
                 }
                 checker = (checker == 0) ? 1 : 0;
+            }
+
+            var poly = new PolyMesh(vertexPoints, faceIndices, faceRoles, vertexRoles);
+            poly.InitTags();
+            return poly;
+        }
+
+        public PolyMesh Revolve(List<Vector3> path, int segments=32, float angle=360)
+        {
+
+            Vector3 rotatePointAroundAxis(Vector3 point, float angle, Vector3 axis)
+            {
+                Quaternion q = Quaternion.AngleAxis(angle, axis);
+                return q * point; //Note: q must be first (point * q wouldn't compile)
+            }
+
+            var faceIndices = new List<int[]>();
+            var vertexPoints = new List<Vector3>();
+            var faceRoles = new List<Roles>();
+            var vertexRoles = new List<Roles>();
+
+            float step = angle / segments;
+            Vector3 axis = path[0] - path.Last();
+
+            int finalRow = (angle < 360) ? 1 : 0;
+
+            for (int segment = 0; segment < segments + finalRow; segment++)
+            {
+                float theta = segment * step;
+                for (var i = 0; i < path.Count; i++)
+                {
+                    var point = path[i];
+                    vertexPoints.Add(rotatePointAroundAxis(point, theta, axis));
+                }
+            }
+
+            int pathCount = path.Count;
+            int vertCount = vertexPoints.Count;
+
+            // If we're not drawing the full 360 degrees then skip the last strip
+            int vertsToDraw = angle < 360 ? vertCount - pathCount : vertCount;
+
+            for (int i = pathCount; i <= vertsToDraw; i += pathCount)
+            {
+                // Triangular faces for bottom tip
+                faceIndices.Add(new[]
+                {
+                    ActualMod(i + 1, vertCount),
+                    0,
+                    ActualMod(i - pathCount + 1, vertCount)
+                });
+                faceRoles.Add(faceIndices.Count % 2 == 0 ? Roles.New : Roles.NewAlt);
+                vertexRoles.AddRange(Enumerable.Repeat(Roles.New, 4));
+
+                // Quad faces for middle section
+                for (int j = i + 1; j < i + pathCount - 2; j++)
+                {
+                    var newFace = new[]
+                    {
+                        ActualMod(j + 1, vertCount),
+                        ActualMod(j, vertCount),
+                        ActualMod(j - pathCount, vertCount),
+                        ActualMod(j + 1 - pathCount, vertCount),
+                    };
+                    faceIndices.Add(newFace);
+                    faceRoles.Add(faceIndices.Count % 2 == 0 ? Roles.New : Roles.NewAlt);
+                    vertexRoles.AddRange(Enumerable.Repeat(Roles.New, 4));
+                }
+
+                // Triangular faces for top tip
+                faceIndices.Add(new[]
+                {
+                    ActualMod(i + pathCount - 2, vertCount),
+                    ActualMod(i - 2, vertCount),
+                    pathCount - 1,
+                });
+                faceRoles.Add(faceIndices.Count % 2 == 0 ? Roles.New : Roles.NewAlt);
+                vertexRoles.AddRange(Enumerable.Repeat(Roles.New, 4));
             }
 
             var poly = new PolyMesh(vertexPoints, faceIndices, faceRoles, vertexRoles);
