@@ -1,5 +1,12 @@
 {
   "dependencies": {
+    "com.fab.livelua": {
+      "version": "https://github.com/fabSchneider/LiveLua.git",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "86ff98376aa2454bece362b421b7910fc6ff6046"
+    },
     "com.ixxy.polyhydra.core": {
       "version": "file:Polyhydra",
       "depth": 0,
@@ -48,7 +55,7 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.test-framework": {
-      "version": "1.1.31",
+      "version": "1.1.33",
       "depth": 0,
       "source": "registry",
       "dependencies": {
@@ -57,6 +64,13 @@
         "com.unity.modules.jsonserialize": "1.0.0"
       },
       "url": "https://packages.unity.com"
+    },
+    "moonsharp": {
+      "version": "https://github.com/fabSchneider/moonsharp.git#v2.0.0-upm.533e8b0",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "9a4ca897d603b83ad1dc8912cc425d6be5e9b76b"
     },
     "com.unity.modules.ai": {
       "version": "1.0.0",

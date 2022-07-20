@@ -1,9 +1,11 @@
 {
   "dependencies": {
+    "com.fab.livelua": "https://github.com/fabSchneider/LiveLua.git",
     "com.unity.ide.rider": "3.0.15",
     "com.unity.ide.visualstudio": "2.0.16",
     "com.unity.ide.vscode": "1.2.5",
-    "com.unity.test-framework": "1.1.31",
+    "com.unity.test-framework": "1.1.33",
+    "moonsharp": "https://github.com/fabSchneider/moonsharp.git#v2.0.0-upm.533e8b0",
     "com.unity.modules.ai": "1.0.0",
     "com.unity.modules.animation": "1.0.0",
     "com.unity.modules.assetbundle": "1.0.0",
