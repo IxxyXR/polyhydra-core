@@ -13,7 +13,7 @@ using Random = UnityEngine.Random;
 
 namespace Polyhydra.Core
 {
-    
+
     public enum Axis {X,Y,Z}
 
     public enum UVMethods
@@ -32,7 +32,7 @@ namespace Polyhydra.Core
         ByFaceDirection,
         ByTags,
     }
-    
+
     public enum Roles
     {
         Ignored,
@@ -41,7 +41,7 @@ namespace Polyhydra.Core
         NewAlt,
         ExistingAlt,
     }
-    
+
     public partial class PolyMesh
     {
         private PointOctree<Vertex> octree;
@@ -61,7 +61,7 @@ namespace Polyhydra.Core
             new Color(0.5f, 1.0f, 1.0f),
             new Color(1.0f, 0.5f, 1.0f),
         };
-        
+
         // Mod functions that treat negative values sanely
         public static int ActualMod(int x, int m) => (x % m + m) % m;
         public static float ActualMod(float x, float m) => (x % m + m) % m;
@@ -70,7 +70,7 @@ namespace Polyhydra.Core
         public List<Roles> FaceRoles;
         public List<Roles> VertexRoles;
         public List<HashSet<string>> FaceTags;
-        
+
         public MeshHalfedgeList Halfedges { get; private set; }
         public MeshVertexList Vertices { get; set; }
         public MeshFaceList Faces { get; private set; }
@@ -79,7 +79,7 @@ namespace Polyhydra.Core
         {
             FaceRoles = Enumerable.Repeat(role, Faces.Count).ToList();
         }
-		
+
         public void SetVertexRoles(Roles role)
         {
             VertexRoles = Enumerable.Repeat(role, Vertices.Count).ToList();
@@ -190,7 +190,7 @@ namespace Polyhydra.Core
             Grid,
             Random,
         }
-        
+
         public static PolyMesh FromConwayString(string conwayString)
         {
             // Seed types
@@ -210,10 +210,10 @@ namespace Polyhydra.Core
               {"R",  SeedShape.Random},
               {"K",  SeedShape.Grid},
             };
-            
+
             var operatorMap = new Dictionary<string, Operation>
             {
-                
+
                 {"a", Operation.Ambo},
                 {"b", Operation.Bevel},
                 {"d", Operation.Dual},
@@ -239,7 +239,7 @@ namespace Polyhydra.Core
                 {"X", Operation.Cross},
                 {"z", Operation.Zip},
                 {"C", Operation.Canonicalize},
-                
+
                 // {"r", Operation.Reflect},
                 // {"O", Operation.Quadsub},
                 // {"u", Operation.Trisub},
@@ -247,7 +247,7 @@ namespace Polyhydra.Core
                 // {"Z", Operation.Triangulate},
                 // {"A", Operation.AdjustXYZ},
             };
-            
+
             var allTokens = new HashSet<string>(seedMap.Keys);
             allTokens.UnionWith(operatorMap.Keys);
 
@@ -256,7 +256,7 @@ namespace Polyhydra.Core
 
             var tokens = new List<(string, float)>();
             int pointer = 0;
-            
+
             while (pointer < conwayString.Length)
             {
               var opString = conwayString.Substring(pointer, 1);
@@ -275,7 +275,7 @@ namespace Polyhydra.Core
               var floatValue = float.TryParse(conwayString.Substring(start_n, pointer-start_n), out floatString);
               tokens.Add((opString, floatValue ? floatString : float.NaN));
             }
-            
+
             tokens.Reverse();
             const string parameterizedSeeds = "PAYZJKU";
             if (parameterizedSeeds.IndexOf(tokens[0].Item1, StringComparison.Ordinal) >= 0)
@@ -303,7 +303,7 @@ namespace Polyhydra.Core
                 if (!float.IsNaN(tokens[i].Item2))
                 {
                     if (
-                        op==Operation.Loft || op==Operation.Needle || 
+                        op==Operation.Loft || op==Operation.Needle ||
                         op==Operation.Kis || op==Operation.Lace || op==Operation.Stake)
                     {
                         int sides = Mathf.FloorToInt(tokens[i].Item2);
@@ -315,7 +315,7 @@ namespace Polyhydra.Core
                         filter = Filter.NumberOfSides(vertexEdges);
                     }
                 }
-                
+
                 if (op==Operation.Lace && tokens[i].Item2 == 0)
                 {
                     // Antiprism's L0 op
@@ -358,7 +358,7 @@ namespace Polyhydra.Core
                 {
                     poly = poly.Canonicalize(2, 2); // Antiprism compatibility
                 }
-                
+
             }
             return poly;
         }
@@ -389,7 +389,7 @@ namespace Polyhydra.Core
 
             int paramInt = Mathf.FloorToInt(param);
             int sides = Mathf.Max(paramInt, 3);
-            
+
             switch (seedShape)
             {
                 case SeedShape.Tetrahedron:
@@ -488,7 +488,7 @@ namespace Polyhydra.Core
         {
             var faceIndices = new List<int[]>();
             var vertexPoints = new List<Vector3>();
-            
+
             // Read all non-empty, non-comment lines into a list
             var lines = reader
                 .ReadToEnd()
@@ -506,7 +506,7 @@ namespace Polyhydra.Core
             {
                 // Split on any whitespace
                 string[] vertex = Regex.Split(lines[i], "\\s+");
-                
+
                 var v = new Vector3(
                     float.Parse(vertex[0]),
                     float.Parse(vertex[1]),
@@ -514,14 +514,14 @@ namespace Polyhydra.Core
                 );
                 vertexPoints.Add(v);
             }
-            
+
             FaceTags = new List<HashSet<string>>();
 
             // Faces should immediately follow all vertices
             int firstFaceLine = NVertices + 2;
             for (int i = firstFaceLine; i < firstFaceLine + NFaces; i++)
             {
-                
+
                 // Split on any whitespace
                 var faceString = Regex.Split(lines[i], "\\s+");
                 int sides = int.Parse(faceString[0]);
@@ -549,10 +549,10 @@ namespace Polyhydra.Core
                 face = face.ToArray();
                 faceIndices.Add(face);
             }
-            
+
             var faceRoles = Enumerable.Repeat(Roles.Existing, faceIndices.Count);
             var vertexRoles = Enumerable.Repeat(Roles.Existing, NVertices);
-            
+
             FaceRoles = faceRoles.ToList();
             VertexRoles = vertexRoles.ToList();
             InitIndexed(vertexPoints, faceIndices);
@@ -615,7 +615,7 @@ namespace Polyhydra.Core
         {
             return FindBoundaries(Halfedges);
         }
-        
+
         public List<List<Halfedge>> FindBoundaries(IEnumerable<Halfedge> edges)
         {
             var looped = new HashSet<Halfedge>();
@@ -666,7 +666,7 @@ namespace Polyhydra.Core
                 octree.Add(v, v.Position);
             }
         }
-        
+
         public Vertex[] FindNeighbours(Vertex v, float distance)
         {
             return octree.GetNearby(v.Position, distance);
@@ -1044,7 +1044,7 @@ namespace Polyhydra.Core
             public List<Vector4> miscUVs1;
             public List<Vector4> miscUVs2;
         }
-        
+
         public Mesh BuildUnityMesh(MeshData meshData)
         {
             var target = new Mesh();
@@ -1063,15 +1063,15 @@ namespace Polyhydra.Core
                 meshData.meshVertices[i] = meshData.meshVertices[i]
                     * ScalingFactor
                     + new Vector3(
-                        Random.value * jitter, 
-                        Random.value * jitter, 
+                        Random.value * jitter,
+                        Random.value * jitter,
                         Random.value * jitter
                     );
             }
 
             target.vertices = meshData.meshVertices.ToArray();
             target.normals = meshData.meshNormals.ToArray();
-            
+
             if (meshData.generateSubmeshes)
             {
                 target.subMeshCount = meshData.submeshTriangles.Count;
@@ -1178,12 +1178,12 @@ namespace Polyhydra.Core
             }
             return faceIndices;
         }
-        
+
         public enum Operation
         {
-            
+
             // Conway Operators
-            
+
             Identity = 0,
             Kis = 1,
             Ambo = 2,
@@ -1222,10 +1222,10 @@ namespace Polyhydra.Core
             Ortho3 = 97,
 
             // Alternating Operators
-            
+
             SplitFaces = 34,
             Gable = 35,
-            
+
             // Thickening Operators
 
             Extrude = 36,
@@ -1234,7 +1234,10 @@ namespace Polyhydra.Core
             Skeleton = 38,
 
             // Object Transforms
-            
+
+            ScaleX = 98,
+            ScaleY = 99,
+            ScaleZ = 100,
             Recenter = 64,
             SitLevel = 65,
 
@@ -1247,7 +1250,7 @@ namespace Polyhydra.Core
             FaceRotateZ = 43,
             FaceSlide = 44,
             // Hinge = 48,
-            
+
             // Affine Vertex Transforms
 
             VertexScale = 45,
@@ -1256,9 +1259,9 @@ namespace Polyhydra.Core
             VertexStellate = 81,
 
             // PolarOffset,   TODO
-            
+
             // Shape Replication
-            
+
             // AddDual = 49,
             // AddCopyX = 50,
             // AddCopyY = 51,
@@ -1268,23 +1271,23 @@ namespace Polyhydra.Core
             // AddMirrorZ = 55,
             // Stack = 72,
             // Layer = 73,
-            
-            // Face/Vertex Deletion            
+
+            // Face/Vertex Deletion
 
             FaceRemove = 56,
             VertexRemove = 58,
-            
+
             // Topology Manipulation
-            
+
             FillHoles = 60,
             // ExtendBoundaries = 61,
             // ConnectFaces = 80,
             // FaceMerge = 62,
             Weld = 63,
             ConvexHull = 68,
-            
+
             // Non-Affine Vertex Transforms
-            
+
             // Stretch = 66,
             Spherize = 69,
             Cylinderize = 70,
@@ -1296,7 +1299,7 @@ namespace Polyhydra.Core
             PerlinNoiseZ = 88,
 
             // Store/Recall
-            
+
             // Stash = 74,
             // Unstash = 75,
             // UnstashToVerts = 76,
@@ -1304,9 +1307,9 @@ namespace Polyhydra.Core
             AddTag = 90,
             RemoveTag = 91,
             ClearTags = 92,
-            
+
             // Generator Ops
-            
+
             Sweep = 95,
         }
 
@@ -1319,11 +1322,11 @@ namespace Polyhydra.Core
                 return this;
             }
             PolyMesh polyMesh = this;
-            
+
             switch (op)
             {
                 // Conway Operators
-                
+
                 case Operation.Identity:
                     polyMesh = Duplicate();
                     break;
@@ -1435,16 +1438,16 @@ namespace Polyhydra.Core
                     break;
 
                 // Alternating Operators
-                
+
                 case Operation.SplitFaces:
                     polyMesh = polyMesh.SplitFaces(p);
                     break;
                 case Operation.Gable:
                     polyMesh = polyMesh.Gable(p);
                     break;
-                
+
                 // Thickening Operators
-                
+
                 case Operation.Extrude:
                     polyMesh = polyMesh.Extrude(p);
                     break;
@@ -1540,7 +1543,7 @@ namespace Polyhydra.Core
                 //     polyMesh = polyMesh.Layer(p);
                 //     break;
 
-                // Face/Vertex Deletion            
+                // Face/Vertex Deletion
 
                 case Operation.FaceRemove:
                     polyMesh = polyMesh.FaceRemove(p);
@@ -1615,11 +1618,11 @@ namespace Polyhydra.Core
                 case Operation.ClearTags:
                     polyMesh.ClearTags(p);
                     break;
-                
+
                 case Operation.Sweep:
                     polyMesh = polyMesh.Sweep(p);
                     break;
-                
+
                 default:
                     Debug.LogError($"Unrecognised operation: {op}");
                     break;
