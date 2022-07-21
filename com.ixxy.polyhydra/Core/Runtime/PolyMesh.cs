@@ -1465,6 +1465,16 @@ namespace Polyhydra.Core
 
                 // Object Transforms
 
+                case Operation.ScaleX:
+                    polyMesh = polyMesh.Scale(p, (int)Axis.X);
+                    break;
+                case Operation.ScaleY:
+                    polyMesh = polyMesh.Scale(p, (int)Axis.Y);
+                    break;
+                case Operation.ScaleZ:
+                    polyMesh = polyMesh.Scale(p, (int)Axis.Z);
+                    break;
+
                 case Operation.Recenter:
                     polyMesh.Recenter();
                     break;
@@ -1487,7 +1497,7 @@ namespace Polyhydra.Core
                     polyMesh = polyMesh.FaceRotate(p, (int)Axis.Y);
                     break;
                 case Operation.FaceRotateZ:
-                    polyMesh = polyMesh.FaceRotate(p,  (int)Axis.Z);
+                    polyMesh = polyMesh.FaceRotate(p, (int)Axis.Z);
                     break;
                 case Operation.FaceSlide:
                     polyMesh = polyMesh.FaceSlide(p);
