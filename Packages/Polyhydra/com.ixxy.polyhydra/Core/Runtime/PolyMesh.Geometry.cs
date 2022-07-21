@@ -80,6 +80,46 @@ namespace Polyhydra.Core
             return original;
         }
 
+        public PolyMesh Scale(OpParams o, int axis)
+        {
+            PolyMesh poly;
+
+            if (o.filter == null)
+            {
+                poly = this;
+            }
+            else
+            {
+                poly = FaceRemove(new OpParams(o.filter), true);
+            }
+
+            switch (axis)
+            {
+                case 0:
+                    poly.Scale(new Vector3(o.OriginalParamA, 1, 1));
+                    break;
+                case 1:
+                    poly.Scale(new Vector3(1, o.OriginalParamA, 1));
+                    break;
+                case 2:
+                    poly.Scale(new Vector3(1, 1, o.OriginalParamA));
+                    break;
+            }
+
+            PolyMesh result;
+            if (o.filter == null)
+            {
+                result = poly;
+            }
+            else
+            {
+                result= FaceRemove(new OpParams(o.filter), false);
+                result.Append(poly);
+            }
+            return result;
+
+        }
+
         public void Scale(Vector3 scale)
         {
             if (Vertices.Count > 0)
