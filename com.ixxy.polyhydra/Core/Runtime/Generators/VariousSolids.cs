@@ -15,22 +15,11 @@ namespace Polyhydra.Core
 
     public static class VariousSolids
     {
-        public static PolyMesh Build(VariousSolidTypes type, int x, int y, int z = 0)
-        {
-            return type switch
-            {
-                VariousSolidTypes.UvSphere => UvSphere(x, y),
-                VariousSolidTypes.UvHemisphere => UvHemisphere(x, y),
-                VariousSolidTypes.Torus => Torus(x, y, z),
-                VariousSolidTypes.Box => Box(x, y, z),
-                VariousSolidTypes.Stairs => Stairs(x, y, z)
-            };
-        }
 
-        private static PolyMesh Torus(int pathSteps, int shapeSides, int scale)
+        public static PolyMesh Torus(int pathSteps, int shapeSides, float scale)
         {
             var shape = Shapes.Build(ShapeTypes.Polygon, shapeSides);
-            shape = shape.FaceScale(new OpParams(scale/100f)); 
+            shape = shape.FaceScale(new OpParams(scale/100f));
             var path = Shapes.Build(ShapeTypes.Polygon, pathSteps);
             return path.Sweep(path.Faces[0].Get2DVertices(), shape.Faces[0].Get2DVertices(), true);
         }
@@ -127,21 +116,23 @@ namespace Polyhydra.Core
             return poly;
         }
 
-        public static PolyMesh Stairs(int steps, int width, float height, bool splitAlongWidth=false)
+        public static PolyMesh Stairs(int steps, float width, float height, bool splitAlongWidth=false)
         {
             PolyMesh poly;
             OpFunc func;
+
             if (splitAlongWidth)
             {
-                poly = Grids.Build(GridEnums.GridTypes.K_4_4_4_4, GridEnums.GridShapes.Plane, width, steps);
-                func = new(
-                    x => x.index / width / (1f / height) + height
-                );
+                // Uses an x/z grid to create multiple x segments - so width will be cast to int
+                poly = Grids.Build(GridEnums.GridTypes.K_4_4_4_4, GridEnums.GridShapes.Plane, Mathf.FloorToInt(width), steps);
+                func = new OpFunc(x => x.index / width / (1f / height) + height);
             }
             else
             {
+                // A single width division
                 poly = Grids.Build(GridEnums.GridTypes.K_4_4_4_4, GridEnums.GridShapes.Plane, 1, steps);
-                poly.Transform(Vector3.zero, scale: new Vector3(width, 1, 1));
+                // Scale in x to give the desired width
+                poly.Scale(new Vector3(width, 1, 1));
                 func = new OpFunc(x => x.index / (1f / height) + height);
             }
             return poly.Extrude(new OpParams(func));
