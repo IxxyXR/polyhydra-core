@@ -1123,7 +1123,7 @@ namespace Polyhydra.Core
                     color = colors[(int)faceRole];
                     break;
                 case ColorMethods.BySides:
-                    color = colors[face.Sides % colors.Length];
+                    color = colors[(face.Sides - 3) % colors.Length];
                     break;
                 case ColorMethods.ByFaceDirection:
                     color = colors[CalcDirectionIndex(face, colors.Length - 1)];
