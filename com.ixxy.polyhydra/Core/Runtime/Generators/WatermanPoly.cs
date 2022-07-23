@@ -7,6 +7,7 @@
 * Public Domain: http://creativecommons.org/publicdomain/zero/1.0/
 */
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using GK;
@@ -16,8 +17,12 @@ using UnityEngine;
 	public static class WatermanPoly
 	{
 		public static PolyMesh Build(float R = 1.0f, int root = 2, int c = 0, bool mergeFaces=false)
-		{
-			Vector3[] centers = 
+        {
+
+            // Avoid a weird failure case
+            if (c == 0 && root == 1){ root = 2; }
+
+			Vector3[] centers =
 			{
 				new Vector3(0, 0, 0),
 				new Vector3(0.5f, 0.5f, 0.0f),
@@ -27,7 +32,7 @@ using UnityEngine;
 				new Vector3(0.0f, 0.0f, 0.5f),
 				new Vector3(1.0f, 0.0f, 0.0f)
 			};
-			
+
 			if (root < 1)
 			{
 				return new PolyMesh();
@@ -114,18 +119,28 @@ using UnityEngine;
 					}
 				}
 			}
-			
+
             var verts = new List<Vector3>();
             var normals = new List<Vector3>();
             var tris = new List<int>();
-			
+
 			var hull = new ConvexHullCalculator();
             hull.GenerateHull(points, false, ref verts, ref tris, ref normals);
             var faces = tris.Select((x, i) => new { Index = i, Value = x })
                 .GroupBy(x => x.Index / 3)
                 .Select(x => x.Select(v => v.Value));
             var poly = new PolyMesh(verts, faces);
-            if (mergeFaces) poly.MergeCoplanarFaces(0.01f);
+            if (mergeFaces)
+            {
+                try
+                {
+                    poly.MergeCoplanarFaces(0.01f);
+                }
+                catch (Exception e)
+                {
+                    Debug.LogWarning($"Failed to merge coplanar faces: {e.Message}");
+                }
+            }
             return poly;
 		}
 	}
