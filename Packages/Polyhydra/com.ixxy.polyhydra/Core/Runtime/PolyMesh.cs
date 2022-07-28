@@ -31,6 +31,7 @@ namespace Polyhydra.Core
         ByRole,
         ByFaceDirection,
         ByTags,
+        ByIndex
     }
 
     public enum Roles
@@ -800,23 +801,15 @@ namespace Polyhydra.Core
 
             if (generateSubmeshes)
             {
-                switch (colorMethod)
+                if (colorMethod == ColorMethods.ByTags)
                 {
-                    case ColorMethods.ByRole:
-                        uniqueRoles = new HashSet<Roles>(FaceRoles).ToList();
-                        for (int i = 0; i < uniqueRoles.Count; i++) submeshTriangles.Add(new List<int>());
-                        break;
-                    case ColorMethods.BySides:
-                        for (int i = 0; i < colors.Length; i++) submeshTriangles.Add(new List<int>());
-                        break;
-                    case ColorMethods.ByFaceDirection:
-                        for (int i = 0; i < colors.Length; i++) submeshTriangles.Add(new List<int>());
-                        break;
-                    case ColorMethods.ByTags:
-                        var flattenedTags = FaceTags.SelectMany(d => d);
-                        uniqueTags = new HashSet<string>(flattenedTags).ToList();
-                        for (int i = 0; i < uniqueTags.Count + 1; i++) submeshTriangles.Add(new List<int>());
-                        break;
+                    var flattenedTags = FaceTags.SelectMany(d => d);
+                    uniqueTags = new HashSet<string>(flattenedTags).ToList();
+                    for (int i = 0; i < uniqueTags.Count + 1; i++) submeshTriangles.Add(new List<int>());
+                }
+                else
+                {
+                    for (int i = 0; i < colors.Length; i++) submeshTriangles.Add(new List<int>());
                 }
             }
 
@@ -987,7 +980,10 @@ namespace Polyhydra.Core
                             submeshTriangles[face.Sides].AddRange(faceTris);
                             break;
                         case ColorMethods.ByFaceDirection:
-                            submeshTriangles[CalcDirectionIndex(face, colors.Length - 1)].AddRange(faceTris);
+                            submeshTriangles[DirectionIndex(face.Normal) % colors.Length].AddRange(faceTris);
+                            break;
+                        case ColorMethods.ByIndex:
+                            submeshTriangles[index % colors.Length].AddRange(faceTris);
                             break;
                         case ColorMethods.ByTags:
                             if (FaceTags[i].Count > 0)
@@ -1097,19 +1093,17 @@ namespace Polyhydra.Core
         }
 
 
-        private static int CalcDirectionIndex(Face face, int range)
+        private static int DirectionIndex(Vector3 normal)
         {
-            var angles = new[]
-            {
-                Vector3.Angle(face.Normal, Vector3.up),
-                Vector3.Angle(face.Normal, Vector3.down),
-                Vector3.Angle(face.Normal, Vector3.left),
-                Vector3.Angle(face.Normal, Vector3.right),
-                Vector3.Angle(face.Normal, Vector3.forward),
-                Vector3.Angle(face.Normal, Vector3.back),
-            };
-            float angle = angles.Min();
-            return Mathf.FloorToInt((angle / 90f) * range);
+            // Returns 0, 1 or 2 depending if the normal is mostly facing x, y or z
+            normal = new Vector3(Mathf.Abs(normal.x), Mathf.Abs(normal.y), Mathf.Abs(normal.z));
+            int index;
+            if (normal.x > normal.y)
+            {index = normal.z > normal.x ? 2 : 0;}
+            else if (normal.z > normal.y)
+            {index = 2;}
+            else {index = 1;}
+            return index;
         }
 
         public Color32 CalcFaceColor(Color[] colors, ColorMethods colorMethod, int i)
@@ -1126,7 +1120,10 @@ namespace Polyhydra.Core
                     color = colors[(face.Sides - 3) % colors.Length];
                     break;
                 case ColorMethods.ByFaceDirection:
-                    color = colors[CalcDirectionIndex(face, colors.Length - 1)];
+                    color = colors[DirectionIndex(face.Normal) % colors.Length];
+                    break;
+                case ColorMethods.ByIndex:
+                    color = colors[i % colors.Length];
                     break;
                 case ColorMethods.ByTags:
                     if (i < FaceTags.Count && FaceTags[i].Count > 0)
@@ -1580,7 +1577,7 @@ namespace Polyhydra.Core
                     polyMesh = polyMesh.Weld(p.OriginalParamA);
                     break;
                 case Operation.ConvexHull:
-                    polyMesh = polyMesh.ConvexHull(true);
+                    polyMesh = polyMesh.ConvexHull();
                     break;
 
                 // Non-Affine Vertex Transforms
