@@ -36,11 +36,11 @@ namespace Polyhydra.Core
 
     public enum Roles
     {
-        Ignored,
         Existing,
         New,
         NewAlt,
         ExistingAlt,
+        Ignored,
     }
 
     public partial class PolyMesh
