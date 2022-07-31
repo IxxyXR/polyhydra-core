@@ -455,7 +455,6 @@ namespace Polyhydra.Core
             var vertexPoints = new List<Vector3>();
             var faceIndices = new List<IEnumerable<int>>();
 
-            var faceRoles = new List<Roles>();
             var vertexRoles = new List<Roles>();
 
             for (var faceIndex = 0; faceIndex < Faces.Count; faceIndex++)
@@ -479,12 +478,11 @@ namespace Polyhydra.Core
                 }
 
                 faceIndices.Add(faceVertices);
-                faceRoles.Add(includeFace ? FaceRoles[faceIndex] : Roles.Ignored);
                 var vertexRole = includeFace ? Roles.Existing : Roles.Ignored;
                 vertexRoles.AddRange(Enumerable.Repeat(vertexRole, faceVertices.Count));
             }
 
-            return new PolyMesh(vertexPoints, faceIndices, faceRoles, vertexRoles, FaceTags);
+            return new PolyMesh(vertexPoints, faceIndices, FaceRoles, vertexRoles, FaceTags);
         }
 
         public PolyMesh FaceRotate(OpParams o, int axis = 0)
@@ -492,7 +490,6 @@ namespace Polyhydra.Core
             var vertexPoints = new List<Vector3>();
             var faceIndices = new List<IEnumerable<int>>();
 
-            var faceRoles = new List<Roles>();
             var vertexRoles = new List<Roles>();
 
 
@@ -530,12 +527,11 @@ namespace Polyhydra.Core
                 }
 
                 faceIndices.Add(faceVertices);
-                faceRoles.Add(includeFace ? FaceRoles[faceIndex] : Roles.Ignored);
                 var vertexRole = includeFace ? Roles.Existing : Roles.Ignored;
                 vertexRoles.AddRange(Enumerable.Repeat(vertexRole, faceVertices.Count));
             }
 
-            return new PolyMesh(vertexPoints, faceIndices, faceRoles, vertexRoles, FaceTags);
+            return new PolyMesh(vertexPoints, faceIndices, FaceRoles, vertexRoles, FaceTags);
         }
 
         public PolyMesh VertexRemove(OpParams o, bool invertLogic)
