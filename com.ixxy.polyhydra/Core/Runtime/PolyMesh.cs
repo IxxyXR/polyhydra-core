@@ -754,7 +754,6 @@ namespace Polyhydra.Core
             {
                 bounds.Encapsulate(vert.Position);
             }
-
             return bounds;
         }
 
@@ -1286,6 +1285,9 @@ namespace Polyhydra.Core
             // Non-Affine Vertex Transforms
 
             // Stretch = 66,
+            TaperX = 101,
+            TaperY = 102,
+            TaperZ = 103,
             Spherize = 69,
             Cylinderize = 70,
             Bulge = 93,
@@ -1585,6 +1587,15 @@ namespace Polyhydra.Core
                 // case Operation.Stretch:
                 //     polyMesh = polyMesh.Stretch(p);
                 //     break;
+                case Operation.TaperX:
+                    polyMesh = polyMesh.Taper(p, (int)Axis.X);
+                    break;
+                case Operation.TaperY:
+                    polyMesh = polyMesh.Taper(p, (int)Axis.Y);
+                    break;
+                case Operation.TaperZ:
+                    polyMesh = polyMesh.Taper(p, (int)Axis.Z);
+                    break;
                 case Operation.Spherize:
                     polyMesh = polyMesh.Spherize(p);
                     break;

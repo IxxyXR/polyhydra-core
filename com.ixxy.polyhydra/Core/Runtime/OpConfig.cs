@@ -504,12 +504,30 @@ namespace Polyhydra.Core
                     }
                 },
                 {
-                    PolyMesh.Operation.ScaleZ,
+                    PolyMesh.Operation.TaperX,
                     new OpConfig
                     {
                         usesFilter = true,
-                        amountDefault = .5f,
-                        amountMin = 0.0001f, amountMax = 10, amountSafeMin = -10, amountSafeMax = 10
+                        amountDefault = -.5f,
+                        amountMin = -3f, amountMax = 8, amountSafeMin = -1f, amountSafeMax = 2
+                    }
+                },
+                {
+                    PolyMesh.Operation.TaperY,
+                    new OpConfig
+                    {
+                        usesFilter = true,
+                        amountDefault = -.5f,
+                        amountMin = -3f, amountMax = 8, amountSafeMin = -1f, amountSafeMax = 2
+                    }
+                },
+                {
+                    PolyMesh.Operation.TaperZ,
+                    new OpConfig
+                    {
+                        usesFilter = true,
+                        amountDefault = -.5f,
+                        amountMin = -3f, amountMax = 8, amountSafeMin = -1f, amountSafeMax = 2
                     }
                 },
                 {

@@ -136,6 +136,44 @@ namespace Polyhydra.Core
             }
         }
 
+        public PolyMesh Taper(OpParams o, int axis)
+        {
+            PolyMesh poly = o.filter == null ? this : FaceRemove(new OpParams(o.filter), true);
+            Bounds bounds = poly.GetBounds();
+
+            float min = bounds.min[axis];
+            float max = bounds.max[axis];
+            float amount = o.OriginalParamA;
+
+            if (poly.Vertices.Count > 0)
+            {
+                for (var i = 0; i < poly.Vertices.Count; i++)
+                {
+                    var vertexPos = poly.Vertices[i].Position;
+                    float pos = vertexPos[axis];
+                    float scale = Mathf.InverseLerp(min, max, pos) * amount;
+                    poly.Vertices[i].Position = new Vector3(
+                        vertexPos.x * (axis!=0 ? scale + 1 : 1),
+                        vertexPos.y * (axis!=1 ? scale + 1 : 1),
+                        vertexPos.z * (axis!=2 ? scale + 1 : 1)
+                    );
+                }
+            }
+
+            PolyMesh result;
+            if (o.filter == null)
+            {
+                result = poly;
+            }
+            else
+            {
+                result = FaceRemove(new OpParams(o.filter), false);
+                result.Append(poly);
+            }
+
+            return result;
+        }
+
         public void Transform(Vector3 pos, Vector3? rot = null, Vector3? scale = null)
         {
             var matrix = Matrix4x4.TRS(
