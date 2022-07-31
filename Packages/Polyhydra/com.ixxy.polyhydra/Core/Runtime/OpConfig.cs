@@ -518,7 +518,7 @@ namespace Polyhydra.Core
                     {
                         usesFilter = true,
                         amountDefault = 0.5f,
-                        amountMin = -6, amountMax = 6, amountSafeMin = -1, amountSafeMax = 0.999f
+                        amountMin = -8, amountMax = 8, amountSafeMin = -4, amountSafeMax = 4f
                     }
                 },
                 {
@@ -554,7 +554,7 @@ namespace Polyhydra.Core
                     {
                         usesFilter = true,
                         amountDefault = 0.5f,
-                        amountMin = -8, amountMax = 8, amountSafeMin = -4, amountSafeMax = 4
+                        amountMin = -8, amountMax = 8, amountSafeMin = 0, amountSafeMax = 4
                     }
                 },
                 {
