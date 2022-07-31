@@ -19,17 +19,16 @@ namespace Polyhydra.Core
             return filter == null || filter.evalVertex(new FilterParams(this, vertexIndex));
         }
 
-        public PolyMesh AddMirrored(OpParams o, Vector3 axis)
+        public PolyMesh Mirror(OpParams o, Vector3 axis)
         {
             float amount = o.GetValueA(this, 0);
-            var original = FaceRemove(o);
-            var mirror = original.Duplicate();
-            mirror.Mirror(axis, amount);
+            var mirror = Duplicate();
             mirror = mirror.FaceRemove(o, true);
+            mirror.Mirror(axis, amount);
             mirror.Halfedges.Flip();
-            original.Append(mirror);
-            original.Recenter();
-            return original;
+            mirror.Append(this);
+            mirror.Recenter();
+            return mirror;
         }
 
         public void Mirror(Vector3 axis, float offset)
@@ -45,6 +44,11 @@ namespace Polyhydra.Core
                 var v = Vertices[i];
                 v.Position = Vector3.Reflect(v.Position, axis);
             }
+        }
+
+        public PolyMesh AddCopy(OpParams o, Vector3 axis)
+        {
+            return AddCopy(axis, o.OriginalParamA, o.filter);
         }
 
         public PolyMesh AddCopy(Vector3 axis, float amount, Filter filter, string tags = "")
