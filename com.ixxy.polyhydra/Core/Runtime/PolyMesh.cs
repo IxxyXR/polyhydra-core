@@ -1256,15 +1256,15 @@ namespace Polyhydra.Core
 
             // PolarOffset,   TODO
 
-            // Shape Replication
+            // Replication
 
-            // AddDual = 49,
-            // AddCopyX = 50,
-            // AddCopyY = 51,
-            // AddCopyZ = 52,
-            // AddMirrorX = 53,
-            // AddMirrorY = 54,
-            // AddMirrorZ = 55,
+            AddDual = 49,
+            DuplicateX = 50,
+            DuplicateY = 51,
+            DuplicateZ = 52,
+            MirrorX = 53,
+            MirrorY = 54,
+            MirrorZ = 55,
             // Stack = 72,
             // Layer = 73,
 
@@ -1524,27 +1524,27 @@ namespace Polyhydra.Core
 
                 // Shape Replication
 
-                // case Operation.AddDual:
-                //     polyMesh = polyMesh.AddDual(p);
-                //     break;
-                // case Operation.AddCopyX:
-                //     polyMesh = polyMesh.AddCopy(p);
-                //     break;
-                // case Operation.AddCopyY:
-                //     polyMesh = polyMesh.AddCopyY(p);
-                //     break;
-                // case Operation.AddCopyZ:
-                //     polyMesh = polyMesh.AddCopyZ(p);
-                //     break;
-                // case Operation.AddMirrorX:
-                //     polyMesh = polyMesh.AddMirrorX(p);
-                //     break;
-                // case Operation.AddMirrorY:
-                //     polyMesh = polyMesh.AddMirrorY(p);
-                //     break;
-                // case Operation.AddMirrorZ:
-                //     polyMesh = polyMesh.AddMirrorZ(p);
-                //     break;
+                case Operation.AddDual:
+                    polyMesh = polyMesh.AddDual(p.OriginalParamA);
+                    break;
+                case Operation.DuplicateX:
+                    polyMesh = polyMesh.AddCopy(p, Vector3.right);
+                    break;
+                case Operation.DuplicateY:
+                    polyMesh = polyMesh.AddCopy(p, Vector3.up);
+                    break;
+                case Operation.DuplicateZ:
+                    polyMesh = polyMesh.AddCopy(p, Vector3.forward);
+                    break;
+                case Operation.MirrorX:
+                    polyMesh = polyMesh.Mirror(p, Vector3.right);
+                    break;
+                case Operation.MirrorY:
+                    polyMesh = polyMesh.Mirror(p, Vector3.up);
+                    break;
+                case Operation.MirrorZ:
+                    polyMesh = polyMesh.Mirror(p, Vector3.forward);
+                    break;
                 // case Operation.Stack:
                 //     polyMesh = polyMesh.Stack(p);
                 //     break;

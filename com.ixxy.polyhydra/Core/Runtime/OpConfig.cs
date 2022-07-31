@@ -665,68 +665,68 @@ namespace Polyhydra.Core
                 // 		amountMin = -180, amountMax = 180, amountSafeMin = 0, amountSafeMax = 180
                 // 	}
                 // },
-                // {
-                // 	PolyMesh.Operation.AddDual,
-                // 	new OpConfig
-                // 	{
-                // 		amountDefault = 1f,
-                // 		amountMin = -6, amountMax = 6, amountSafeMin = -2, amountSafeMax = 2
-                // 	}
-                // },
-                // {
-                // 	PolyMesh.Operation.AddCopyX,
-                // 	new OpConfig
-                // 	{
-                // 		usesFilter = true,
-                // 		amountDefault = 0,
-                // 		amountMin = -6, amountMax = 6, amountSafeMin = -2, amountSafeMax = 2
-                // 	}
-                // },
-                // {
-                // 	PolyMesh.Operation.AddCopyY,
-                // 	new OpConfig
-                // 	{
-                // 		usesFilter = true,
-                // 		amountDefault = 0,
-                // 		amountMin = -6, amountMax = 6, amountSafeMin = -2, amountSafeMax = 2
-                // 	}
-                // },
-                // {
-                // 	PolyMesh.Operation.AddCopyZ,
-                // 	new OpConfig
-                // 	{
-                // 		usesFilter = true,
-                // 		amountDefault = 0,
-                // 		amountMin = -6, amountMax = 6, amountSafeMin = -2, amountSafeMax = 2
-                // 	}
-                // },
-                // {
-                // 	PolyMesh.Operation.AddMirrorX,
-                // 	new OpConfig
-                // 	{
-                // 		usesFilter = true,
-                // 		amountDefault = 0,
-                // 		amountMin = -6, amountMax = 6, amountSafeMin = -2, amountSafeMax = 2
-                // 	}
-                // },
-                // {
-                // 	PolyMesh.Operation.AddMirrorY,
-                // 	new OpConfig
-                // 	{
-                // 		usesFilter = true,
-                // 		amountDefault = 0,
-                // 		amountMin = -6, amountMax = 6, amountSafeMin = -2, amountSafeMax = 2
-                // 	}
-                // },
-                // {
-                // 	PolyMesh.Operation.AddMirrorZ,
-                // 	new OpConfig
-                // 	{
-                // 		usesFilter = true,
-                // 		amountDefault = 0,
-                // 		amountMin = -6, amountMax = 6, amountSafeMin = -2, amountSafeMax = 2
-                // 	}
-                // },
+                {
+                	PolyMesh.Operation.AddDual,
+                	new OpConfig
+                	{
+                		amountDefault = 1f,
+                		amountMin = -6, amountMax = 6, amountSafeMin = -2, amountSafeMax = 2
+                	}
+                },
+                {
+                	PolyMesh.Operation.DuplicateX,
+                	new OpConfig
+                	{
+                		usesFilter = true,
+                		amountDefault = 1,
+                		amountMin = -6, amountMax = 6, amountSafeMin = -2, amountSafeMax = 2
+                	}
+                },
+                {
+                	PolyMesh.Operation.DuplicateY,
+                	new OpConfig
+                	{
+                		usesFilter = true,
+                		amountDefault = 1,
+                		amountMin = -6, amountMax = 6, amountSafeMin = -2, amountSafeMax = 2
+                	}
+                },
+                {
+                	PolyMesh.Operation.DuplicateZ,
+                	new OpConfig
+                	{
+                		usesFilter = true,
+                		amountDefault = 1,
+                		amountMin = -6, amountMax = 6, amountSafeMin = -2, amountSafeMax = 2
+                	}
+                },
+                {
+                	PolyMesh.Operation.MirrorX,
+                	new OpConfig
+                	{
+                		usesFilter = true,
+                		amountDefault = 0,
+                		amountMin = -6, amountMax = 6, amountSafeMin = -2, amountSafeMax = 2
+                	}
+                },
+                {
+                	PolyMesh.Operation.MirrorY,
+                	new OpConfig
+                	{
+                		usesFilter = true,
+                		amountDefault = 0,
+                		amountMin = -6, amountMax = 6, amountSafeMin = -2, amountSafeMax = 2
+                	}
+                },
+                {
+                	PolyMesh.Operation.MirrorZ,
+                	new OpConfig
+                	{
+                		usesFilter = true,
+                		amountDefault = 0,
+                		amountMin = -6, amountMax = 6, amountSafeMin = -2, amountSafeMax = 2
+                	}
+                },
                 // {PolyMesh.Operation.Stash, new OpConfig
                 // 	{
                 // 		usesFilter = true,
