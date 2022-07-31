@@ -508,7 +508,7 @@ namespace Polyhydra.Core
 
                 Vector3 direction = axis switch
                 {
-                    0 => Vector3.Cross(face.Normal, Vector3.up),
+                    0 => Vector3.Cross(face.Normal, Vector3.left),
                     1 => Vector3.Cross(face.Normal, Vector3.forward),
                     2 => face.Normal
                 };
