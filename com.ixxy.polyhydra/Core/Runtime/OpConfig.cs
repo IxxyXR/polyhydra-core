@@ -491,7 +491,7 @@ namespace Polyhydra.Core
                     {
                         usesFilter = true,
                         amountDefault = .5f,
-                        amountMin = 0.0001f, amountMax = 10, amountSafeMin = -10, amountSafeMax = 10
+                        amountMin = -10, amountMax = 10, amountSafeMin = .001f, amountSafeMax = 4
                     }
                 },
                 {
@@ -500,7 +500,16 @@ namespace Polyhydra.Core
                     {
                         usesFilter = true,
                         amountDefault = .5f,
-                        amountMin = 0.0001f, amountMax = 10, amountSafeMin = -10, amountSafeMax = 10
+                        amountMin = -10, amountMax = 10, amountSafeMin = .001f, amountSafeMax = 4
+                    }
+                },
+                {
+                    PolyMesh.Operation.ScaleZ,
+                    new OpConfig
+                    {
+                        usesFilter = true,
+                        amountDefault = .5f,
+                        amountMin = -10, amountMax = 10, amountSafeMin = .001f, amountSafeMax = 4
                     }
                 },
                 {
