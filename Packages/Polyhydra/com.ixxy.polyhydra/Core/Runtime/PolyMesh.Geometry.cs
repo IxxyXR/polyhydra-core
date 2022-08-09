@@ -887,6 +887,7 @@ namespace Polyhydra.Core
             return Shell(new OpParams(new OpFunc(x => offsetList[x.index])), symmetric);
         }
 
+        // Intended mainly for flat 2D shapes
         public PolyMesh LayeredExtrude(int storeys, float storeyHeight = 1f)
         {
             var roof = Duplicate();
