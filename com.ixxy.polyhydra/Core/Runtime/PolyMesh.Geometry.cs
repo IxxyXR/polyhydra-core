@@ -952,7 +952,7 @@ namespace Polyhydra.Core
 
             result.Halfedges.Flip();
 
-            // append top to ext (can't use Append() because copy would reverse face loops)
+            // Append top to ext (can't use Append() because copy would reverse face loops)
             foreach (var v in top.Vertices) result.Vertices.Add(v);
             foreach (var h in top.Halfedges) result.Halfedges.Add(h);
             for (var topFaceIndex = 0; topFaceIndex < top.Faces.Count; topFaceIndex++)
@@ -999,8 +999,12 @@ namespace Polyhydra.Core
             }
 
             result.FaceTags = newFaceTags;
-            result.Halfedges.MatchPairs();
 
+            // No need for this if we weld.
+            // result.Halfedges.MatchPairs();
+
+            // Topology is borked without weld. (try following shell with chamfer)
+            result = result.Weld(.0001f);  // TODO why do we need to do this?
             return result;
         }
 
