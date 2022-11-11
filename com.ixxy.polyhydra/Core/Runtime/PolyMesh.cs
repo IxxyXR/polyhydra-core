@@ -1140,9 +1140,9 @@ namespace Polyhydra.Core
         {
             int hex = Int32.Parse(htmlColor.Replace("#", ""), NumberStyles.HexNumber);
             return new Color(
-                (hex & 0xff0000)>> 0x10,
-                (hex & 0xff00)>> 8,
-                hex & 0xff
+                ((hex & 0xff0000)>> 0x10)/255f,
+                ((hex & 0xff00)>> 8)/255f,
+                (hex & 0xff)/255f
             );
         }
 
