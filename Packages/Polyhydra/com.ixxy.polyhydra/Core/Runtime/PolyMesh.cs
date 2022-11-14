@@ -72,6 +72,9 @@ namespace Polyhydra.Core
         public List<Roles> VertexRoles;
         public List<HashSet<string>> FaceTags;
 
+        // Should we even split triangles within a face?
+        private const bool FACETED_FACES = false;
+
         public MeshHalfedgeList Halfedges { get; private set; }
         public MeshVertexList Vertices { get; set; }
         public MeshFaceList Faces { get; private set; }
@@ -878,15 +881,43 @@ namespace Polyhydra.Core
                 {
                     if (face.AreAllVertsVisibleFromCentroid())
                     {
-                        for (var edgeIndex = 0; edgeIndex < faceIndex.Count; edgeIndex++)
+                        // Convex faces can use fan triangulation
+                        // It's fast at the cost of an extra triangle per face
+
+                        int centroidIndex;
+                        if (!FACETED_FACES)
                         {
-                            // Convex faces can use fan triangulation
-                            // It's fast at the cost of an extra triangle per face
                             meshVertices.Add(faceCentroid);
                             meshUVs.Add(calcUV(meshVertices[index], xAxis, yAxis));
-                            faceTris.Add(index++);
                             edgeUVs.Add(new Vector2(0, 0));
                             barycentricUVs.Add(new Vector3(0, 0, 1));
+                            centroidIndex = index++;
+
+                            meshNormals.Add(faceNormal);
+                            meshColors.Add(color);
+                            miscUVs1.Add(miscUV1);
+                            miscUVs2.Add(miscUV2);
+                        }
+
+                        for (var edgeIndex = 0; edgeIndex < faceIndex.Count; edgeIndex++)
+                        {
+                            if (!FACETED_FACES)
+                            {
+                                faceTris.Add(centroidIndex);
+                            }
+                            else
+                            {
+                                meshVertices.Add(faceCentroid);
+                                meshUVs.Add(calcUV(meshVertices[index], xAxis, yAxis));
+                                faceTris.Add(index++);
+                                edgeUVs.Add(new Vector2(0, 0));
+                                barycentricUVs.Add(new Vector3(0, 0, 1));
+
+                                meshNormals.Add(faceNormal);
+                                meshColors.Add(color);
+                                miscUVs1.Add(miscUV1);
+                                miscUVs2.Add(miscUV2);
+                            }
 
                             meshVertices.Add(points[faceIndex[edgeIndex]]);
                             meshUVs.Add(calcUV(meshVertices[index], xAxis, yAxis));
@@ -894,16 +925,21 @@ namespace Polyhydra.Core
                             edgeUVs.Add(new Vector2(1, 1));
                             barycentricUVs.Add(new Vector3(0, 1, 0));
 
+                            meshNormals.Add(faceNormal);
+                            meshColors.Add(color);
+                            miscUVs1.Add(miscUV1);
+                            miscUVs2.Add(miscUV2);
+
                             meshVertices.Add(points[faceIndex[(edgeIndex + 1) % face.Sides]]);
                             meshUVs.Add(calcUV(meshVertices[index], xAxis, yAxis));
                             faceTris.Add(index++);
                             edgeUVs.Add(new Vector2(1, 1));
                             barycentricUVs.Add(new Vector3(1, 0, 0));
 
-                            meshNormals.AddRange(Enumerable.Repeat(faceNormal, 3));
-                            meshColors.AddRange(Enumerable.Repeat(color, 3));
-                            miscUVs1.AddRange(Enumerable.Repeat(miscUV1, 3));
-                            miscUVs2.AddRange(Enumerable.Repeat(miscUV2, 3));
+                            meshNormals.Add(faceNormal);
+                            meshColors.Add(color);
+                            miscUVs1.Add(miscUV1);
+                            miscUVs2.Add(miscUV2);
                         }
                     }
                     else
