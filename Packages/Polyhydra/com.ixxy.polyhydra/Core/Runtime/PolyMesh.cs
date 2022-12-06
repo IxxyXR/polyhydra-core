@@ -1520,7 +1520,9 @@ namespace Polyhydra.Core
                 // Face Transforms
 
                 case Operation.FaceOffset:
-                    polyMesh = polyMesh.FaceOffset(p);
+                    polyMesh = polyMesh.StraightSkeleton(p);
+                    // polyMesh = polyMesh.FaceInset(p);
+                    // polyMesh = polyMesh.Tesselate(p);
                     break;
                 case Operation.FaceScale:
                     polyMesh = polyMesh.FaceScale(p);
@@ -1686,5 +1688,58 @@ namespace Polyhydra.Core
 
         }
 
+        public List<PolyMesh> SplitToSeparatePolys()
+        {
+            int groupIndex = 0;
+            int facesProcessed = 0;
+            var faceGroups = new Dictionary<Face, int>();
+            var queue = new List<Face>();
+
+            do
+            {
+                var currentFace = Faces.First(f => !faceGroups.ContainsKey(f));
+                faceGroups[currentFace] = groupIndex;
+                queue.Add(currentFace);
+
+                int queuePointer = 0;
+                while (queue.Count != 0)
+                {
+                    currentFace = queue.First();
+                    queue.RemoveAt(0);
+                    foreach (var edge in currentFace.GetHalfedges())
+                    {
+                        var nextFace = edge.Pair.Face;
+                        if (faceGroups[nextFace] != -1)
+                        {
+                            faceGroups[nextFace] = groupIndex;
+                            facesProcessed++;
+                            queue.Add(nextFace);
+                        }
+                    }
+                }
+                groupIndex++;
+            } while (facesProcessed < Faces.Count);
+
+            int numFaces = groupIndex - 1;
+            var polyList = Enumerable.Repeat(Duplicate(), numFaces).ToArray();
+            // foreach (var poly in polyList)
+            // {
+            //     poly.Faces.Clear();
+            // }
+
+            foreach (var kv in faceGroups)
+            {
+                int group = kv.Value;
+                Face face = kv.Key;
+                // polyList[group]
+            }
+
+            foreach (var poly in polyList)
+            {
+                poly.CullUnusedVertices();
+            }
+
+            return polyList.ToList();
+        }
     }
 }

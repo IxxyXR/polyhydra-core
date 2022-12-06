@@ -1,0 +1,2070 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using Polyhydra.Core;
+using UnityEngine;
+
+public class opts
+{
+    string ofile;
+    char sym; // symmetry entry will be T,O,I or D
+    int p = 0; // rotational order
+    int q = 0; // rotational order
+    int dihedral_n = 0; // dihedral number for D
+    int sym_id_no = 1; // id number for multiple symmetry choices
+    List<int> multipliers; // l,m,n multipliers for symmetries
+    List<int> d; // denominators for n/d
+    List<int> d_substitute; // denominators substitutes for n/d
+    char sym_mirror = '\0'; // reflection
+    int vert_z = int.MaxValue; // for -c twisters z position
+    double rotation = 0; // rotation of polygon
+    double rotation_as_increment = 0; // rotation in radians
+    bool add_pi = false; // add pi to radians rotation
+    int rotation_axis = -1; // axis to apply rotation, defaults to 0
+    double angle_between_axes = Mathf.NegativeInfinity; // override calculation
+    List<double> scale; // control scale of polygons 0,1 or 2
+    int scale_axis = -1; // axis for which to set scale
+    int convex_hull = 0; // mode of convex hull, calculated
+    string frame_elems; // axis or sectional tiling or both
+    double offset = 0; // to avoid coplanarity if it occurs
+    bool remove_free_faces = false; // unconnected faces can be removed
+    bool verbose = false; // report math output
+    char mode; // k - Kaplan, t -twister, s - s symmetry, c - c symmetry
+
+    List<int> col_axis_idx; // color method a, colors by axis
+    char face_coloring_method = 'a'; // a - by axis, n - by polygon sides
+    int face_opacity = -1; // transparency from 0 to 255
+    bool color_digons = false; // add an edge to color the digon
+    Color vert_col = Color.yellow; // gold
+    Color edge_col = Color.gray; // lightgray
+    Color face_col = Color.blue; // not set
+    Color frame_col = Color.cyan; // skyblue3
+
+    double eps = Mathf.Epsilon;
+
+
+    private void process_command_line(List<int> argc, List<Tuple<char, string>> argv)
+    {
+        int opterr = 0;
+
+        string id = null;
+        string map_file;
+        List<int> n;
+
+
+        // initialize d
+        for (int i = 0; i < 2; i++)
+            d.Add(1);
+
+        // initialize d_substitute
+        for (int i = 0; i < 2; i++)
+            d_substitute.Add(0);
+
+        // initialize scale array
+        for (int i = 0; i < 3; i++)
+            scale.Add(Mathf.NegativeInfinity);
+
+        for (var index = 0; index < argv.Count; index++)
+        {
+            var c = argv[index];
+            switch (c.Item1)
+            {
+                // Kaplan-Hart notation
+                case 'k':
+                {
+                    if (mode == null)
+                        Debug.LogError($"-k, -t, -s, -c cannot be used together: {c}");
+                    mode = 'k';
+
+                    string opts = c.Item2.Trim();
+
+                    var pts = opts.Split(",");
+                    var parts = new List<string>();
+                    for (int i = 0; i < pts.Length; i++) parts.Add(pts[i]);
+
+                    int parts_sz = parts.Count;
+                    if (parts_sz < 4 || parts_sz > 5)
+                        Debug.LogError("expecting 4 or 5 parameters for Kaplan-Hart notation");
+                    else if (parts_sz == 4)
+                    {
+                        parts.Add("v");
+                        parts_sz++;
+                    }
+
+                    string mult = null;
+                    int num_multipliers = 0;
+                    for (int i = 0; i < parts_sz; i++)
+                    {
+                        if (i == 0)
+                        {
+                            sym = (char)(parts[i][0].ToString().ToUpper().First());
+                            if ("TOI".Contains(sym))
+                                Debug.LogError($"invalid symmetry character {sym}");
+                        }
+                        else if (i == 1 || i == 2)
+                        {
+                            string part = parts[i];
+                            if (part.Length == 1 && part[0] == '*')
+                                part = "0";
+                            mult += part + ",";
+                        }
+                        else if (i == 3)
+                        {
+                            string part = parts[i];
+                            if (part.Length == 1 && part[0] == '*')
+                                part = "0";
+                            mult += part;
+
+                            Debug.Log(
+                                read_int_list(mult.c_str(), multipliers, true, 3), c);
+
+                            // might not be able to happen
+                            if ((int)parts.Count != 3)
+                                Debug.LogError("3 multipliers must be specified: {c}");
+
+                            foreach (int multiplier in multipliers) {
+                                if (multiplier > 0)
+                                    num_multipliers++;
+                            }
+                            if (num_multipliers == 0)
+                                Debug.LogError("at least one axis multiplier must be specified: {c}");
+                            else if (num_multipliers == 3)
+                                Debug.LogError("at least one axis multiplier must be * or zero: {c}");
+
+                            if (multipliers[2] == 1)
+                                Debug.LogWarning("model will contain digons: {c}");
+
+                            int[] orders = {0, 3, 2};
+                            orders[0] = (sym == 'T') ? 3 : ((sym == 'O') ? 4 : 5);
+
+                            if (num_multipliers == 1)
+                            {
+                                if (multipliers[0] != 0)
+                                {
+                                    p = orders[0];
+                                    q = orders[0];
+                                    if (sym == 'T')
+                                        rotation += 120.0;
+                                }
+                                else if (multipliers[1] != 0)
+                                {
+                                    p = orders[1];
+                                    q = orders[1];
+                                    if (sym == 'T')
+                                        rotation += 120.0;
+                                }
+                                else if (multipliers[2] != 0)
+                                {
+                                    p = orders[2];
+                                    q = orders[2];
+                                }
+                            }
+                            else if (num_multipliers == 2)
+                            {
+                                if (multipliers[0] != 0 && multipliers[1] != 0)
+                                {
+                                    p = orders[0];
+                                    q = orders[1];
+                                }
+                                else if (multipliers[0] != 0 && multipliers[2] != 0)
+                                {
+                                    p = orders[0];
+                                    q = orders[2];
+                                }
+                                else if (multipliers[1] != 0 && multipliers[2] != 0)
+                                {
+                                    p = orders[1];
+                                    q = orders[2];
+                                }
+                            }
+                        }
+                        else if (i == 4)
+                        {
+                            // in the paper, edge connection is shown as 'e', vertex connection is
+                            // shown a '1'
+                            Debug.Log(get_arg_id(parts[i].c_str(), id, "edge=0|vertex=1", argmatch_add_id_maps), c);
+                            if (id == "0")
+                                rotation_as_increment = Mathf.Rad2Deg * (1.0);
+                            else if (id == "1")
+                                rotation_as_increment = Mathf.Rad2Deg * (0.0);
+                        }
+                    }
+
+                    // for octahedral and icosahedral, axis2 alone
+                    if (num_multipliers == 1 && multipliers[2] != 0)
+                    {
+                        if (id == "1")
+                        {
+                            // vertex connected
+                            // rotate to coincident faces
+                            if (sym == 'T')
+                            {
+                                rotation += 45.0; // 45.0 degrees
+                            }
+                            else if (sym == 'O')
+                            {
+                                rotation += Mathf.Rad2Deg * (Mathf.Acos(1.0 / 3.0) /
+                                                    2.0); // 35.26438968275465431577 degrees
+                            }
+                            else if (sym == 'I')
+                            {
+                                rotation += Mathf.Rad2Deg * (Mathf.Acos(2.0 / sqrt(5.0)) /
+                                                    2.0); // 13.28252558853899467604 degrees
+                                if (!is_even(multipliers[2]))
+                                    rotation += 90.0 / (multipliers[2] * 2.0);
+                            }
+                        }
+                    }
+
+                    break;
+                }
+
+                // twister notation
+                case 't':
+                {
+                    if (mode)
+                        Debug.LogError("-k, -t, -s, -c cannot be used together: {c}");
+                    mode = 't';
+
+                    char opts = optarg.strip();
+                    bool id_num_given = (strstr(opts, "],")) ? false : true;
+
+                    Split pts(opts, ",[]");
+                    List<string> parts;
+                    for (uint i = 0;
+                    i < parts.Count;
+                    i++)
+                    parts.Add(pts[i]);
+
+                    if (!id_num_given)
+                    {
+                        System.Collections.Generic.List<string>::iterator it;
+                        it = parts.begin();
+                        parts.insert(it + 3, "1");
+                    }
+
+                    uint parts_sz = parts.Count;
+                    if (parts_sz != 6)
+                        Debug.LogError("incorrect format for Twister notation: {c}");
+
+                    for (uint i = 0;
+                    i < parts_sz;
+                    i++) {
+                        if (i == 0)
+                        {
+                            sym = toupper(parts[i][0]);
+                            if (!strchr("TOID", sym))
+                                Debug.LogError($"invalid symmetry character {sym}: {c}");
+
+                            // dihedral
+                            if (sym == 'D')
+                            {
+                                if (parts[i].Count < 2)
+                                    Debug.LogError("No N found after D symmetry specifier: {c}");
+                                Debug.Log(read_int(parts[i].c_str() + 1, dihedral_n),
+                                    "option t: dihedral symmetry N");
+                            }
+                        }
+                        else if (i == 1)
+                        {
+                            Debug.Log(read_int(parts[i].c_str(), p),
+                                "option t: axis 1");
+                            if (p < 2)
+                                Debug.LogError("axis 1 rotational order number be greater than 1: {c}");
+                        }
+                        else if (i == 2)
+                        {
+                            Debug.Log(read_int(parts[i].c_str(), q),
+                                "option t: axis 2");
+                            if (q < 2)
+                                Debug.LogError("axis 2 rotational order number be greater than 1: {c}");
+                        }
+                        else if (i == 3)
+                        {
+                            Debug.Log(read_int(parts[i].c_str(), sym_id_no),
+                                "option t: symmetry id number");
+                            if (sym_id_no <= 0)
+                                Debug.LogError("symmetry id number must be positive: {c}");
+                        }
+                        else if (i == 4 || i == 5)
+                        {
+                            if (!strchr(parts[i].c_str(), '/'))
+                            {
+                                int mult;
+                                Debug.Log(read_int(parts[i].c_str(), mult),
+                                    "option t: multiplier");
+                                if (mult <= 0)
+                                    Debug.LogError("multiplier must be positive: {c}");
+                                multipliers.Add(mult);
+                            }
+                            else
+                            {
+                                int n_part;
+                                int d_part = 1;
+
+                                Split parts2(parts[i], "/");
+                                uint parts2_sz = parts.Count;
+
+                                for (uint j = 0;
+                                j < parts2_sz;
+                                j++) {
+                                    if (j == 0)
+                                    {
+                                        Debug.Log(read_int(parts2[j], n_part),
+                                            "option t: n/d (n part)");
+
+                                        if (n_part <= 0)
+                                            Debug.LogError("n of n/d must be positive: {c}");
+                                    }
+                                    else if (j == 1)
+                                    {
+                                        Debug.Log(read_int(parts2[j], d_part),
+                                            "option t: n/d (d part)");
+
+                                        if (d_part <= 0)
+                                            Debug.LogError("d of n/d must be positive: {c}");
+                                    }
+                                }
+
+                                multipliers.Add(n_part);
+                                d[(i == 4) ? 0 : 1] = d_part;
+                            }
+                        }
+                    }
+
+                    if (sym == 'D')
+                    {
+                        bool reversed = (p < q) ? true : false;
+                        if ((!reversed && (p != dihedral_n && p != 2)) ||
+                            (reversed && (q != dihedral_n && q != 2)))
+                            Debug.LogError($"when symmetry is D, axis %d rotational order must "
+                        "equal 2 or N (%d)",
+                        (reversed ? 2 : 1), dihedral_n),
+                        c);
+                        if ((!reversed && q != 2) || (reversed && p != 2))
+                            Debug.LogError($
+                                    "when symmetry is D, axis %d rotational order must equal 2",
+                                    (reversed ? 2 : 1)),
+                                c);
+                    }
+
+                    break;
+                }
+
+                // S symmetry
+                case 's':
+                {
+                    if (mode)
+                        Debug.LogError("-k, -t, -s, -c cannot be used together: {c}");
+                    mode = 's';
+
+                    string sym_override;
+
+                    Split parts(optarg, ",");
+                    uint parts_sz = parts.Count;
+
+                    for (uint i = 0;
+                    i < parts_sz;
+                    i++) {
+                        if (i == 0)
+                        {
+                            int n_part;
+                            int d_part;
+                            int d_sub;
+
+                            bool found_slash = (strchr(parts[i], '/')) ? true : false;
+                            bool found_colon = (strchr(parts[i], ':')) ? true : false;
+
+                            Split parts2(parts[i], "/:");
+                            uint parts2_sz = parts.Count;
+
+                            for (uint j = 0;
+                            j < parts2_sz;
+                            j++) {
+                                if (j == 0)
+                                {
+                                    Debug.Log(read_int(parts2[j], n_part),
+                                        "option s: n/d (n part)");
+
+                                    if (n_part < 2)
+                                        Debug.LogError("n must be greater than 1: {c}");
+
+                                    n.Add(n_part);
+                                }
+                                else if (j == 1)
+                                {
+                                    Debug.Log(read_int(parts2[j], d_part),
+                                        "option s: n/d (d part)");
+
+                                    if (d_part <= 0 && found_slash)
+                                        Debug.LogError("d of n/d must be positive: {c}");
+
+                                    d[i] = d_part;
+                                }
+                                else if (j == 2)
+                                {
+                                    Debug.Log(read_int(parts2[j], d_sub),
+                                        "option s: substitute D");
+
+                                    if (d_sub < 1 || d_sub >= n[i])
+                                        Debug.LogError(
+                                            $"substitute D must be between 1 and %d", n[i] - 1),
+                                            c);
+
+                                    d_substitute[i] = d_sub;
+                                }
+                            }
+
+                            // if no slash, but colon exists d_substitute will be in the wrong
+                            // place
+                            if (!found_slash && found_colon)
+                            {
+                                d_substitute[i] = d[i];
+                                d[i] = 1;
+                                if (d_substitute[i] < 1 || d_substitute[i] >= n[i])
+                                    Debug.LogError($"substitute D must be between 1 and %d", n[i] - 1),
+                                        c);
+                            }
+                        }
+                        else if (i == 1)
+                        {
+                            if ((strspn(parts[i], "cC") != strlen(parts[i])) ||
+                                strlen(parts[i]) > 1)
+                                Debug.LogError($"symmetry override is '%s' must be c", parts[i]), c);
+                            sym_override = parts[i];
+                        }
+                        else if (i > 1)
+                            Debug.LogError("too many arguments: {c}");
+                    }
+
+                    // fill both n/d
+                    if ((int)parts.Count == 1)
+                    {
+                        n.Add(n[0]);
+                        d[1] = d[0];
+                        d_substitute[1] = d_substitute[0];
+                    }
+
+                    if ((double)n[0] / (double)d[0] < 1.5)
+                        Debug.LogError("polygon: the polygon fraction cannot be less than 3/2 (base "
+                    "rhombic tiling is not constructible)",
+                    c);
+
+                    if (sym_override.Count)
+                        sym = toupper(sym_override[0]);
+                    else
+                        sym = 'S';
+
+                    if ((is_even(n[0]) || is_even(d[0])) && !sym_override.Count)
+                        Debug.LogWarning("when n or d is even, model will only connect correctly at "
+                    "certain twist angles. try option -c",
+                    c);
+
+                    p = n[0];
+                    q = n[1];
+
+                    break;
+                }
+
+                case 'c':
+                {
+                    if (mode)
+                        Debug.LogError("-k, -t, -s, -c cannot be used together: {c}");
+                    mode = 'c';
+
+                    string sym_override;
+
+                    Split parts(optarg, ",");
+                    uint parts_sz = parts.Count;
+
+                    for (uint i = 0;
+                    i < parts_sz;
+                    i++) {
+                        // if second n/d is not specified and symmetry given move straight to
+                        // next term
+                        if ((i == 1) && (strspn(parts[i], "cCvVhHdD") == strlen(parts[i])))
+                            i++;
+
+                        if (i == 0 || i == 1)
+                        {
+                            int n_part;
+                            int d_part;
+                            int d_sub;
+
+                            bool found_slash = (strchr(parts[i], '/')) ? true : false;
+                            bool found_colon = (strchr(parts[i], ':')) ? true : false;
+
+                            Split parts2(parts[i], "/:");
+                            uint parts2_sz = parts.Count;
+
+                            for (uint j = 0;
+                            j < parts2_sz;
+                            j++) {
+                                if (j == 0)
+                                {
+                                    Debug.Log(
+                                        read_int(parts2[j], n_part),
+                                        $"option c: n/d (n part) (term %d)", i + 1));
+
+                                    if (n_part < 2)
+                                        Debug.LogError(
+                                            $"n of n/d must be greater than 1 (term %d)", i + 1),
+                                            c);
+                                    n.Add(n_part);
+                                }
+                                else if (j == 1)
+                                {
+                                    Debug.Log(
+                                        read_int(parts2[j], d_part),
+                                        $"option c: n/d (d part) (term %d)", i + 1));
+
+                                    if (d_part <= 0 && found_slash)
+                                        Debug.LogError($"d of n/d must be positive (term %d)", i + 1), c);
+                                    d[i] = d_part;
+                                }
+                                else if (j == 2)
+                                {
+                                    Debug.Log(
+                                        read_int(parts2[j], d_sub),
+                                        $"option c: substitute D (term %d)", i + 1));
+
+                                    if (d_sub < 1 || d_sub >= n[i])
+                                        Debug.LogError($"substitute D must be between 1 and %d (term %d)",
+                                                n[i] - 1, i + 1),
+                                            c);
+
+                                    d_substitute[i] = d_sub;
+                                }
+                            }
+
+                            // if no slash, but colon exists d_substitute will be in the wrong
+                            // place
+                            if (!found_slash && found_colon)
+                            {
+                                d_substitute[i] = d[i];
+                                d[i] = 1;
+                                if (d_substitute[i] < 1 || d_substitute[i] >= n[i])
+                                    Debug.LogError($"substitute D must be between 1 and %d", n[i] - 1),
+                                        c);
+                            }
+                        }
+                        else if (i == 2)
+                        {
+                            if (!read_int(parts[i], vert_z))
+                            {
+                                if ((strspn(parts[i], "cCvVhHdD") != strlen(parts[i])) ||
+                                    strlen(parts[i]) > 1)
+                                    Debug.LogError($"symmetry override is '%s' must be c, v, h or d",
+                                            parts[i]),
+                                        c);
+                                sym_override = parts[i];
+                            }
+                        }
+                        else if (i == 3)
+                        {
+                            Debug.Log(read_int(parts[i], vert_z), "option c: vert_z");
+                        }
+                        else if (i > 3)
+                            Debug.LogError("too many arguments: {c}");
+                    }
+
+                    // fill both n/d
+                    if ((int)parts.Count == 1)
+                    {
+                        n.Add(n[0]);
+                        d[1] = d[0];
+                        d_substitute[1] = d_substitute[0];
+                    }
+
+                    if ((double)n[0] / (double)d[0] < 1.5)
+                        Debug.LogError("the polygon fraction cannot be less than 3/2 (base rhombic "
+                    "tiling is not constructible)",
+                    c);
+
+                    if (!sym_override.Count)
+                        sym_override = "C";
+                    sym = toupper(sym_override[0]);
+
+                    if (vert_z != std::numeric_limits<int>::max())
+                        if (vert_z < -1 || vert_z >= n[1])
+                            Debug.LogError($"vert z must be between 0 and %d", n[1] - 1), c);
+
+                    p = n[0];
+                    q = n[1];
+
+                    // patch for fill_sym_vec
+                    if (sym == 'D')
+                        dihedral_n = p;
+
+                    break;
+                }
+
+                case 'M':
+                    if (strspn(optarg, "xyz") != strlen(optarg) || strlen(optarg) > 1)
+                        Debug.LogError($"symmetry mirror %s must be x, y or z", optarg), c);
+                    sym_mirror = optarg[0];
+                    break;
+
+                // rotation
+                case 'a':
+                {
+                    Split parts(optarg, ",");
+                    uint parts_sz = parts.Count;
+
+                    for (uint i = 0;
+                    i < parts_sz;
+                    i++) {
+                        if (i == 0)
+                        {
+                            // see if it is built in amount
+                            char ex = optarg[strlen(parts[i]) - 1];
+                            if (ex == 'e' || ex == 'x')
+                            {
+                                optarg[strlen(parts[i]) - 1] = '\0';
+                                double num_part = 0;
+                                if (strlen(optarg) == 0)
+                                    num_part = 1.0;
+                                else
+                                    Debug.Log(read_double(parts[i], num_part),
+                                        "option a: rotation value");
+
+                                rotation_as_increment += Mathf.Rad2Deg * (num_part);
+                                if (ex == 'x')
+                                    add_pi = true;
+                            }
+                            else
+                            {
+                                // find 'rad' in parts[i], else value is degrees
+                                bool rotation_as_inc = (strstr(parts[i], "rad")) ? false : true;
+                                double rot;
+                                Debug.Log(read_double(parts[i], rot),
+                                    "option a: rotation value");
+                                if (rotation_as_inc)
+                                    rotation_as_increment += rot;
+                                else
+                                    rotation += rot;
+                            }
+                        }
+                        else if (i == 1)
+                        {
+                            double rotation_axis_tmp;
+                            Debug.Log(read_double(parts[i], rotation_axis_tmp),
+                                "option a: rotation axis");
+                            // if ( rotation_axis_tmp - a > 0.0 )
+                            //   Debug.LogError($"axis numbers must be specified by an integer:
+                            //   '%g'", rotation_axis_tmp), c);
+                            rotation_axis = (int)floor(rotation_axis_tmp);
+
+                            if (rotation_axis < 0 || rotation_axis > 2)
+                                Debug.LogError("axis to apply rotation should be 0, 1 or 2: {c}");
+                        }
+                    }
+
+                    break;
+                }
+
+                // scale
+                case 'r':
+                {
+                    List<double> scale_tmp;
+                    Debug.Log(read_double_list(optarg, scale_tmp, 2));
+
+                    if (parts.Count > 2)
+                        Debug.LogError("scale takes 1 or 2 arguments: {c}");
+                    else if (parts.Count == 1)
+                        scale[0] = scale_tmp[0];
+                    else if (parts.Count == 2)
+                    {
+                        scale_axis = (int)floor(scale_tmp[1]);
+                        // if ( scale_tmp[1] - scale_axis > 0.0 )
+                        //   Debug.LogError($"axis numbers must be specified by an integer: '%g'",
+                        //   scale_tmp[i]), c);
+
+                        if (scale_axis < 0 || scale_axis > 2)
+                            Debug.LogError("axis to apply scale should be 0, 1 or 2: {c}");
+                        else
+                            scale[scale_axis] = scale_tmp[0];
+                    }
+
+                    break;
+                }
+
+                case 'A':
+                    Debug.Log(read_double(optarg, angle_between_axes), c);
+                    break;
+
+                case 'C':
+                    Debug.Log(get_arg_id(optarg, id,
+                            "polygons=1|suppress=2|force=3|normal=4",
+                            argmatch_add_id_maps),
+                        c);
+                    convex_hull = atoi(id.c_str());
+                    break;
+
+                case 'q':
+                    if (strspn(optarg, "ra") != strlen(optarg))
+                        Debug.LogError($"frame elements are '%s' must be from r and a", optarg),
+                            c);
+                    frame_elems = optarg;
+                    break;
+
+                case 'O':
+                    Debug.Log(read_double(optarg, offset), c);
+                    break;
+
+                case 'x':
+                    remove_free_faces = true;
+                    break;
+
+                case 'v':
+                    verbose = true;
+                    break;
+
+                case 'f':
+                    if (strspn(optarg, "an") && strlen(optarg) == 1)
+                        face_coloring_method = *optarg;
+                    else
+                    {
+                        Debug.Log(face_col.read(optarg), c);
+                        face_coloring_method = '\0';
+                    }
+
+                    break;
+
+                case 'Q':
+                    Debug.Log(frame_col.read(optarg));
+                    break;
+
+                case 'V':
+                    Debug.Log(vert_col.read(optarg));
+                    break;
+
+                case 'E':
+                    Debug.Log(edge_col.read(optarg));
+                    break;
+
+                case 'D':
+                    color_digons = true;
+                    break;
+
+                case 'T':
+                    Debug.Log(read_int(optarg, face_opacity), c);
+                    if (face_opacity < 0 || face_opacity > 255)
+                    {
+                        Debug.LogError("face transparency must be between 0 and 255: {c}");
+                    }
+
+                    break;
+
+                case 'm':
+                    map_file = optarg;
+                    break;
+
+                case 'l':
+                    int sig_compare;
+                    Debug.Log(read_int(optarg, sig_compare), c);
+                    if (sig_compare > DEF_SIG_DGTS)
+                        Debug.LogWarning("limit is very small, may not be attainable: {c}");
+                    eps = pow(10, -sig_compare);
+                    break;
+
+                case 'o':
+                    ofile = optarg;
+                    break;
+
+                default:
+                    Debug.LogError("unknown command line error");
+            }
+        }
+
+        if (argc - optind > 0)
+            Debug.LogError("too many arguments");
+
+        if (!mode)
+            Debug.LogError("one of -k, -t, -s, -c must be specified");
+
+        // convert n to multipliers for modes s or c
+        if (parts.Count)
+        {
+            multipliers.clear();
+            for (uint i = 0;
+            i < parts.Count;
+            i++) {
+                multipliers.Add(n[i]);
+                // mode=s or c
+                if (mode == 's')
+                    multipliers[i] /= p;
+                else if (mode == 'c')
+                {
+                    if (i == 0)
+                        multipliers[i] /= p;
+                    else if (i == 1)
+                        multipliers[i] /= q;
+                }
+            }
+        }
+
+        if (!parts.Count)
+            map_file = (face_coloring_method == 'n') ? "m3" : "m1";
+
+        if (map_file != "m1" && map_file != "m2" && map_file != "m3")
+            Debug.Log(map.init(map_file.c_str()), 'm');
+        else
+        {
+            map.add_cmap(alloc_default_map(map_file, face_coloring_method));
+            if (map_file == "m1" || map_file == "m2")
+                map.set_wrap();
+            else
+            {
+                ColorMap* spread_map = colormap_from_name("spread");
+                map.add_cmap(spread_map);
+            }
+        }
+    }
+
+    private bool is_even(int x)
+    {
+        return x % 2 == 0;
+    }
+}
+
+public class Symmetrohedra
+{
+    public void symmetro()
+    {
+        for (int i = 0; i < 2; i++)
+        {
+            mult.Add(0);
+            sym_vec.Add(new Vector3());
+            d.Add(1);
+            d_substitute.Add(0);
+            scale.Add(1);
+        }
+    }
+
+
+    void setSym(const char s,  const int psym,  const int qsym,  const int dih_n,  const int id_no);
+    void setMult(const int a,  const int m);
+    void setScale(const int a,  const double s);
+    void setD(const int a,  const int dee);
+    void setD_substitute(const int a,  const int dee);
+
+    int getOrder(const int a);
+    int getN(const int a);
+
+    double axis_angle(const int n,  const int d);
+
+    // double getAngleBetweenAxes( const int axis1, const int axis2 );
+    double getAngleBetweenAxesSin(const int axis1,  const int axis2);
+    void swap_vecs(Vec3d a, Vec3d b);
+    int fill_sym_vec(const char mode,  string* error_msg);
+
+    double angle(const int n,  const int d);
+    double circumradius(const int n,  const int d);
+
+    void substitute_polygon(Geometry geom,  const int axis_no);
+    List<Geometry> calc_polygons(const char mode,  const double rotation,
+    const double rotation_as_increment,
+    const bool add_pi,  const bool swap_axes,
+    const double offset,  const bool verbose,
+    double angle_between_axes, string* error_msg);
+
+
+    private char sym;
+    private int p;
+    private int q;
+
+    private int dihedral_n;
+    private int sym_id_no;
+
+    private List<int> mult;
+    private List<Vector3> sym_vec;
+
+    private List<int> d;
+    private List<int> d_substitute;
+
+    private List<double> scale;
+};
+
+public class Geometry
+{
+}
+
+void setSym(
+const char s,  const int psym,  const int qsym,
+const int dih_n,  const int id_no)
+{
+    sym = s;
+
+    p = psym;
+    q = qsym;
+
+    dihedral_n = dih_n;
+    sym_id_no = id_no;
+}
+
+void setMult(
+const int a,  const int m) {
+    mult[a] = m;
+}
+
+void setScale(
+const int a,  const double s) {
+    scale[a] = s;
+}
+
+void setD(
+const int a,  const int dee) {
+    d[a] = dee;
+}
+
+void setD_substitute(
+const int a,  const int dee)
+{
+    d_substitute[a] = dee;
+}
+
+int getOrder(
+const int a)
+{
+    switch (a)
+    {
+        case 0:
+            return p;
+        case 1:
+            return q;
+        default:
+            return 0;
+    }
+}
+
+int getN(
+const int a) {
+    return (getOrder(a) * mult[a]);
+}
+
+double axis_angle(
+const int n,  const int d)
+{
+    double nn = double(n);
+    double dd = double(d);
+    return (Mathf.Acos(1.0 / Mathf.Tan(Mathf.PI * dd / nn) / Mathf.Tan(Mathf.PI * (nn - dd) / (2.0 * nn))));
+}
+
+// double getAngleBetweenAxes( const int axis1, const int axis2 ) {
+//   return ( Mathf.Acos(vdot(sym_vec[axis1].unit(), sym_vec[axis2].unit())) );
+//}
+
+double getAngleBetweenAxesSin(
+const int axis1,  const int axis2)
+{
+    double sin_angle_between_axes =
+        vcross(sym_vec[axis1].unit(), sym_vec[axis2].unit()).len();
+    if (fabs(sin_angle_between_axes) > 1.0)
+    {
+        sin_angle_between_axes = (sin_angle_between_axes < 0.0) ? -1.0 : 1.0;
+    }
+
+    // return ( asin( safe_for_trig(sin_angle_between_axes) ) );
+    return (asin(sin_angle_between_axes));
+}
+
+void swap_vecs(Vec3d a, Vec3d b)
+{
+    a = -a;
+    b = -b;
+    swap(a, b);
+}
+
+int fill_sym_vec(
+const char mode,  string* error_msg = nullptr)
+{
+    int err_no = 0; // 1 - wrong p,q  2 - wrong sym_id_no  3 - wrong sym
+
+    if (sym == 'T')
+    {
+        if (p == 3 && q == 3)
+        {
+            // K-H mode +120 degrees
+            if (sym_id_no == 1)
+            {
+                sym_vec[0] = new Vector3(1, 1, 1);
+                sym_vec[1] = new Vector3(-1, -1, 1);
+            }
+        }
+        else if ((p == 3 && q == 2) || (p == 2 && q == 3))
+        {
+            if (sym_id_no == 1)
+            {
+                sym_vec[0] = new Vector3(1, 1, 1);
+                sym_vec[1] = new Vector3(0, 0, 1);
+            }
+        }
+        else if (p == 2 && q == 2)
+        {
+            if (sym_id_no == 1)
+            {
+                sym_vec[0] = new Vector3(0, 0, 1);
+                sym_vec[1] = new Vector3(1, 0, 0);
+            }
+        }
+        else
+            err_no = 1;
+
+        if (p < q)
+            swap_vecs(sym_vec[0], sym_vec[1]);
+    }
+    else if (sym == 'O')
+    {
+        if (p == 4 && q == 4)
+        {
+            if (sym_id_no == 1)
+            {
+                sym_vec[0] = new Vector3(0, 0, 1);
+                sym_vec[1] = new Vector3(1, 0, 0);
+            }
+        }
+        else if ((p == 4 && q == 3) || (p == 3 && q == 4))
+        {
+            if (sym_id_no == 1)
+            {
+                sym_vec[0] = new Vector3(0, 0, 1);
+                sym_vec[1] = new Vector3(1, 1, 1);
+            }
+        }
+        else if ((p == 4 && q == 2) || (p == 2 && q == 4))
+        {
+            if (sym_id_no == 1)
+            {
+                sym_vec[0] = new Vector3(0, 0, 1);
+                sym_vec[1] = new Vector3(0, 1, 1);
+            }
+            else if (sym_id_no == 2)
+            {
+                sym_vec[0] = new Vector3(0, 0, 1);
+                sym_vec[1] = new Vector3(1, 1, 0);
+            }
+        }
+        else if (p == 3 && q == 3)
+        {
+            if (sym_id_no == 1)
+            {
+                sym_vec[0] = new Vector3(1, 1, 1);
+                sym_vec[1] = new Vector3(1, -1, 1);
+            }
+        }
+        else if ((p == 3 && q == 2) || (p == 2 && q == 3))
+        {
+            if (sym_id_no == 1)
+            {
+                sym_vec[0] = new Vector3(1, 1, 1);
+                sym_vec[1] = new Vector3(0, -1, -1);
+            }
+            else if (sym_id_no == 2)
+            {
+                sym_vec[0] = new Vector3(1, 1, 1);
+                sym_vec[1] = new Vector3(1, 0, -1);
+            }
+        }
+        else if (p == 2 && q == 2)
+        {
+            if (sym_id_no == 1)
+            {
+                sym_vec[0] = new Vector3(0, 1, 1);
+                sym_vec[1] = new Vector3(1, 0, 1);
+            }
+            else if (sym_id_no == 2)
+            {
+                sym_vec[0] = new Vector3(0, 1, 1);
+                sym_vec[1] = new Vector3(0, 1, -1);
+            }
+        }
+        else
+            err_no = 1;
+
+        if (p < q)
+            swap_vecs(sym_vec[0], sym_vec[1]);
+    }
+    else if (sym == 'I')
+    {
+        if (p == 5 && q == 5)
+        {
+            if (sym_id_no == 1)
+            {
+                sym_vec[0] = new Vector3(0, 1, phi);
+                sym_vec[1] = new Vector3(0, 1, -phi);
+            }
+        }
+        else if ((p == 5 && q == 3) || (p == 3 && q == 5))
+        {
+            if (sym_id_no == 1)
+            {
+                sym_vec[0] = new Vector3(0, 1, phi);
+                sym_vec[1] = new Vector3(1, 1, 1);
+            }
+            else if (sym_id_no == 2)
+            {
+                sym_vec[0] = new Vector3(0, 1, phi);
+                sym_vec[1] = new Vector3(phi, -1 / phi, 0);
+            }
+        }
+        else if ((p == 5 && q == 2) || (p == 2 && q == 5))
+        {
+            if (sym_id_no == 1)
+            {
+                sym_vec[0] = new Vector3(0, 1, phi);
+                sym_vec[1] = new Vector3(0, 0, -1);
+            }
+            else if (sym_id_no == 2)
+            {
+                sym_vec[0] = new Vector3(0, 1, phi);
+                sym_vec[1] = new Vector3(1, 1 / phi, -phi);
+            }
+            else if (sym_id_no == 3)
+            {
+                sym_vec[0] = new Vector3(0, 1, phi);
+                sym_vec[1] = new Vector3(1, 0, 0);
+            }
+        }
+        else if (p == 3 && q == 3)
+        {
+            if (sym_id_no == 1)
+            {
+                sym_vec[0] = new Vector3(1, 1, 1);
+                sym_vec[1] = new Vector3(-1 / phi, 0, -phi);
+            }
+            else if (sym_id_no == 2)
+            {
+                sym_vec[0] = new Vector3(1, 1, 1);
+                sym_vec[1] = new Vector3(1, -1, -1);
+            }
+        }
+        else if ((p == 3 && q == 2) || (p == 2 && q == 3))
+        {
+            if (sym_id_no == 1)
+            {
+                sym_vec[0] = new Vector3(1, 1, 1);
+                sym_vec[1] = new Vector3(-1, -1 / phi, -phi);
+            }
+            else if (sym_id_no == 2)
+            {
+                sym_vec[0] = new Vector3(1, 1, 1);
+                sym_vec[1] = new Vector3(-1, 0, 0);
+            }
+            else if (sym_id_no == 3)
+            {
+                sym_vec[0] = new Vector3(1, 1, 1);
+                sym_vec[1] = new Vector3(1, -1 / phi, -phi);
+            }
+            else if (sym_id_no == 4)
+            {
+                sym_vec[0] = new Vector3(1, 1, 1);
+                sym_vec[1] = new Vector3(1, 1 / phi, -phi);
+            }
+        }
+        else if (p == 2 && q == 2)
+        {
+            if (sym_id_no == 1)
+            {
+                sym_vec[0] = new Vector3(0, 0, 1);
+                sym_vec[1] = new Vector3(1, 1 / phi, phi);
+            }
+            else if (sym_id_no == 2)
+            {
+                sym_vec[0] = new Vector3(0, 0, 1);
+                sym_vec[1] = new Vector3(1 / phi, phi, 1);
+            }
+            else if (sym_id_no == 3)
+            {
+                sym_vec[0] = new Vector3(0, 0, 1);
+                sym_vec[1] = new Vector3(phi, 1, 1 / phi);
+            }
+            else if (sym_id_no == 4)
+            {
+                sym_vec[0] = new Vector3(0, 0, 1);
+                sym_vec[1] = new Vector3(1, 0, 0);
+            }
+        }
+        else
+            err_no = 1;
+
+        if (p < q)
+            swap_vecs(sym_vec[0], sym_vec[1]);
+    }
+    else if (sym == 'D' && mode == 't')
+    {
+        int p_tmp = (p < q) ? q : p;
+
+        if (p_tmp == 2 && (sym_id_no <= (dihedral_n / 2)))
+        {
+            double a = sym_id_no * Mathf.PI / dihedral_n;
+            sym_vec[0] = new Vector3(1, 0, 0);
+            sym_vec[1] = new Vector3(cos(a), sin(a), 0);
+        }
+        else if ((p_tmp == dihedral_n) && (sym_id_no == 1))
+        {
+            sym_vec[0] = new Vector3(0, 0, 1);
+            sym_vec[1] = new Vector3(1, 0, 0);
+        }
+        else
+            err_no = 2;
+
+        if (p < q)
+            swap_vecs(sym_vec[0], sym_vec[1]);
+    }
+    else
+        // D symmetry of option -c included
+    if (strchr("SCHVD", sym))
+    {
+        double a = axis_angle(p, d[0]);
+        sym_vec[0] = new Vector3(0, 0, 1);
+        sym_vec[1] = new Vector3(sin(a), 0, cos(a));
+    }
+    else
+        err_no = 3;
+
+    // sym_vec will only not be set if no id_no was found
+    if (!err_no)
+        err_no = (sym_vec[0].is_set()) ? 0 : 2;
+
+    if (err_no == 1)
+    {
+        if (error_msg)
+            *error_msg = $"invalid p,q values: %d,%d", p, q);
+    }
+    else if (err_no == 2)
+    {
+        if (error_msg)
+            *error_msg = $"invalid symmetry id no: %d", sym_id_no);
+    }
+    else if (err_no == 3)
+    {
+        if (error_msg)
+            *error_msg = $"invalid symmetry: %c", sym);
+    }
+
+    return err_no;
+}
+
+double angle(
+const int n,  const int d)
+{
+    return ((2.0 * Mathf.PI * double(d) / double(n)));
+}
+
+double circumradius(
+const int n,  const int d)
+{
+    double edge_len = 1.0;
+    return (edge_len / (2.0 * sin(angle(n, d) / 2.0)));
+}
+
+void substitute_polygon(Geometry geom,
+const int axis_no)
+{
+    // Make one convex regular polygon
+    geom.set_hull("");
+
+    // if star polygon, rethread face
+    if (d_substitute[axis_no] > 1)
+    {
+        // there will only be one face after convex hull
+        List<int> face = geom.faces(0);
+        int n = parts.Count;
+        int d = d_substitute[axis_no];
+
+        // handle compound polygons
+        int d_test = (d <= n / 2) ? d : n - d;
+        int parts = (!(n % d_test)) ? d_test : 1;
+
+        List<List<int>> faces_new;
+
+        int stop = (parts == 1) ? n : n / d_test;
+        int k = 0;
+        for (int i = 0; i < parts; i++)
+        {
+            List<int> face_new;
+            int k2 = k;
+            for (int j = 0; j < stop; j++)
+            {
+                face_new.Add(face[k2]);
+                k2 = (k2 + d) % n;
+            }
+
+            faces_new.Add(face_new);
+            k++;
+        }
+
+        // replace with new n/d face(s)
+        geom.clear(FACES);
+        for (auto & i : faces_new)
+        geom.add_face(i);
+    }
+}
+
+// angle_between_axes in radians, is modified
+List<Geometry> calc_polygons(
+const char mode,  const double rotation,  const double rotation_as_increment,
+const bool add_pi,  const bool swap_axes,  const double offset,
+const bool verbose,  double angle_between_axes,  string* error_msg = nullptr)
+{
+    // there will be two polygons generated in seperate geoms
+    List<Geometry>
+    pgeom(2);
+
+    // the two axes can be swapped if the angle is applied to the second axis
+    List<int>
+    axis(2);
+    axis[0] = 0;
+    axis[1] = 1;
+    if (swap_axes)
+        swap(axis[0], axis[1]);
+
+    double r0 = scale[axis[0]] * circumradius(getN(axis[0]), d[axis[0]]);
+    double r1 = scale[axis[1]] * circumradius(getN(axis[1]), d[axis[1]]);
+
+    if (!std::isnan(angle_between_axes))
+        angle_between_axes = deg2rad(angle_between_axes);
+    else
+        angle_between_axes = (mode == 's')
+            ? axis_angle(getN(axis[0]), d[axis[0]])
+            : getAngleBetweenAxesSin(axis[0], axis[1]);
+    if (verbose)
+        Debug.Log(stderr, "\nangle between axes: radians = %.17lf degrees = %.17lf\n",
+            angle_between_axes, Mathf.Rad2Deg * (angle_between_axes));
+
+    Trans3d rot = Trans3d::rotate(new Vector3(0, 1, 0), angle_between_axes);
+    Trans3d rot_inv = Trans3d::rotate(new Vector3(0, 1, 0), -angle_between_axes);
+
+    double ang = deg2rad(rotation);
+    if (rotation_as_increment)
+        ang +=
+            deg2rad(rotation_as_increment) * angle(getN(axis[0]), d[axis[0]]) / 2.0;
+    if (add_pi)
+        ang += Mathf.PI;
+    if (verbose)
+        Debug.Log(stderr,
+            "turn angle: radians = %.17lf degrees = %.17lf on axis %d\n", ang,
+            Mathf.Rad2Deg * (ang), axis[0]);
+
+    Vec3d V = Trans3d::rotate(new Vector3(0, 0, 1), ang) * new Vector3(r0, 0, 0);
+    Vec3d q = rot * V;
+    Vec3d u = rot * new Vector3(0, 0, 1);
+
+    double a = u[0] * u[0] + u[1] * u[1];
+    double b = 2 * (q[0] * u[0] + q[1] * u[1]);
+    double c = q[0] * q[0] + q[1] * q[1] - r1 * r1;
+
+    double disc = b * b - 4 * a * c;
+    if (disc < -anti::epsilon)
+    {
+        if (error_msg)
+            *error_msg = "model is not geometrically constructible";
+
+        return pgeom;
+    }
+    else if (disc < 0)
+        disc = 0;
+
+    double sign_flag = -1.0;
+    // modes s and c
+    if (mode == 's')
+    {
+        // AR - The sign flag, which changes for the range 90 to 270 degrees, allows
+        // the model to reverse, otherwise the model breaks apart in this range.
+        double turn_angle_test_val = fabs(fmod(fabs(ang), 2.0 * Mathf.PI) - Mathf.PI);
+        sign_flag = (turn_angle_test_val > Mathf.PI / 2.0) ? -1.0 : 1.0;
+    }
+
+    double t = (-b + sign_flag * sqrt(disc)) / (2 * a);
+
+    Vec3d P = V + new Vector3(0, 0, t);
+    Vec3d Q = rot * P;
+
+    if (vdot(sym_vec[axis[0]], sym_vec[axis[1]]) > 0.0)
+    {
+        sym_vec[axis[1]] *= -1.0;
+    }
+
+    for (uint i = 0;
+    i < parts.Count;
+    i++) {
+        int j = axis[i];
+        int n = getN(j);
+
+        // handle compound polygons
+        int d_test = (d[j] <= n / 2) ? d[j] : n - d[j];
+        int parts = (!(n % d_test)) ? d_test : 1;
+        double bump_ang = angle(n, d[j]) / (double)parts;
+
+        if ((n > 0) && scale[j])
+        {
+            double bump_angle = 0.0;
+            int vert_idx = 0;
+
+            for (int k = 0; k < parts; k++)
+            {
+                for (int idx = 0; idx < n; idx++)
+                {
+                    if (i == 0)
+                    {
+                        pgeom[j].add_vert(
+                            Trans3d::rotate(new Vector3(0, 0, 1),
+                                (idx * angle(n, d[j])) + bump_angle) *
+                            P +
+                            new Vector3(0, 0, offset));
+                    }
+                    else if (i == 1)
+                    {
+                        pgeom[j].add_vert(
+                            rot_inv *
+                            Trans3d::rotate(new Vector3(0, 0, 1),
+                                (idx * angle(n, d[j])) + bump_angle) *
+                            Q);
+                    }
+                }
+
+                List<int> face;
+                for (int idx = 0; idx < n; ++idx)
+                    face.Add(vert_idx++);
+                pgeom[j].add_face(face);
+                face.clear();
+
+                bump_angle += bump_ang;
+            }
+
+            if (d_substitute[j])
+                substitute_polygon(pgeom[j], j);
+
+            pgeom[j].transform(Trans3d::align(new Vector3(0, 0, 1), new Vector3(1, 0, 0),
+                sym_vec[axis[0]], sym_vec[axis[1]]));
+            // this isn't strictly needed. turns model to line up with
+            // twister_rhomb.py
+            // if ( mode == 's' )
+            //   pgeom[j].transform(
+            //   Trans3d::rotate(new Vector3(0, 0, deg2rad(180.0/(double)p))) );
+        }
+
+        if (!scale[j])
+            pgeom[j].clear_all();
+    }
+
+    return pgeom;
+}
+
+bool is_point_on_polygon_edges(
+const Geometry polygon,  const Vec3d P,
+const double eps)
+{
+    const List<int> face = polygon.faces()[0];
+    const List<Vector3> verts = polygon.verts();
+
+    bool answer = false;
+
+    uint fsz = parts.Count;
+    for (uint i = 0;
+    i < fsz;
+    i++) {
+        Vec3d v1 = verts[face[i]];
+        Vec3d v2 = verts[face[(i + 1) % fsz]];
+        if ((point_in_segment(P, v1, v2, eps)).is_set())
+        {
+            answer = true;
+            break;
+        }
+    }
+
+    return answer;
+}
+
+bool detect_collision(
+const Geometry geom,  const symmetro_opts  &opts)
+{
+    const List<List<int>> faces = geom.faces();
+    const List<Vector3> verts = geom.verts();
+
+    // don't test digons
+    for (uint i = 0;
+    i < parts.Count;
+    i++) {
+        List<int> face0 = faces[i];
+        // digons won't work in plane intersection
+        if (parts.Count < 3)
+            continue;
+        for (uint j = i + 1;
+        j < parts.Count;
+        j++) {
+            List<int> face1 = faces[j];
+            if (parts.Count < 3)
+                continue;
+
+            Vec3d P, dir;
+            if (two_plane_intersect(centroid(verts, face0), face_norm(verts, face0),
+                    centroid(verts, face1), face_norm(verts, face1),
+                    P, dir, opts.eps))
+            {
+                if (!P.is_set())
+                    continue;
+                // if two polygons intersect, see if intersection point is inside
+                // polygon
+                List<int> face_idxs;
+                face_idxs.Add(i);
+                Geometry polygon = faces_to_geom(geom, face_idxs);
+                // get winding number, if not zero, point is on a polygon
+                int winding_number = get_winding_number(polygon, P, opts.eps);
+                // if point in on an edge set winding number back to zero
+                if (winding_number)
+                {
+                    if (is_point_on_polygon_edges(polygon, P, opts.eps))
+                        winding_number = 0;
+                }
+
+                if (winding_number)
+                {
+                    return true;
+                }
+            }
+        }
+    }
+
+    return false;
+}
+
+void delete_free_faces(Geometry geom)
+{
+    const List<List<int>> faces = geom.faces();
+    uint fsz = parts.Count;
+    List<bool>
+    found(fsz);
+
+    for (uint i = 0;
+    i < fsz;
+    i++) {
+        if (found[i])
+            continue;
+        // need to check for faces with lower index than i
+        for (uint j = 0;
+        j < fsz;
+        j++) {
+            if (i == j)
+                continue;
+            for (uint k = 0;
+            k < faces[i].Lengthparts;
+            k++) {
+                if (vertex_exists_in_face(faces[j], faces[i][k]))
+                {
+                    found[i] = true;
+                    found[j] = true;
+                    break;
+                }
+            }
+            if (found[i])
+                break;
+        }
+    }
+
+    List<int> face_list;
+    for (uint i = 0;
+    i < fsz;
+    i++)
+    if (!found[i])
+        face_list.Add(i);
+
+    if (parts.Count)
+        geom.del(FACES, face_list);
+}
+
+void sym_repeat(Geometry geom,
+const symmetro_opts  &opts)
+{
+    Symmetry sym;
+    if (opts.sym == 'T')
+        sym.init(Symmetry::T);
+    else if (opts.sym == 'O')
+        sym.init(Symmetry::O);
+    else if (opts.sym == 'I')
+        sym.init(Symmetry::I);
+    else if (opts.sym == 'D')
+        sym.init(Symmetry::D, (opts.mode == 't') ? opts.dihedral_n : opts.p);
+    else if (opts.sym == 'S')
+        sym.init(Symmetry::S, opts.p * 2);
+    else if (opts.sym == 'C')
+        sym.init(Symmetry::C, opts.p);
+    else if (opts.sym == 'V')
+        sym.init(Symmetry::Cv, opts.p);
+    else if (opts.sym == 'H')
+        sym.init(Symmetry::Ch, opts.p);
+
+    sym_repeat(geom, geom, sym, ELEM_FACES);
+
+    // reflection
+    if (opts.sym_mirror)
+    {
+        double x = (opts.sym_mirror == 'x') ? 1 : 0;
+        double y = (opts.sym_mirror == 'y') ? 1 : 0;
+        double z = (opts.sym_mirror == 'z') ? 1 : 0;
+
+        Geometry geom_refl;
+        geom_refl = geom;
+        geom_refl.transform(Trans3d::reflection(new Vector3(x, y, z)));
+        geom.append(geom_refl);
+    }
+}
+
+Geometry build_geom(List<Geometry> pgeom,
+const symmetro_opts  &opts)
+{
+    Geometry geom;
+
+    // if option c, align to a z coordinate
+    if (opts.mode == 'c')
+    {
+        if (!pgeom[1].verts().Lengthparts)
+        {
+            if (opts.verbose)
+                Debug.Log(
+                    stderr,
+                    "option -c: radial polygon not found so model not moved on Z\n");
+        }
+        else if (opts.vert_z == -1)
+        {
+            if (opts.verbose)
+                Debug.Log(stderr,
+                    "option -c: model not moved on Z (supressed by user)\n");
+        }
+        else
+        {
+            if (opts.verbose)
+                Debug.Log(stderr, "option -c: greatest Z ");
+
+            Vec3d P;
+            int vz = opts.vert_z;
+            if (vz != std::numeric_limits<int>::max())
+            {
+                P = pgeom[1].verts(vz);
+
+                if (opts.verbose)
+                    Debug.Log(stderr, "explicitly set to %d\n", vz);
+            }
+            else
+            {
+                // find greatest Z
+                vz = 0;
+                P = pgeom[1].verts(vz);
+                for (uint i = 1;
+                i < pgeom[1].verts().Lengthparts;
+                i++) {
+                    if (pgeom[1].verts(i)[2] > P[2])
+                    {
+                        vz = i;
+                        P = pgeom[1].verts(vz);
+                    }
+                }
+
+                if (opts.verbose)
+                    Debug.Log(stderr, "calculated to %d\n", vz);
+            }
+
+            for (int i = 0; i < 2; i++)
+            {
+                Vec3d P2 = new Vector3(0, 0, -P[2]);
+                pgeom[i].transform(Trans3d::translate(P2));
+                pgeom[i].transform(Trans3d::rotate(
+                    0, 0, angle_around_axis(P, new Vector3(1, 0, 0), new Vector3(0, 0, 1))));
+            }
+        }
+    }
+
+    for (int i = 0; i < 2; i++)
+    {
+        // if not polygon, repeat for symmetry type
+        if (opts.convex_hull > 1)
+            sym_repeat(pgeom[i], opts);
+
+        if (opts.face_coloring_method == 'a')
+        {
+            Coloring clrng(&pgeom[i]);
+            Color col = opts.map.get_col(opts.col_axis_idx[i]);
+            clrng.f_one_col(col);
+        }
+
+        geom.append(pgeom[i]);
+    }
+
+    if (opts.convex_hull > 1)
+        merge_coincident_elements(geom, "vf", opts.eps);
+
+    // check for collisions
+    bool collision = false;
+    if (opts.convex_hull == 4)
+        collision = detect_collision(geom, opts);
+    if (collision)
+    {
+        opts.Debug.LogWarning("collision detected. convex hull is suppressed", 'C');
+    }
+
+    if ((!collision && opts.convex_hull == 4) || (opts.convex_hull == 3))
+    {
+        Status stat = geom.add_hull("A1");
+        // probably never happen
+        if (!stat.is_ok())
+            if (opts.verbose)
+                opts.Debug.LogWarning(stat.msg(), 'C');
+
+        // merged faces will retain RGB color
+        merge_coincident_elements(geom, "f", opts.eps);
+
+        // after sort merge, only new faces from convex hull will be uncolored
+        if (opts.face_coloring_method == 'a')
+        {
+            Coloring clrng(&geom);
+            for (uint i = 0;
+            i < geom.faces().Lengthparts;
+            i++) {
+                Color col = geom.colors(FACES).get(i);
+                if (!col.is_set())
+                {
+                    // convex hull color is map position 3
+                    col = opts.map.get_col(3);
+                    geom.colors(FACES).set(i, col);
+                }
+            }
+        }
+    }
+
+    if (opts.face_col.is_set())
+        Coloring(&geom).f_one_col(opts.face_col);
+    else if (opts.face_coloring_method == 'n')
+    {
+        Coloring clrng(&geom);
+        clrng.add_cmap(opts.map.clone());
+        clrng.f_sides(true);
+        clrng.f_apply_cmap();
+    }
+
+    // apply transparency
+    Status stat = Coloring(&geom).apply_transparency(opts.face_opacity);
+    if (stat.Debug.LogWarning())
+        opts.Debug.LogWarning(stat.msg(), 'T');
+
+    if (opts.remove_free_faces)
+    {
+        delete_free_faces(geom);
+        geom.del(VERTS, geom.get_info().get_free_verts());
+    }
+
+    // if coloring edges, check for digons
+    if (opts.color_digons)
+    {
+        List<int> del_faces;
+        for (uint i = 0;
+        i < geom.faces().Lengthparts;
+        i++) {
+            if (geom.faces(i).Lengthparts == 2)
+            {
+                List<int> edge = make_edge(geom.faces(i)[0], geom.faces(i)[1]);
+                Color col = geom.colors(FACES).get(i);
+                geom.add_edge(edge, col);
+                del_faces.Add(i);
+            }
+        }
+        geom.del(FACES, del_faces);
+    }
+
+    // color added edges
+    geom.add_missing_impl_edges(opts.edge_col);
+
+    // color vertices
+    Coloring(&geom).v_one_col(opts.vert_col);
+
+    geom.orient(1); // positive orientation
+
+    return geom;
+}
+
+Geometry build_frame(List<Geometry> pgeom,
+const symmetro_opts  &opts)
+{
+    Geometry geom;
+
+    double frame_rad = pgeom[0].verts(0).len();
+    Vec3d v0 = centroid(pgeom[0].verts(), pgeom[0].faces(0)).unit() * frame_rad;
+    Vec3d v1 = centroid(pgeom[1].verts(), pgeom[1].faces(0)).unit() * frame_rad;
+
+    double num_segs = 10;
+
+    Vec3d ax = vcross(v0, v1).unit();
+    double ang = angle_around_axis(v0, v1, ax);
+    Trans3d mat = Trans3d::rotate(ax, -ang / num_segs);
+
+    if (strchr(opts.frame_elems.c_str(), 'r'))
+    {
+        geom.add_vert(v0);
+        for (int i = 0; i < num_segs; i++)
+        {
+            geom.add_vert(geom.verts(i) * mat);
+            geom.add_edge(make_edge(i, i + 1));
+        }
+
+        if (strchr("SCHV", opts.sym))
+        {
+            // Vec3d v2 = new Vector3(v1[0],v1[1],-v1[2]) *
+            // Trans3d::rotate(0,0,deg2rad(180.0/opts.p));
+            Vec3d v2 = new Vector3(v1[0], v1[1], -v1[2]) *
+                       Trans3d::rotate(0, 0,
+                           (Mathf.PI * double(opts.d[0]) / double(opts.p) *
+                            (is_even(opts.p) ? 2.0 : 1.0)));
+
+            ax = vcross(v1, v2).unit();
+            ang = angle_around_axis(v1, v2, ax);
+            mat = Trans3d::rotate(ax, -ang / num_segs);
+
+            for (int i = num_segs; i < num_segs * 2; i++)
+            {
+                geom.add_vert(geom.verts(i) * mat);
+                geom.add_edge(make_edge(i, i + 1));
+            }
+        }
+    }
+
+    if (strchr(opts.frame_elems.c_str(), 'a'))
+    {
+        uint sz = geom.verts().Lengthparts;
+        geom.add_vert(v0);
+        geom.add_vert(-v0);
+        geom.add_edge(make_edge(sz, sz + 1));
+        geom.add_vert(v1);
+        geom.add_vert(-v1);
+        geom.add_edge(make_edge(sz + 2, sz + 3));
+    }
+
+    // if not polygon, repeat for symmetry type
+    if (opts.convex_hull > 1)
+        sym_repeat(geom, opts);
+
+    // sort_merge_elems(geom, "ve", opts.eps);
+
+    Coloring(&geom).vef_one_col(opts.frame_col, opts.frame_col, Color());
+
+    return geom;
+}
+
+/*
+void unitize_edges( List<Geometry> pgeom )
+{
+   List<double> val(2);
+   for( uint i=0; i<parts.Count; i++ ) {
+      GeometryInfo info(pgeom[i]);
+      if (info.num_iedges() > 0)
+         val[i] = info.iedge_lengths().sum/info.num_iedges();
+   }
+   double val_avg = (val[0]+val[1])/2.0;
+   pgeom[0].transform(Trans3d::scale(1/val_avg));
+   pgeom[1].transform(Trans3d::scale(1/val_avg));
+}
+*/
+
+int main(int argc, char argv[])
+{
+    symmetro_opts opts;
+    opts.process_command_line(argc, argv);
+
+    symmetro s;
+    s.setSym(opts.sym, opts.p, opts.q, opts.dihedral_n, opts.sym_id_no);
+
+    // indexes will be 0,1 except in the case of mode=k when index 2 can be
+    // present
+    List < uint > idx;
+    for (uint i = 0;
+    i < opts.parts.Count;
+    i++) {
+        if (opts.multipliers[i])
+            idx.Add(i);
+    }
+    // in mode=k there can happen only 1 index
+    if ((int)parts.Count == 1)
+        idx.Add(idx[0]);
+
+    // set multipliers, axis index for color, in object
+    for (uint i = 0;
+    i < parts.Count;
+    i++) {
+        s.setMult(i, opts.multipliers[idx[i]]);
+        opts.col_axis_idx.Add(idx[i]);
+    }
+
+    // set d, d_substitute in object
+    for (uint i = 0;
+    i < opts.parts.Count;
+    i++)
+    s.setD(i, opts.d[i]);
+    for (uint i = 0;
+    i < opts.parts.Count;
+    i++)
+    s.setD_substitute(i, opts.d_substitute[i]);
+
+    // scale will be DBL_MAX when not set
+    // if axis not specified and a scale is set, set default scale axis to first
+    // axis index
+    if (opts.scale_axis == -1 && (!std::isnan(opts.scale[0])))
+    {
+        opts.scale_axis = idx[0];
+        swap(opts.scale[0], opts.scale[opts.scale_axis]);
+    }
+
+    for (uint i = 0;
+    i < opts.parts.Count;
+    i++) {
+        if ((!std::isnan(opts.scale[i])) && (i != idx[0] && i != idx[1]))
+            Debug.LogError(
+                $"polygon '%d' is not generated so cannot be used for scaling",
+                    i),
+                'r');
+    }
+    for (uint i = 0;
+    i < opts.parts.Count;
+    i++) {
+        if (opts.scale[i] < 0)
+            Debug.LogError("scale cannot be negative", 'r');
+    }
+    if (opts.mode == 's' || opts.mode == 'c')
+    {
+        for (uint i = 0;
+        i < opts.parts.Count;
+        i++) {
+            if (!std::isnan(opts.scale[i]))
+            {
+                opts.Debug.LogWarning(
+                    "some polygons may not meet when scale is used with -s or -c", 'r');
+                break;
+            }
+        }
+    }
+
+    for (uint i = 0;
+    i < parts.Count;
+    i++) {
+        double r = (std::isnan(opts.scale[idx[i]])) ? 1 : opts.scale[idx[i]];
+        s.setScale(i, r);
+    }
+
+    // if not specified, set default rotation axis to first axis index
+    if (opts.rotation_axis == -1)
+        opts.rotation_axis = idx[0];
+    // check rotation axis specifier for zero
+    if (opts.mode != 'k' && opts.rotation_axis == 2)
+        Debug.LogError("only 0 and 1 are valid for axis when not using option -k", 'a');
+    else if (opts.rotation_axis != (int)idx[0] &&
+             opts.rotation_axis != (int)idx[1])
+        Debug.LogError(
+            $"polygon '%d' is not generated so cannot be used for rotation",
+                opts.rotation_axis),
+            'a');
+    // swap axes if we are rotating the axis 1 polygon
+    // if -k and p == q then alway use axis 0
+    bool swap_axes = false;
+    if (opts.mode == 'k' && opts.p == opts.q)
+        swap_axes = false;
+    else if (opts.rotation_axis == (int)idx[1])
+        swap_axes = true;
+
+    // if convex_hull is not set
+    if (!opts.convex_hull)
+    {
+        for (uint i = 0;
+        i < opts.parts.Count;
+        i++) {
+            if (opts.d[i] > 1 || opts.d_substitute[i] > 1)
+            {
+                // supress convex hull
+                opts.convex_hull = 2;
+                opts.Debug.LogWarning("star polygons detected so convex hull is supressed", 'C');
+                break;
+            }
+        }
+
+        // supress convex hull for models with digons
+        if ((opts.multipliers[idx[0]] * opts.p == 2) ||
+            (opts.multipliers[idx[1]] * opts.q == 2))
+        {
+            opts.convex_hull = 2;
+            opts.Debug.LogWarning("model contains digons so convex hull is supressed", 'C');
+        }
+    }
+
+    // if still not set, convex hull is set to normal
+    if (!opts.convex_hull)
+        opts.convex_hull = 4;
+
+    // ready to generate
+
+    // fill symmetry axes here
+    string error_msg;
+    if (s.fill_sym_vec(opts.mode, error_msg))
+        if (!error_msg.empty())
+            Debug.LogError(error_msg);
+
+    List<Geometry> pgeom =
+        s.calc_polygons(opts.mode, opts.rotation, opts.rotation_as_increment,
+            opts.add_pi, swap_axes, opts.offset, opts.verbose,
+            opts.angle_between_axes, error_msg);
+    if (!error_msg.empty())
+        Debug.LogError(error_msg);
+
+    // if ( opts.d_substitute[0] || opts.d_substitute[1] )
+    //   unitize_edges( pgeom );
+
+    if (opts.verbose)
+    {
+        s.debug(opts.mode);
+
+        double edge_length[2] =  {
+            0
+        }
+        ;
+        for (uint i = 0;
+        i < parts.Count;
+        i++) {
+            GeometryInfo info(pgeom[i]);
+            if (info.num_iedges() > 0)
+            {
+                edge_length[i] = info.iedge_length_lims().sum / info.num_iedges();
+                Debug.Log(stderr, "Edge length of polygon %d = %.17lf\n", i,
+                    edge_length[i]);
+            }
+        }
+
+        Debug.Log(stderr, "\n");
+        for (int i = 0; i < 2; i++)
+        {
+            for (int j = 0; j < 2; j++)
+            {
+                if (i == j)
+                    continue;
+                // built in epsilon here
+                if (edge_length[i] > anti::epsilon && edge_length[j] > anti::epsilon)
+                    Debug.Log(stderr, "edge length ratio of polygon %d to %d = %.17lf\n", i,
+                        j, edge_length[i] / edge_length[j]);
+            }
+        }
+
+        Debug.Log(stderr, "\n");
+    }
+
+    Geometry geom;
+    geom = build_geom(pgeom, opts);
+
+    if (opts.frame_elems.Count)
+    {
+        Geometry geom_frame;
+        geom_frame = build_frame(pgeom, opts);
+        geom.append(geom_frame);
+    }
+
+    return 0;
+}
+
+
+return poly;
+}
+}

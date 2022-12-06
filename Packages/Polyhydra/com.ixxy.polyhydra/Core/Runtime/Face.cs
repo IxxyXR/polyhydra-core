@@ -120,40 +120,17 @@ namespace Polyhydra.Core
 
         public (Vector3, Vector3) GetTangents()
         {
-            Vector3 tangentLeft, tangentUp, t1, t2;
-
-            var faceNormal = Normal;
-            t1 = Vector3.Cross(faceNormal, Vector3.forward);
-            t2 = Vector3.Cross(faceNormal, Vector3.left);
-            
-            if (t1.magnitude > t2.magnitude)
-            {
-                tangentUp = t1;
-            }
-            else
-            {
-                tangentUp = t2;
-            }
-
-            t2 = Vector3.Cross(faceNormal, Vector3.up);
-            if (t1.magnitude > t2.magnitude)
-            {
-                tangentLeft = t1;
-            }
-            else
-            {
-                tangentLeft = t2;
-            }
-
-            return (tangentLeft, tangentUp);
+            Vector3 t1, t2;
+            t1 = Tangent;
+            t2 = Vector3.Cross(Normal, t1);
+            return (t1, t2);
         }
 
         public Vector3 GetInteriorCentroid()
         {
             // WIP - not currently correct.
             // See https://stackoverflow.com/questions/9692448/how-can-you-find-the-centroid-of-a-concave-irregular-polygon-in-javascript
-            
-            
+
             List<Vector2> vertices = Get2DVertices();
             vertices.Add(vertices[0]);
             float twicearea = 0;
@@ -197,63 +174,38 @@ namespace Polyhydra.Core
             }
         }
 
-        public Quaternion FacingDirection
-        {
-            get
-            {
-                return Quaternion.LookRotation(Normal, Vector3.up);
-            }
-        }
-
         public int Sides {
             get { return GetVertices().Count; }
         }
         
-        public Vector3 GetTangent(Vector3? dir=null)
-        {
-            if (!dir.HasValue) dir = Vector3.forward;
-            var normal = Normal;
-            Vector3 tangent = Vector3.Cross(normal, dir.Value);
-            if (tangent.magnitude == 0)
-            {
-                tangent = Vector3.Cross( normal, Quaternion.Euler(90,0,0) * dir.Value);
-            }
-            return tangent;
-        }
+        public Vector3 Tangent => Centroid - Halfedge.Vertex.Position;
         
-        public static Vector2 Vector3toVector2(Vector3 v, Vector3 plane)
+        public static Vector2 Vector3toVector2(Vector3 v, Vector3 tangent)
         {
             return new Vector2(
-                Vector3.Dot(v, plane),
-                Vector3.Dot(v, Quaternion.Euler(0, 90, 0) * plane)
+                Vector3.Dot(v, tangent),
+                Vector3.Dot(v, Quaternion.Euler(0, 90, 0) * tangent)
             );
-        }
-
-        public Vector2 PositionOnFace(Vertex v, Vector3 offset)
-        {
-            return Vector3toVector2(v.Position - offset, GetTangent(Normal));
-        }
-        
-        public Vector3 FaceOffsetToVector3(Vertex v, Vector3 offset)
-        {
-            return Vector3toVector2(v.Position - offset, GetTangent(Normal));
         }
 
         // Gets the vertices of this face as a list of Vector2s
         // in the plane of the face relative to it's centroid
         public List<Vector2> Get2DVertices()
         {
-            var centroid = Centroid;
+            var origin = Centroid;
+            var tangents = GetTangents();
             var verts = GetVertices();
-            return verts.Select(v=>PositionOnFace(v, centroid))
-            .ToList();
+            return verts.Select(v => new Vector2(
+                    Vector3.Dot(v.Position - origin, tangents.Item1),
+                    Vector3.Dot(v.Position - origin, tangents.Item2)
+            )).ToList();
         }
 
         public bool IsClockwise
         {
             get
             {
-                var verts = Get2DVertices();
+                var verts= Get2DVertices();
                 float total = 0;
                 for (var i = 0; i < verts.Count; i++)
                 {

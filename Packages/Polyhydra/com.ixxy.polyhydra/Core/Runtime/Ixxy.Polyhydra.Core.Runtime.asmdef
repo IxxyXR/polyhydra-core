@@ -1,7 +1,11 @@
 {
     "name": "Ixxy.Polyhydra.Core.Runtime",
+    "rootNamespace": "",
     "references": [
-        "GUID:0e17a88b6dc314a4b9951fb825043892"
+        "GUID:0e17a88b6dc314a4b9951fb825043892",
+        "GUID:561cd3090aa423b4584912885a62ef6f",
+        "GUID:7e6803b5127cb5a45a5400e9fcdfa294",
+        "GUID:1a45dfb1ec3294540ab1e99aa964d155"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

@@ -74,3 +74,4 @@ crashlytics-build.properties
 Recordings/*
 
 .DS_Store
+Packages/com.fab.livelua/*

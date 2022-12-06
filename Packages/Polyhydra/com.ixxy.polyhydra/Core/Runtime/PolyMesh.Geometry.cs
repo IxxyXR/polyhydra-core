@@ -2,8 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using GK;
+using ProceduralToolkit;
+using ProceduralToolkit.Skeleton;
 using UnityEngine;
-using UnityEngine.UIElements;
 
 namespace Polyhydra.Core
 {
@@ -522,6 +523,125 @@ namespace Polyhydra.Core
                 faceIndices.Add(faceVertices);
                 var vertexRole = includeFace ? Roles.Existing : Roles.Ignored;
                 vertexRoles.AddRange(Enumerable.Repeat(vertexRole, faceVertices.Count));
+            }
+
+            return new PolyMesh(vertexPoints, faceIndices, FaceRoles, vertexRoles, FaceTags);
+        }
+
+
+        public List<Vector3> Convert2dPathto3d(List<Vector2> path, Face face)
+        {
+            var orientation = Quaternion.LookRotation(face.Normal, face.GetTangents().Item2);
+            var origin = face.Centroid;
+            List<Vector3> convertedPath = new List<Vector3>();
+            foreach (Vector2 v in path)
+            {
+                var transformedPoint = orientation * v;
+                transformedPoint += origin;
+                convertedPath.Add(transformedPoint);
+            }
+            return convertedPath;
+        }
+
+        public PolyMesh Tesselate(OpParams o)
+        {
+            var vertexPoints = new List<Vector3>();
+            var faceIndices = new List<IEnumerable<int>>();
+            var vertexRoles = new List<Roles>();
+
+            for (var faceIndex = 0; faceIndex < Faces.Count; faceIndex++)
+            {
+                var face = Faces[faceIndex];
+                var includeFace = IncludeFace(faceIndex, o.filter);
+                if (includeFace)
+                {
+                    var tessellator = new Tessellator();
+                    tessellator.AddContour(face.GetVertices().Select(v => v.Position).ToList());
+                    tessellator.Tessellate(normal: face.Normal);
+                    Debug.Log($"tesselator: {tessellator.vertices} verts {tessellator.indices} indices");
+                    int startingIndex = vertexPoints.Count;
+                    vertexPoints.AddRange(tessellator.vertices.Select(v => new Vector3(v.Position.X, v.Position.Y, v.Position.Z)));
+                    faceIndices.Add(tessellator.indices.Select(i => i + startingIndex));
+                    var vertexRole = includeFace ? Roles.Existing : Roles.Ignored;
+                    vertexRoles.AddRange(Enumerable.Repeat(vertexRole, tessellator.indices.Length));
+                }
+            }
+            return new PolyMesh(vertexPoints, faceIndices, FaceRoles, vertexRoles, FaceTags);
+        }
+
+        public PolyMesh StraightSkeleton(OpParams o)
+        {
+            var vertexPoints = new List<Vector3>();
+            var faceIndices = new List<IEnumerable<int>>();
+            var vertexRoles = new List<Roles>();
+            var faceRoles = new List<Roles>();
+            var faceTags = new List<HashSet<string>>();
+
+            var generator = new StraightSkeletonGenerator();
+
+            for (var faceIndex = 0; faceIndex < Faces.Count; faceIndex++)
+            {
+                var face = Faces[faceIndex];
+                var includeFace = IncludeFace(faceIndex, o.filter);
+                var path2d = face.Get2DVertices();
+                path2d.Reverse();
+                var skeleton = generator.Generate(path2d);
+
+                foreach (var path in skeleton.polygons)
+                {
+                    int c = vertexPoints.Count;
+                    var path3d = Convert2dPathto3d(path, face);
+                    path3d.Reverse();
+
+                    vertexPoints.AddRange(path3d);
+                    var faceVertices = new List<int>();
+                    for (int ii = 0; ii < path3d.Count; ii++)
+                    {
+                        faceVertices.Add(c + ii);
+                    }
+                    faceIndices.Add(faceVertices);
+                    faceRoles.Add(FaceRoles[faceIndex]);
+                    faceTags.Add(FaceTags[faceIndex]);
+                    var vertexRole = includeFace ? Roles.Existing : Roles.Ignored;
+                    vertexRoles.AddRange(Enumerable.Repeat(vertexRole, faceVertices.Count));
+                }
+            }
+
+            return new PolyMesh(vertexPoints, faceIndices, faceRoles, vertexRoles, faceTags);
+        }
+
+        public PolyMesh FaceInset(OpParams o)
+        {
+            var vertexPoints = new List<Vector3>();
+            var faceIndices = new List<IEnumerable<int>>();
+            var vertexRoles = new List<Roles>();
+            var offsetter = new PathOffsetter();
+
+            for (var faceIndex = 0; faceIndex < Faces.Count; faceIndex++)
+            {
+                var face = Faces[faceIndex];
+                var includeFace = IncludeFace(faceIndex, o.filter);
+                var inset = o.GetValueA(this, faceIndex);
+                var path2d= face.Get2DVertices();
+                offsetter.AddPath(path2d);
+                var result = new List<List<Vector2>>();
+                offsetter.Offset(ref result, -inset);
+
+                foreach (var path in result)
+                {
+                    int c = vertexPoints.Count;
+                    var path3d = Convert2dPathto3d(path, face);
+                    vertexPoints.AddRange(path3d);
+                    var faceVertices = new List<int>();
+                    for (int ii = 0; ii < path.Count; ii++)
+                    {
+                        faceVertices.Add(c + ii);
+                    }
+
+                    faceIndices.Add(faceVertices);
+                    var vertexRole = includeFace ? Roles.Existing : Roles.Ignored;
+                    vertexRoles.AddRange(Enumerable.Repeat(vertexRole, faceVertices.Count));
+                }
             }
 
             return new PolyMesh(vertexPoints, faceIndices, FaceRoles, vertexRoles, FaceTags);
@@ -2096,6 +2216,7 @@ namespace Polyhydra.Core
                 while (!finished)
                 {
                     var currentFace = currentEdge.Face;
+                    var edges = currentFace.GetHalfedges();
                     edgeCounter = 0;
                     while (edgeCounter < currentFace.Sides / 2)
                     {
@@ -2105,7 +2226,7 @@ namespace Polyhydra.Core
 
                     loop.Insert(0, new Tuple<int, int>(
                         faceLookup[currentEdge.Face.Name],
-                        currentEdge.Face.GetHalfedges().IndexOf(currentEdge)
+                        edges.IndexOf(currentEdge)
                     ));
                     currentEdge = currentEdge.Pair;
                     failsafe++;
@@ -2306,8 +2427,6 @@ namespace Polyhydra.Core
                                 faceIndices.Add(newEdgeFace2);
                                 faceRoles.Add(section % 2 == 0 ? Roles.New : Roles.NewAlt);
                                 newFaceTags.Add(new HashSet<string>(prevFaceTagSet));
-
-
                             }
                             else
                             {
@@ -2321,7 +2440,6 @@ namespace Polyhydra.Core
                                 faceIndices.Add(newEdgeFace);
                                 faceRoles.Add(section % 2 == 0 ? Roles.New : Roles.NewAlt);
                                 newFaceTags.Add(new HashSet<string>(prevFaceTagSet));
-
                             }
                         }
 

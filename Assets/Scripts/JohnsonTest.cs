@@ -1,4 +1,6 @@
-﻿using System.Globalization;
+﻿using System;
+using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using Polyhydra.Core;
@@ -18,6 +20,11 @@ public class JohnsonTest : TestBase
         TextInfo textInfo = new CultureInfo("en-GB",false).TextInfo;
         SolidName = textInfo.ToTitleCase(JohnsonSolids.Names.Keys.ToArray()[type - 1]);
         poly = JohnsonSolids.Build(type);
+        List<Tuple<int, int>> foo = poly.GetFaceLoop(2);
+        foreach (var f in foo)
+        {
+
+        }
         Build();
     }
 }

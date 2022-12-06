@@ -1,11 +1,10 @@
 {
   "dependencies": {
     "com.fab.livelua": {
-      "version": "https://github.com/fabSchneider/LiveLua.git",
+      "version": "file:com.fab.livelua",
       "depth": 0,
-      "source": "git",
-      "dependencies": {},
-      "hash": "86ff98376aa2454bece362b421b7910fc6ff6046"
+      "source": "embedded",
+      "dependencies": {}
     },
     "com.ixxy.polyhydra.core": {
       "version": "file:Polyhydra",
@@ -21,6 +20,23 @@
       "source": "registry",
       "dependencies": {},
       "url": "https://package.openupm.com"
+    },
+    "com.syomus.proceduraltoolkit": {
+      "version": "https://github.com/Syomus/ProceduralToolkit.git#upm",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {
+        "com.unity.ugui": "1.0.0",
+        "com.unity.mathematics": "1.2.6"
+      },
+      "hash": "722f22ac2dbe72f83715d7f22d615cd697463650"
+    },
+    "com.unity.demoteam.mesh-to-sdf": {
+      "version": "https://github.com/Unity-Technologies/com.unity.demoteam.mesh-to-sdf.git",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "8fc6ff407f341ce97adf566ceb5eb15f13b5a501"
     },
     "com.unity.ext.nunit": {
       "version": "1.0.6",
@@ -54,6 +70,20 @@
       "dependencies": {},
       "url": "https://packages.unity.com"
     },
+    "com.unity.mathematics": {
+      "version": "1.2.6",
+      "depth": 1,
+      "source": "registry",
+      "dependencies": {},
+      "url": "https://packages.unity.com"
+    },
+    "com.unity.robotics.vhacd": {
+      "version": "https://github.com/Unity-Technologies/VHACD.git?path=/com.unity.robotics.vhacd",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "854b3d820901804c338365c63f067ad7f1c4b9c0"
+    },
     "com.unity.test-framework": {
       "version": "1.1.33",
       "depth": 0,
@@ -65,12 +95,28 @@
       },
       "url": "https://packages.unity.com"
     },
+    "com.unity.ugui": {
+      "version": "1.0.0",
+      "depth": 0,
+      "source": "builtin",
+      "dependencies": {
+        "com.unity.modules.ui": "1.0.0",
+        "com.unity.modules.imgui": "1.0.0"
+      }
+    },
     "moonsharp": {
       "version": "https://github.com/fabSchneider/moonsharp.git#v2.0.0-upm.533e8b0",
       "depth": 0,
       "source": "git",
       "dependencies": {},
       "hash": "9a4ca897d603b83ad1dc8912cc425d6be5e9b76b"
+    },
+    "tw.hoba.isomesh": {
+      "version": "https://github.com/shinabebel/IsoMesh.git#upm",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "517b7ca1efa8399d31db1c6449a3886e83714ff3"
     },
     "com.unity.modules.ai": {
       "version": "1.0.0",

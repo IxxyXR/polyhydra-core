@@ -75,7 +75,7 @@ public class TestBase : MonoBehaviour
         }
         if (CanonicalizeIterations > 0 || PlanarizeIterations > 0) poly = poly.Canonicalize(CanonicalizeIterations, PlanarizeIterations);
         if (FaceScale<1f) poly = poly.FaceScale(new OpParams(FaceScale));
-        var meshData = poly.BuildMeshData(colorMethod: colorMethod);
+        var meshData = poly.BuildMeshData(colorMethod: colorMethod, largeMeshFormat: false);
         var mesh = poly.BuildUnityMesh(meshData);
         if (Application.isPlaying)
         {
