@@ -37,6 +37,7 @@ namespace Polyhydra.Core
         PositionY,
         PositionZ,
         DistanceFromCenter,
+        AverageAngle
     }
 
     public class Filter
@@ -92,6 +93,7 @@ namespace Polyhydra.Core
                 FilterTypes.FacingForward => FacingDirection(Vector3.forward, filterParamFloat, false, filterNot),
                 FilterTypes.FacingRight => FacingDirection(Vector3.right, filterParamFloat, false, filterNot),
                 FilterTypes.NSided => NumberOfSides(filterParamInt, filterNot),
+                FilterTypes.AverageAngle => AverageAngle(filterParamFloat, filterNot),
                 FilterTypes.EvenSided => filterNot ? EvenSided : OddSided,
                 FilterTypes.EveryNth => EveryNth(filterParamInt, filterNot),
                 FilterTypes.FirstN => Range(filterParamInt, filterNot),
@@ -199,6 +201,27 @@ namespace Polyhydra.Core
             );
         }
 
+        public static Filter AverageAngle(float maxAngle, bool not = false)
+        {
+            return new Filter(
+                p =>
+                {
+                    var face = p.poly.Faces[p.index];
+                    var edges = face.GetHalfedges();
+                    float angle = edges.Select(e => e.DihedralAngle).Sum() / edges.Count;
+                    bool result = angle < maxAngle;
+                    return not ? !result : result;
+                },
+                p =>
+                {
+                    var vert = p.poly.Vertices[p.index];
+                    var edges = vert.Halfedges;
+                    float angle = edges.Select(e => e.DihedralAngle).Sum() / edges.Count;
+                    bool result = angle < maxAngle;
+                    return not ? !result : result;
+                }
+            );
+        }
         public static Filter OnlyNth(int index, bool not = false)
         {
             return new Filter(

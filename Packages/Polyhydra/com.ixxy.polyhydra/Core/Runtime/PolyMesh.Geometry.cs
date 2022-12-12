@@ -527,6 +527,19 @@ namespace Polyhydra.Core
             return new PolyMesh(vertexPoints, faceIndices, FaceRoles, vertexRoles, FaceTags);
         }
 
+        public List<Vector3> Convert2dPathto3d(List<Vector2> path, Face face)
+        {
+            var orientation = Quaternion.LookRotation(face.Normal, face.GetTangents().Item2);
+            var origin = face.Centroid;
+            List<Vector3> convertedPath = new List<Vector3>();
+            foreach (Vector2 v in path)
+            {
+                var transformedPoint = orientation * v;
+                transformedPoint += origin;
+                convertedPath.Add(transformedPoint);
+            }
+            return convertedPath;
+        }
         public PolyMesh FaceRotate(OpParams o, int axis = 0)
         {
             var vertexPoints = new List<Vector3>();
@@ -1381,7 +1394,6 @@ namespace Polyhydra.Core
                 distance = .00001f; // We always weld by a very small amount. Disable the op if you don't want to weld at all.
             var vertexPoints = new List<Vector3>();
             var faceIndices = new List<IEnumerable<int>>();
-            var vertexRoles = new List<Roles>();
             var reverseDict = new Dictionary<Vertex, int>();
             var vertexReplacementDict = new Dictionary<int, int>();
 
@@ -1429,10 +1441,10 @@ namespace Polyhydra.Core
                 faceIndices.Add(newFaceVertIndices);
             }
 
-            FaceRoles = FaceRoles.GetRange(0, faceIndices.Count);
-            FaceTags = FaceTags?.GetRange(0, faceIndices.Count);
-            vertexRoles = Vertices.Select(x => FaceRoles[Faces.IndexOf(x.Halfedge.Face)]).ToList();
-            return new PolyMesh(vertexPoints, faceIndices, FaceRoles, vertexRoles, FaceTags);
+            var faceRoles = FaceRoles.GetRange(0, faceIndices.Count);
+            var faceTags = FaceTags.GetRange(0, faceIndices.Count);
+            var vertexRoles = Vertices.Select(x => FaceRoles[Faces.IndexOf(x.Halfedge.Face)]).ToList();
+            return new PolyMesh(vertexPoints, faceIndices, faceRoles, vertexRoles, faceTags);
         }
 
         public PolyMesh FillHoles()
@@ -2096,6 +2108,7 @@ namespace Polyhydra.Core
                 while (!finished)
                 {
                     var currentFace = currentEdge.Face;
+                    var edges = currentFace.GetHalfedges();
                     edgeCounter = 0;
                     while (edgeCounter < currentFace.Sides / 2)
                     {
@@ -2105,7 +2118,7 @@ namespace Polyhydra.Core
 
                     loop.Insert(0, new Tuple<int, int>(
                         faceLookup[currentEdge.Face.Name],
-                        currentEdge.Face.GetHalfedges().IndexOf(currentEdge)
+                        edges.IndexOf(currentEdge)
                     ));
                     currentEdge = currentEdge.Pair;
                     failsafe++;
