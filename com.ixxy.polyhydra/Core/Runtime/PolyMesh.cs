@@ -169,13 +169,11 @@ namespace Polyhydra.Core
             IEnumerable<IEnumerable<int>> faceIndices
         ) : this()
         {
-            var faceRoles = Enumerable.Repeat(Roles.New, faceIndices.Count());
-            var vertexRoles = Enumerable.Repeat(Roles.New, verts.Count());
-            FaceRoles = faceRoles.ToList();
-            VertexRoles = vertexRoles.ToList();
+            FaceRoles = Enumerable.Repeat(Roles.New, faceIndices.Count()).ToList();
+            FaceTags = Enumerable.Repeat(new HashSet<string>(), faceIndices.Count()).ToList();
+            VertexRoles = Enumerable.Repeat(Roles.New, verts.Count()).ToList();
             InitIndexed(verts, faceIndices);
             CullUnusedVertices();
-            InitTags();
         }
 
         public enum SeedShape
@@ -460,7 +458,8 @@ namespace Polyhydra.Core
 			IEnumerable<Vector3> verts,
             IEnumerable<IEnumerable<int>> faceIndices,
             IEnumerable<Roles> faceRoles,
-            IEnumerable<Roles> vertexRoles
+            IEnumerable<Roles> vertexRoles,
+            IEnumerable<HashSet<string>> faceTags = null
 		) : this()
         {
             if (faceRoles.Count() != faceIndices.Count())
@@ -472,20 +471,16 @@ namespace Polyhydra.Core
             }
             FaceRoles = faceRoles.ToList();
             VertexRoles = vertexRoles.ToList();
+            if (faceTags == null)
+            {
+                FaceTags = Enumerable.Repeat(new HashSet<string>(), faceIndices.Count()).ToList();
+        }
+            else
+        {
+                FaceTags = faceTags.ToList();
+            }
             InitIndexed(verts, faceIndices);
             CullUnusedVertices();
-            InitTags();
-        }
-
-        public PolyMesh(
-            IEnumerable<Vector3> verticesByPoints,
-            IEnumerable<IEnumerable<int>> facesByVertexIndices,
-            IEnumerable<Roles> faceRoles,
-            IEnumerable<Roles> vertexRoles,
-            List<HashSet<string>> newFaceTags
-        ) : this(verticesByPoints, facesByVertexIndices, faceRoles, vertexRoles)
-        {
-            FaceTags = newFaceTags;
         }
 
         public PolyMesh(TextReader reader) : this()
@@ -716,6 +711,7 @@ namespace Polyhydra.Core
             IEnumerable<IEnumerable<int>> facesByVertexIndices)
         {
             var newRoles = new List<Roles>();
+            var newTags = new List<HashSet<string>>();
 
             // Add vertices
             foreach (Vector3 p in verticesByPoints)
@@ -725,7 +721,7 @@ namespace Polyhydra.Core
 
             // Add faces
             var faces = facesByVertexIndices.ToList();
-            for (int counter = 0; counter < faces.Count(); counter++)
+            for (int counter = 0; counter < faces.Count; counter++)
             {
                 List<int> indices = faces[counter].ToList();
 
@@ -742,12 +738,14 @@ namespace Polyhydra.Core
                 if (faceAdded)
                 {
                     newRoles.Add(FaceRoles[counter]);
+                    newTags.Add(FaceTags[counter]);
                 }
             }
 
             // Find and link halfedge pairs
             Halfedges.MatchPairs();
             FaceRoles = newRoles;
+            FaceTags = newTags;
         }
 
         public Bounds GetBounds()
