@@ -2,8 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using GK;
+using ProceduralToolkit;
+using ProceduralToolkit.Skeleton;
 using UnityEngine;
-using UnityEngine.UIElements;
 
 namespace Polyhydra.Core
 {
@@ -540,6 +541,222 @@ namespace Polyhydra.Core
             }
             return convertedPath;
         }
+
+        public PolyMesh Tessellate(OpParams o)
+        {
+            var vertexPoints = new List<Vector3>();
+            var faceIndices = new List<IEnumerable<int>>();
+
+            int sides = Mathf.FloorToInt(Mathf.Max(3, o.OriginalParamA));
+            var tessellator = new Tessellator();
+            for (var faceIndex = 0; faceIndex < Faces.Count; faceIndex++)
+            {
+                var face = Faces[faceIndex];
+                var includeFace = IncludeFace(faceIndex, o.filter);
+                if (includeFace)
+                {
+                    // var sides = Mathf.FloorToInt(o.GetValueA(this, faceIndex));
+                    // sides = Mathf.Max(3, sides);
+                    tessellator.AddContour(face.GetVertices().Select(v => v.Position).ToList());
+                    // var vertexRole = includeFace ? Roles.Existing : Roles.Ignored;
+                    // vertexRoles.AddRange(Enumerable.Repeat(vertexRole, tessellator.indices.Length));
+                }
+            }
+            tessellator.Tessellate(polySize: sides);
+            int startingIndex = vertexPoints.Count;
+            vertexPoints.AddRange(tessellator.vertices.Select(v => new Vector3(v.Position.X, v.Position.Y, v.Position.Z)));
+            // Split into faces of n sides
+            int numIndices = tessellator.indices.Length;
+            for (int i = 0; i < numIndices; i += sides)
+            {
+                var idxList = tessellator.indices.ToList().GetRange(i, sides).Where(x => x >= 0);
+                faceIndices.Add(idxList.Select(x => startingIndex + x));
+                // faceRoles.Add(FaceRoles[faceIndex]);
+                // faceTags.Add(FaceTags[faceIndex]);
+                if (i + sides >= numIndices) break;
+            }
+
+            var poly = new PolyMesh(vertexPoints, faceIndices);
+            // poly.Weld(0.01f);
+            return poly;
+        }
+
+        public PolyMesh FaceTessellate(OpParams o)
+        {
+            var vertexPoints = new List<Vector3>();
+            var faceIndices = new List<IEnumerable<int>>();
+            var faceRoles = new List<Roles>();
+            var vertexRoles = new List<Roles>();
+            var faceTags = new List<HashSet<string>>();
+
+            for (var faceIndex = 0; faceIndex < Faces.Count; faceIndex++)
+            {
+                var face = Faces[faceIndex];
+                var includeFace = IncludeFace(faceIndex, o.filter);
+                if (includeFace)
+                {
+                    var sides = Mathf.FloorToInt(o.GetValueA(this, faceIndex));
+                    sides = Mathf.Max(3, sides);
+                    var tessellator = new Tessellator();
+                    tessellator.AddContour(face.GetVertices().Select(v => v.Position).ToList());
+                    tessellator.Tessellate(polySize: sides, normal: -face.Normal);
+                    int startingIndex = vertexPoints.Count;
+                    vertexPoints.AddRange(tessellator.vertices.Select(v => new Vector3(v.Position.X, v.Position.Y, v.Position.Z)));
+                    // Split into faces of n sides
+                    int numIndices = tessellator.indices.Length;
+                    for (int i = 0; i < numIndices; i += sides)
+                    {
+                        var idxList = tessellator.indices.ToList().GetRange(i, sides).Where(x => x >= 0);
+                        faceIndices.Add(idxList.Select(x => startingIndex + x));
+                        faceRoles.Add(FaceRoles[faceIndex]);
+                        faceTags.Add(FaceTags[faceIndex]);
+                        if (i + sides >= numIndices) break;
+                    }
+                    var vertexRole = includeFace ? Roles.Existing : Roles.Ignored;
+                    vertexRoles.AddRange(Enumerable.Repeat(vertexRole, tessellator.indices.Length));
+                }
+            }
+            return new PolyMesh(vertexPoints, faceIndices, faceRoles, vertexRoles, faceTags);
+        }
+
+        public PolyMesh StraightSkeleton(OpParams o)
+        {
+            var vertexPoints = new List<Vector3>();
+            var faceIndices = new List<IEnumerable<int>>();
+            var vertexRoles = new List<Roles>();
+            var faceRoles = new List<Roles>();
+            var faceTags = new List<HashSet<string>>();
+
+            for (var faceIndex = 0; faceIndex < Faces.Count; faceIndex++)
+            {
+                var face = Faces[faceIndex];
+                float height = o.GetValueA(this, faceIndex);
+                var includeFace = IncludeFace(faceIndex, o.filter);
+                var path2d = face.Get2DVertices();
+
+                var generator = new StraightSkeletonGenerator();
+                StraightSkeleton skeleton;
+
+                List<List<Vector2>> paths;
+
+                if (includeFace)
+                {
+                    try
+                    {
+                        skeleton = generator.Generate(path2d);
+                        paths = skeleton.polygons;
+                    }
+                    catch (InvalidOperationException)
+                    {
+                        path2d.Reverse();
+                        try
+                        {
+                            skeleton = generator.Generate(path2d);
+                            paths = skeleton.polygons;
+                        }
+                        catch (InvalidOperationException)
+                        {
+                            // Failed both forward and reverse.
+                            // Use the original path
+                            path2d.Reverse();
+                            paths = new List<List<Vector2>> { path2d };
+                            Debug.LogWarning($"Failed to find skeleton for face {faceIndex}");
+                        }
+                    }
+                }
+                else
+                {
+                    paths = new List<List<Vector2>> { path2d };
+                }
+
+                var tempOctree = new PointOctree<int>(1, Vector3.zero, 1);
+                int firstNewVertIndex = vertexPoints.Count;
+
+                foreach (var path in paths)
+                {
+                    var path3d = Convert2dPathto3d(path, face);
+                    path3d.Reverse();
+                    var faceVertexIndices = new List<int>();
+
+                    for (var i = 0; i < path3d.Count; i++)
+                    {
+                        var vert = path3d[i];
+                        faceVertexIndices.Add(vertexPoints.Count);
+                        vertexPoints.Add(vert);
+                        tempOctree.Add(vertexPoints.Count, vert);
+                    }
+
+                    if (faceVertexIndices.Count > 0)
+                    {
+                        // Add the face
+                        faceIndices.Add(faceVertexIndices);
+                        faceRoles.Add(FaceRoles[faceIndex]);
+                        faceTags.Add(FaceTags[faceIndex]);
+                    }
+                    var vertexRole = includeFace ? Roles.Existing : Roles.Ignored;
+                    vertexRoles.AddRange(Enumerable.Repeat(vertexRole, faceVertexIndices.Count));
+                }
+
+                // Offset all "shared" vertices
+                // Note they aren't shared until we weld
+                // so we use the temp octree to find semi-coincident vertices
+                for (int i = firstNewVertIndex; i < vertexPoints.Count; i++)
+                {
+                    var vert = vertexPoints[i];
+                    var coincidentVerts = tempOctree.GetNearby(vert, 0.01f).Length;
+                    if (coincidentVerts > 2)
+                    {
+                        vert += face.Normal * height;
+                        vertexPoints[i] = vert;
+                    }
+                }
+            }
+
+            var poly = new PolyMesh(vertexPoints, faceIndices, faceRoles, vertexRoles, faceTags);
+            poly =  poly.Weld(0.001f);
+            return poly;
+        }
+
+        public PolyMesh FaceInset(OpParams o)
+        {
+            var vertexPoints = new List<Vector3>();
+            var faceIndices = new List<IEnumerable<int>>();
+            var faceRoles = new List<Roles>();
+            var vertexRoles = new List<Roles>();
+
+            for (var faceIndex = 0; faceIndex < Faces.Count; faceIndex++)
+            {
+                var offsetter = new PathOffsetter();
+                var face = Faces[faceIndex];
+                var includeFace = IncludeFace(faceIndex, o.filter);
+                var inset = o.GetValueA(this, faceIndex);
+                var path2d= face.Get2DVertices();
+                offsetter.AddPath(path2d);
+                var result = new List<List<Vector2>>();
+                offsetter.Offset(ref result, -inset);
+
+                foreach (var path in result)
+                {
+                    int c = vertexPoints.Count;
+                    var path3d = Convert2dPathto3d(path, face);
+                    vertexPoints.AddRange(path3d);
+                    var faceVertices = new List<int>();
+                    for (int ii = 0; ii < path.Count; ii++)
+                    {
+                        faceVertices.Add(c + ii);
+                    }
+
+                    faceIndices.Add(faceVertices);
+                    faceRoles.Add(FaceRoles[faceIndex]);
+                    var vertexRole = includeFace ? Roles.Existing : Roles.Ignored;
+                    vertexRoles.AddRange(Enumerable.Repeat(vertexRole, faceVertices.Count));
+                    break;
+                }
+            }
+
+            return new PolyMesh(vertexPoints, faceIndices, faceRoles, vertexRoles, FaceTags);
+        }
+
         public PolyMesh FaceRotate(OpParams o, int axis = 0)
         {
             var vertexPoints = new List<Vector3>();
@@ -1437,13 +1654,14 @@ namespace Polyhydra.Core
                 {
                     newFaceVertIndices.Add(vertexReplacementDict[vertIndex]);
                 }
-
                 faceIndices.Add(newFaceVertIndices);
             }
 
+            // Bad. We should somehow map old faces to new.
             var faceRoles = FaceRoles.GetRange(0, faceIndices.Count);
             var faceTags = FaceTags.GetRange(0, faceIndices.Count);
             var vertexRoles = Vertices.Select(x => FaceRoles[Faces.IndexOf(x.Halfedge.Face)]).ToList();
+
             return new PolyMesh(vertexPoints, faceIndices, faceRoles, vertexRoles, faceTags);
         }
 
@@ -2319,8 +2537,6 @@ namespace Polyhydra.Core
                                 faceIndices.Add(newEdgeFace2);
                                 faceRoles.Add(section % 2 == 0 ? Roles.New : Roles.NewAlt);
                                 newFaceTags.Add(new HashSet<string>(prevFaceTagSet));
-
-
                             }
                             else
                             {
@@ -2334,7 +2550,6 @@ namespace Polyhydra.Core
                                 faceIndices.Add(newEdgeFace);
                                 faceRoles.Add(section % 2 == 0 ? Roles.New : Roles.NewAlt);
                                 newFaceTags.Add(new HashSet<string>(prevFaceTagSet));
-
                             }
                         }
 

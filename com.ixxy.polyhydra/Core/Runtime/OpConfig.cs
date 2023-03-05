@@ -926,6 +926,42 @@ namespace Polyhydra.Core
                         amount2Min = 0, amount2Max = 2, amount2SafeMin = 0, amount2SafeMax = 1f,
                     }
                 },
+                {
+                    PolyMesh.Operation.FaceInset,
+                    new OpConfig
+                    {
+                        usesFilter = true,
+                        amountDefault = 0.1f,
+                        amountMin = -3, amountMax = 3, amountSafeMin = -1f, amountSafeMax = 1f
+                    }
+                },
+                {
+                    PolyMesh.Operation.StraightSkeleton,
+                    new OpConfig
+                    {
+                        usesFilter = true,
+                        amountDefault = 0.1f,
+                        amountMin = -3, amountMax = 3, amountSafeMin = -1f, amountSafeMax = 1f
+                    }
+                },
+                {
+                    PolyMesh.Operation.FaceTessellate,
+                    new OpConfig
+                    {
+                        usesFilter = true,
+                        amountDefault = 3,
+                        amountMin = 2, amountMax = 32, amountSafeMin = 3f, amountSafeMax = 12f
+                    }
+                },
+                {
+                    PolyMesh.Operation.Tessellate,
+                    new OpConfig
+                    {
+                        usesFilter = true,
+                        amountDefault = 3,
+                        amountMin = 2, amountMax = 32, amountSafeMin = 3f, amountSafeMax = 12f
+                    }
+                },
             };
     }
 }

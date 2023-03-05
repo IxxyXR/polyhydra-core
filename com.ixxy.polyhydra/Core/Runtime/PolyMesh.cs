@@ -474,9 +474,9 @@ namespace Polyhydra.Core
             if (faceTags == null)
             {
                 FaceTags = Enumerable.Repeat(new HashSet<string>(), faceIndices.Count()).ToList();
-        }
+            }
             else
-        {
+            {
                 FaceTags = faceTags.ToList();
             }
             InitIndexed(verts, faceIndices);
@@ -1250,6 +1250,9 @@ namespace Polyhydra.Core
             Cross = 33,
             Subdiv = 96,
             Ortho3 = 97,
+            StraightSkeleton = 105,
+            FaceTessellate = 106,
+            Tessellate = 107,
 
             // Alternating Operators
 
@@ -1274,6 +1277,7 @@ namespace Polyhydra.Core
             // Face Transforms
 
             FaceOffset = 39,
+            FaceInset = 104,
             FaceScale = 40,
             FaceRotateX = 41,
             FaceRotateY = 42,
@@ -1327,6 +1331,7 @@ namespace Polyhydra.Core
             Bulge = 93,
             Wave = 94,
             Canonicalize = 71,
+            Relax = 108,
             PerlinNoiseX = 86,
             PerlinNoiseY = 87,
             PerlinNoiseZ = 88,
@@ -1520,6 +1525,18 @@ namespace Polyhydra.Core
                 case Operation.FaceOffset:
                     polyMesh = polyMesh.FaceOffset(p);
                     break;
+                case Operation.FaceInset:
+                    polyMesh = polyMesh.FaceInset(p);
+                    break;
+                case Operation.StraightSkeleton:
+                    polyMesh = polyMesh.StraightSkeleton(p);
+                    break;
+                case Operation.FaceTessellate:
+                    polyMesh = polyMesh.FaceTessellate(p);
+                    break;
+                case Operation.Tessellate:
+                    polyMesh = polyMesh.Tessellate(p);
+                    break;
                 case Operation.FaceScale:
                     polyMesh = polyMesh.FaceScale(p);
                     break;
@@ -1650,6 +1667,9 @@ namespace Polyhydra.Core
                         p.OriginalParamA,
                         p.OriginalParamB
                     );
+                    break;
+                case Operation.Relax:
+                    polyMesh.Relax(Mathf.FloorToInt(p.OriginalParamA));
                     break;
                 case Operation.PerlinNoiseX:
                     polyMesh.PerlinNoise(Vector3.left, p.OriginalParamA, p.OriginalParamB, p.OriginalParamB);

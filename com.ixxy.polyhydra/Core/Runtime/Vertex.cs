@@ -56,6 +56,56 @@ namespace Polyhydra.Core {
             }
         }
 
+        public List<Vertex> Neighbours
+        {
+            get {
+                var neighbours = new List<Vertex>();
+                if (Halfedge == null) return neighbours;
+                bool boundary = false;
+                var edge = Halfedge;
+                do {
+                    if (edge.Vertex != this)
+                    {
+                        neighbours.Add(edge.Vertex);
+                    }
+                    else if (edge.Pair != null && edge.Pair.Vertex != this)
+                    {
+                        neighbours.Add(edge.Pair.Vertex);
+                    }
+                    if (edge.Pair == null) {
+                        boundary = true; // boundary hit
+                        break;
+                    }
+                    edge = edge.Pair.Prev;
+                } while (edge != Halfedge);
+
+                if (boundary) {
+                    var redges = new List<Vertex>();
+                    edge = Halfedge;
+                    while (edge.Next.Pair != null) {
+                        edge = edge.Next.Pair;
+                        if (edge.Vertex != this)
+                        {
+                            neighbours.Add(edge.Vertex);
+                        }
+                        else if (edge.Pair != null && edge.Pair.Vertex != this)
+                        {
+                            neighbours.Add(edge.Pair.Vertex);
+                        }
+                    }
+
+                    if (redges.Count > 1) {
+                        redges.Reverse();
+                    }
+
+                    redges.AddRange(neighbours);
+                    return redges;
+                }
+
+                return neighbours;
+            }
+        }
+
         /// <summary>
         /// Gets a list of edges which are incident this vertex (ordered anticlockwise around the vertex).
         /// </summary>
