@@ -330,5 +330,29 @@ namespace Polyhydra.Core
             canonicalized.VertexRoles = previousVertexRoles;
             return canonicalized;
         }
+
+        // Performs Laplacian smoothing on the mesh with the given number of iteration
+        // https://en.wikipedia.org/wiki/Laplacian_smoothing
+        private void Relax(int iterations)
+        {
+            for (int i = 0; i < iterations; i++)
+            {
+                var newPositions = new Vector3[Vertices.Count];
+                for (var j = 0; j < Vertices.Count; j++)
+                {
+                    var neighbours = Vertices[j].Neighbours;
+                    foreach (var neighbour in neighbours)
+                    {
+                        newPositions[j] += neighbour.Position;
+                    }
+                    newPositions[j] /= neighbours.Count;
+                }
+                for (int k = 0; k < Vertices.Count; k++)
+                {
+                    Vertices[k].Position = newPositions[k];
+                }
+            }
+        }
+
     }
 }

@@ -29,7 +29,9 @@ public class TestBase : MonoBehaviour
     public int CanonicalizeIterations = 0;
     public int PlanarizeIterations = 0;
     [Range(.1f, 1f)] public float FaceScale = .99f;
-    
+    [Range(-1f, 1f)] public float FaceExtrude = 0;
+    [Range(-1f, 1f)] public float FaceInset = 0;
+
     [NonSerialized] public PolyMesh poly;
 
     public void Build(ColorMethods colorMethod = ColorMethods.ByRole)
@@ -72,6 +74,15 @@ public class TestBase : MonoBehaviour
         {   
             var op2Filter = Filter.GetFilter(Op2FilterType, Op2FilterParam, Mathf.FloorToInt(Op2FilterParam), Op2FilterFlip);
             poly = poly.AppyOperation(op2, new OpParams(Op2Parameter1, Op2Parameter2, filter: op2Filter));
+        }
+        if (FaceInset != 0)
+        {
+            poly = poly.FaceInset(new OpParams(FaceInset));
+        }
+
+        if (FaceExtrude != 0)
+        {
+            poly = poly.Extrude(new OpParams(FaceExtrude));
         }
         if (CanonicalizeIterations > 0 || PlanarizeIterations > 0) poly = poly.Canonicalize(CanonicalizeIterations, PlanarizeIterations);
         if (FaceScale<1f) poly = poly.FaceScale(new OpParams(FaceScale));
