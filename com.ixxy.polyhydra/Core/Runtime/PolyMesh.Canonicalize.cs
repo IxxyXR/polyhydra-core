@@ -319,16 +319,15 @@ namespace Polyhydra.Core
 		 *                           iteration.
 		 * @return The canonicalized version of this polyhedron.
 		 */
-        public PolyMesh Canonicalize(double thresholdAdjust, double thresholdPlanarize)
+        public void Canonicalize(double thresholdAdjust, double thresholdPlanarize)
         {
-            var previousFaceRoles = FaceRoles;
-            var previousVertexRoles = VertexRoles;
+            var previousFaceRoles = FaceRoles.ToList();
+            var previousVertexRoles = VertexRoles.ToList();
             PolyMesh canonicalized = Duplicate();
-            if (thresholdAdjust > 0) Adjust(canonicalized, thresholdAdjust);
-            if (thresholdPlanarize > 0) Planarize(canonicalized, thresholdPlanarize);
-            canonicalized.FaceRoles = previousFaceRoles;
-            canonicalized.VertexRoles = previousVertexRoles;
-            return canonicalized;
+            if (thresholdAdjust > 0) Adjust(this, thresholdAdjust);
+            if (thresholdPlanarize > 0) Planarize(this, thresholdPlanarize);
+            FaceRoles = previousFaceRoles;
+            VertexRoles = previousVertexRoles;
         }
 
         // Performs Laplacian smoothing on the mesh with the given number of iteration
@@ -350,6 +349,37 @@ namespace Polyhydra.Core
                 for (int k = 0; k < Vertices.Count; k++)
                 {
                     Vertices[k].Position = newPositions[k];
+                }
+            }
+        }
+
+        public void Planarize2(int iterations, float rate=0.5f)
+        {
+            for (int i = 0; i < iterations; i++)
+            {
+                var faceIndices = ListFacesByVertexIndices();
+                var newVertices = Vertices.Select(v => v.Position).ToList();
+                for (int faceIndex = 0; faceIndex < Faces.Count; faceIndex++)
+                {
+                    var face = Faces[faceIndex];
+                    var centroid = face.Centroid;
+                    Vector3 normal = face.Normal;
+                    // Project each vertex onto the best-fit plane
+                    for (int j = 0; j < face.Sides; j++)
+                    {
+                        int currentIndex = faceIndices[faceIndex][j];
+                        Vector3 currentPosition = Vertices[currentIndex].Position;
+                        Vector3 toCentroid = currentPosition - centroid;
+                        float distanceToPlane = Vector3.Dot(toCentroid, normal);
+                        Vector3 projectedPosition = currentPosition - normal * distanceToPlane;
+                        newVertices[currentIndex] = Vector3.Lerp(newVertices[currentIndex], projectedPosition, rate);
+                    }
+                }
+
+                for (var vertexIndex = 0; vertexIndex < Vertices.Count; vertexIndex++)
+                {
+                    var v = Vertices[vertexIndex];
+                    v.Position = newVertices[vertexIndex];
                 }
             }
         }

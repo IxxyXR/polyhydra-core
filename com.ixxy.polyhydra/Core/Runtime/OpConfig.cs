@@ -824,6 +824,17 @@ namespace Polyhydra.Core
                     }
                 },
                 {
+                    PolyMesh.Operation.Planarize,
+                    new OpConfig
+                    {
+                        amountDefault = 20f,
+                        amountMin = 0, amountSafeMin = 0, amountSafeMax = 200, amountMax = 1000,
+                        usesAmount2 = true,
+                        amount2Default = .25f,
+                        amount2Min = 0.000001f, amount2SafeMin = 0.0005f, amount2SafeMax = 1, amount2Max = 1,
+                    }
+                },
+                {
                     PolyMesh.Operation.ConvexHull,
                     new OpConfig
                     {
