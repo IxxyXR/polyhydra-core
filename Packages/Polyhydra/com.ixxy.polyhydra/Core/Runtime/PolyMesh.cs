@@ -349,7 +349,7 @@ namespace Polyhydra.Core
 
                 if (op==Operation.Canonicalize)
                 {
-                    poly = poly.Canonicalize(tokens[i].Item2, tokens[i].Item2);
+                    poly.Canonicalize(tokens[i].Item2, tokens[i].Item2);
                 }
                 else
                 {
@@ -1331,6 +1331,7 @@ namespace Polyhydra.Core
             Bulge = 93,
             Wave = 94,
             Canonicalize = 71,
+            Planarize = 82,
             Relax = 108,
             PerlinNoiseX = 86,
             PerlinNoiseY = 87,
@@ -1648,10 +1649,10 @@ namespace Polyhydra.Core
                     polyMesh = polyMesh.Taper(p, (int)Axis.Z);
                     break;
                 case Operation.Spherize:
-                    polyMesh = polyMesh.Spherize(p);
+                    polyMesh.Spherize(p);
                     break;
                 case Operation.Cylinderize:
-                    polyMesh = polyMesh.Cylinderize(p);
+                    polyMesh.Cylinderize(p);
                     break;
                 case Operation.Bulge:
                     polyMesh.Bulge(Vector3.up, p.OriginalParamA, p.OriginalParamB);
@@ -1660,7 +1661,7 @@ namespace Polyhydra.Core
                     polyMesh.Wave(Vector3.up, p.OriginalParamA, p.OriginalParamB);
                     break;
                 case Operation.Canonicalize:
-                    polyMesh = polyMesh.Canonicalize(
+                    polyMesh.Canonicalize(
                         // TODO - iterations or tolerance?
                         // Mathf.FloorToInt(p.OriginalParamA),
                         // Mathf.FloorToInt(p.OriginalParamB)
@@ -1670,6 +1671,9 @@ namespace Polyhydra.Core
                     break;
                 case Operation.Relax:
                     polyMesh.Relax(Mathf.FloorToInt(p.OriginalParamA));
+                    break;
+                case Operation.Planarize:
+                    polyMesh.Planarize2(Mathf.FloorToInt(p.OriginalParamA), p.OriginalParamB);
                     break;
                 case Operation.PerlinNoiseX:
                     polyMesh.PerlinNoise(Vector3.left, p.OriginalParamA, p.OriginalParamB, p.OriginalParamB);

@@ -1118,16 +1118,23 @@ namespace Polyhydra.Core
         }
 
         // Intended mainly for flat 2D shapes
-        public PolyMesh LayeredExtrude(int storeys, float storeyHeight = 1f)
+        public PolyMesh LayeredExtrude(int storeys, float storeyHeight = 1f, Axis axis = Axis.Y)
         {
+            Vector3 direction = axis switch
+            {
+                Axis.X => Vector3.right,
+                Axis.Y => Vector3.up,
+                Axis.Z => Vector3.forward,
+                _ => throw new ArgumentOutOfRangeException()
+            };
             var roof = Duplicate();
             var building = Duplicate();
             building = building.Flip();
             for (var i = 0; i < storeys; i++)
             {
-                building = building.ExtendBoundaries(storeyHeight, 0, Vector3.up);
+                building = building.ExtendBoundaries(storeyHeight, 0, direction);
             }
-            roof.Transform(new Vector3(0, storeys * storeyHeight, 0));
+            roof.Transform(direction * storeys * storeyHeight);
             building.Append(roof);
             building.FaceRoles = Enumerable.Repeat(Roles.Existing, building.FaceRoles.Count).ToList();
             building = building.Weld(0.001f);
@@ -3543,29 +3550,19 @@ namespace Polyhydra.Core
                 v.Position += axis * offset * strength;
             }
         }
-        public PolyMesh Spherize(OpParams o)
+        public void Spherize(OpParams o)
         {
-            var vertexPoints = new List<Vector3>();
-            var faceIndices = ListFacesByVertexIndices();
-
+            var centroid = GetCentroid();
             for (var vertexIndex = 0; vertexIndex < Vertices.Count; vertexIndex++)
             {
                 float amount = o.GetValueA(this, vertexIndex);
-                var vertex = Vertices[vertexIndex];
                 if (IncludeVertex(vertexIndex, o.filter))
                 {
-                    vertexPoints.Add(Vector3.LerpUnclamped(vertex.Position, vertex.Position.normalized, amount));
-                    VertexRoles[vertexIndex] = Roles.Existing;
-                }
-                else
-                {
-                    vertexPoints.Add(vertex.Position);
-                    VertexRoles[vertexIndex] = Roles.Ignored;
+                    var vertex = Vertices[vertexIndex];
+                    var unitVectorFromCenter = (vertex.Position - centroid).normalized;
+                    Vertices[vertexIndex].Position = Vector3.LerpUnclamped(vertex.Position, unitVectorFromCenter, amount);
                 }
             }
-
-            var polyMesh = new PolyMesh(vertexPoints, faceIndices, FaceRoles, VertexRoles, FaceTags);
-            return polyMesh;
         }
 
         public void Flatten(Axis axis)
@@ -3590,11 +3587,8 @@ namespace Polyhydra.Core
             }
         }
 
-        public PolyMesh Cylinderize(OpParams o)
+        public void Cylinderize(OpParams o)
         {
-	        var vertexPoints = new List<Vector3>();
-	        var faceIndices = ListFacesByVertexIndices();
-
 	        for (var vertexIndex = 0; vertexIndex < Vertices.Count; vertexIndex++)
 	        {
 		        float amount = o.GetValueA(this, vertexIndex);
@@ -3603,18 +3597,9 @@ namespace Polyhydra.Core
 		        {
 			        var normalized = new Vector2(vertex.Position.x, vertex.Position.z).normalized;
 			        var result = new Vector3(normalized.x, vertex.Position.y, normalized.y);
-			        vertexPoints.Add(Vector3.LerpUnclamped(vertex.Position, result, amount));
-			        VertexRoles[vertexIndex] = Roles.Existing;
-		        }
-		        else
-		        {
-			        vertexPoints.Add(vertex.Position);
-			        VertexRoles[vertexIndex] = Roles.Ignored;
-		        }
+			        Vertices[vertexIndex].Position = Vector3.LerpUnclamped(vertex.Position, result, amount);
+                }
 	        }
-
-	        var polyMesh = new PolyMesh(vertexPoints, faceIndices, FaceRoles, VertexRoles, FaceTags);
-	        return polyMesh;
         }
 
         private void AddTag(OpParams o)

@@ -1,4 +1,5 @@
-﻿using Polyhydra.Core;
+﻿using System;
+using Polyhydra.Core;
 using UnityEngine;
 
 [ExecuteInEditMode]
@@ -18,7 +19,18 @@ public class ShapesTest : TestBase
     public override void Go()
     {
         poly = Shapes.Build(type, A, B, C, method);
-        if (Layers>0) poly = poly.LayeredExtrude(Layers, LayerHeight);
+        Axis axis = type switch
+        {
+            ShapeTypes.Polygon => Axis.Y,
+            ShapeTypes.Star => Axis.Y,
+            ShapeTypes.C_Shape => Axis.Y,
+            ShapeTypes.L_Shape => Axis.Y,
+            ShapeTypes.H_Shape => Axis.Y,
+            ShapeTypes.Arc => Axis.Z,
+            ShapeTypes.Arch => Axis.Z,
+            _ => throw new ArgumentOutOfRangeException()
+        };
+        if (Layers>0) poly = poly.LayeredExtrude(Layers, LayerHeight, axis);
         Build();
     }
 }
