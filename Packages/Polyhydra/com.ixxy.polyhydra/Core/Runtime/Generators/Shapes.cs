@@ -14,6 +14,7 @@ namespace Polyhydra.Core
         H_Shape,
         Arc,
         Arch,
+        GothicArch,
     }
 
     public class Shapes
@@ -35,6 +36,7 @@ namespace Polyhydra.Core
                 ShapeTypes.H_Shape => H_Shape(a, b, c, method),
                 ShapeTypes.Arc => Arc(Mathf.FloorToInt(a), 1, b, 360 * c),
                 ShapeTypes.Arch => Arch(Mathf.FloorToInt(a), 1, b, c),
+                ShapeTypes.GothicArch => GothicArch(Mathf.FloorToInt(a), 1, b, c),
                 _ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
             };
         }
@@ -258,5 +260,93 @@ namespace Polyhydra.Core
 
             return new PolyMesh(verts, faces);
         }
+        public static PolyMesh GothicArch(int sides, float width, float thickness, float height)
+        {
+            float curveX = 0.5f;
+            float curveY = 0.75f;
+
+            Vector2 pointA;
+            Vector2 pointB;
+            Vector2 pointC;
+            Vector2 pointD;
+            Vector2 pointE;
+
+            void calcPoints()
+            {
+                pointA = new Vector2(-width, 0);
+                pointB = new Vector2(-(width * curveX), height * curveY);
+                pointC = new Vector2(0, height);
+                pointD = new Vector2(width * curveX, height * curveY);
+                pointE = new Vector2(width, 0);
+            }
+
+            calcPoints();
+            var arcLeftInner = Arc(pointA, pointB, pointC, sides);
+            var arcRightInner = Arc(pointC, pointD, pointE, sides).Skip(1).ToList();
+
+            width += thickness;
+            height += thickness;
+
+            calcPoints();
+            var arcLeftOuter = Arc(pointA, pointB, pointC, sides);
+            var arcRightOuter = Arc(pointC, pointD, pointE, sides).Skip(1).ToList();
+
+            arcRightOuter.Reverse();
+            arcLeftOuter.Reverse();
+
+            List<Vector2> gothicArchPoints = new List<Vector2>();
+            gothicArchPoints.AddRange(arcLeftInner);
+            gothicArchPoints.AddRange(arcRightInner);
+            gothicArchPoints.AddRange(arcRightOuter);
+            gothicArchPoints.AddRange(arcLeftOuter);
+
+            var verts = gothicArchPoints.Select(v => new Vector3(v.x, v.y, 0)).ToList();
+            var face = Enumerable.Range(0, verts.Count).ToList();
+            var faces = new List<List<int>>{face};
+            var polyMesh = new PolyMesh(verts, faces);
+            return polyMesh;
+        }
+
+        static List<Vector2> Arc(Vector2 pointA, Vector2 pointB, Vector2 pointC, int sides)
+        {
+            // Calculate the slope of the lines
+            float slopeAB = (pointB.y - pointA.y) / (pointB.x - pointA.x);
+            float slopeBC = (pointC.y - pointB.y) / (pointC.x - pointB.x);
+
+            // Calculate the center of the arc
+            float centerX = (slopeAB * slopeBC * (pointA.y - pointC.y) + slopeBC * (pointA.x + pointB.x) - slopeAB * (pointB.x + pointC.x)) / (2 * (slopeBC - slopeAB));
+            float centerY = -1 * (centerX - (pointA.x + pointB.x) / 2) / slopeAB + (pointA.y + pointB.y) / 2;
+            Vector2 center = new Vector2(centerX, centerY);
+
+            // Calculate the radius of the arc
+            float radius = Vector2.Distance(pointA, center);
+
+            // Calculate the start and end angles
+            float startAngle = (float)(Math.Atan2(pointA.y - centerY, pointA.x - centerX) * (180 / Math.PI));
+            float endAngle = (float)(Math.Atan2(pointC.y - centerY, pointC.x - centerX) * (180 / Math.PI));
+
+            List<Vector2> arcPoints = new List<Vector2>();
+            float sweepAngle = endAngle - startAngle;
+            var sweepAngle2 = Mathf.Min(sweepAngle, 360 - sweepAngle);
+            if (Mathf.Min(Mathf.Abs(sweepAngle), Mathf.Abs(sweepAngle2)) == sweepAngle2)
+            {
+                sweepAngle = -sweepAngle2;
+            }
+            float angleStep = sweepAngle / (sides - 1);
+
+            for (int i = 0; i < sides; i++)
+            {
+                float currentAngle = startAngle + angleStep * i;
+                float radianAngle = currentAngle * (float)Math.PI / 180;
+
+                float x = center.x + radius * (float)Math.Cos(radianAngle);
+                float y = center.y + radius * (float)Math.Sin(radianAngle);
+
+                arcPoints.Add(new Vector2(x, y));
+            }
+
+            return arcPoints;
+        }
+
     }
 }

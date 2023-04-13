@@ -28,6 +28,7 @@ public class ShapesTest : TestBase
             ShapeTypes.H_Shape => Axis.Y,
             ShapeTypes.Arc => Axis.Z,
             ShapeTypes.Arch => Axis.Z,
+            ShapeTypes.GothicArch => Axis.Z,
             _ => throw new ArgumentOutOfRangeException()
         };
         if (Layers>0) poly = poly.LayeredExtrude(Layers, LayerHeight, axis);
