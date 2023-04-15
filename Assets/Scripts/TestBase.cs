@@ -112,8 +112,9 @@ public class TestBase : MonoBehaviour
         {
             Vector3 vert = poly.DebugVerts[i];
             Vector3 pos = transform.TransformPoint(vert);
-            Gizmos.DrawWireSphere(pos, .1f);
-            Handles.Label(pos + new Vector3(0, 0, 0), i.ToString());
+            Gizmos.color = Color.red;
+            Gizmos.DrawWireSphere(pos, .025f);
+            Handles.Label(pos + new Vector3(0, 0.03f, 0), i.ToString());
         }
     }
 }

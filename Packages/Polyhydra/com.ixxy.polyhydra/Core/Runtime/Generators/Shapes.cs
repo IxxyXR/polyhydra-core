@@ -36,7 +36,7 @@ namespace Polyhydra.Core
                 ShapeTypes.H_Shape => H_Shape(a, b, c, method),
                 ShapeTypes.Arc => Arc(Mathf.FloorToInt(a), 1, b, 360 * c),
                 ShapeTypes.Arch => Arch(Mathf.FloorToInt(a), 1, b, c),
-                ShapeTypes.GothicArch => GothicArch(Mathf.FloorToInt(a), 1, b, c),
+                ShapeTypes.GothicArch => GothicArch(sides: Mathf.FloorToInt(a), width: 1, thickness: b, height: c),
                 _ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
             };
         }
@@ -265,49 +265,27 @@ namespace Polyhydra.Core
             float curveX = 0.5f;
             float curveY = 0.75f;
 
-            Vector2 pointA;
-            Vector2 pointB;
-            Vector2 pointC;
-            Vector2 pointD;
-            Vector2 pointE;
-
-            void calcPoints()
-            {
-                pointA = new Vector2(-width, 0);
-                pointB = new Vector2(-(width * curveX), height * curveY);
-                pointC = new Vector2(0, height);
-                pointD = new Vector2(width * curveX, height * curveY);
-                pointE = new Vector2(width, 0);
-            }
-
-            calcPoints();
-            var arcLeftInner = Arc(pointA, pointB, pointC, sides);
-            var arcRightInner = Arc(pointC, pointD, pointE, sides).Skip(1).ToList();
-
-            width += thickness;
-            height += thickness;
-
-            calcPoints();
-            var arcLeftOuter = Arc(pointA, pointB, pointC, sides);
-            var arcRightOuter = Arc(pointC, pointD, pointE, sides).Skip(1).ToList();
-
-            arcRightOuter.Reverse();
-            arcLeftOuter.Reverse();
+            var pointA = new Vector2(-width, 0);
+            var pointB = new Vector2(-(width * curveX), height * curveY);
+            var pointC = new Vector2(0, height);
+            var pointD = new Vector2(width * curveX, height * curveY);
+            var pointE = new Vector2(width, 0);
+            var arcLeft = ThreePointArc(pointA, pointB, pointC, sides);
+            var arcRight = ThreePointArc(pointC, pointD, pointE, sides).Skip(1).ToList();
 
             List<Vector2> gothicArchPoints = new List<Vector2>();
-            gothicArchPoints.AddRange(arcLeftInner);
-            gothicArchPoints.AddRange(arcRightInner);
-            gothicArchPoints.AddRange(arcRightOuter);
-            gothicArchPoints.AddRange(arcLeftOuter);
+            gothicArchPoints.AddRange(arcLeft);
+            gothicArchPoints.AddRange(arcRight);
 
-            var verts = gothicArchPoints.Select(v => new Vector3(v.x, v.y, 0)).ToList();
+            var offsetPath = PolyMesh.PathOffset(gothicArchPoints, thickness, miterLimit: 8)[0];
+            var verts = offsetPath.Select(v => new Vector3(v.x, v.y, 0)).ToList();
             var face = Enumerable.Range(0, verts.Count).ToList();
             var faces = new List<List<int>>{face};
             var polyMesh = new PolyMesh(verts, faces);
             return polyMesh;
         }
 
-        static List<Vector2> Arc(Vector2 pointA, Vector2 pointB, Vector2 pointC, int sides)
+        static List<Vector2> ThreePointArc(Vector2 pointA, Vector2 pointB, Vector2 pointC, int sides)
         {
             // Calculate the slope of the lines
             float slopeAB = (pointB.y - pointA.y) / (pointB.x - pointA.x);
