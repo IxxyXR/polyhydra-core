@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using GK;
 using ProceduralToolkit;
+using ProceduralToolkit.ClipperLib;
 using ProceduralToolkit.Skeleton;
 using UnityEngine;
 
@@ -726,14 +727,11 @@ namespace Polyhydra.Core
 
             for (var faceIndex = 0; faceIndex < Faces.Count; faceIndex++)
             {
-                var offsetter = new PathOffsetter();
                 var face = Faces[faceIndex];
                 var includeFace = IncludeFace(faceIndex, o.filter);
-                var inset = o.GetValueA(this, faceIndex);
-                var path2d= face.Get2DVertices();
-                offsetter.AddPath(path2d);
-                var result = new List<List<Vector2>>();
-                offsetter.Offset(ref result, -inset);
+                var amount = o.GetValueA(this, faceIndex);
+                var polygon2d= face.Get2DVertices();
+                var result = PolygonOffset(polygon2d, -amount);
 
                 foreach (var path in result)
                 {
@@ -755,6 +753,28 @@ namespace Polyhydra.Core
             }
 
             return new PolyMesh(vertexPoints, faceIndices, faceRoles, vertexRoles, FaceTags);
+        }
+
+        public static List<List<Vector2>> PolygonOffset(List<Vector2> polygon2d, float amount)
+        {
+            var offsetter = new PathOffsetter();
+            offsetter.AddPath(polygon2d);
+            var result = new List<List<Vector2>>();
+            offsetter.Offset(ref result, amount);
+            return result;
+        }
+
+        public static List<List<Vector2>> PathOffset(
+            List<Vector2> path2d, float amount,
+            JoinType joinType = JoinType.jtMiter,
+            EndType endType = EndType.etOpenButt, float miterLimit = 2f)
+        {
+            var offsetter = new PathOffsetter();
+            offsetter.miterLimit = miterLimit;
+            offsetter.AddPath(path2d, joinType, endType);
+            var result = new List<List<Vector2>>();
+            offsetter.Offset(ref result, amount);
+            return result;
         }
 
         public PolyMesh FaceRotate(OpParams o, int axis = 0)
