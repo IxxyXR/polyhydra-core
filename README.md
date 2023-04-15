@@ -29,8 +29,6 @@ Portions of grids.cs is from Antiprism and is MIT but should be attributed to Ad
 
 Isohedral tilings are from tactile.js https://github.com/isohedral/tactile-js Thanks to Craig Kaplan @TriggerLoop
 
-Triangulation code is from https://github.com/gpvigano/AsImpL
-
 My original inspiration was 3DS Max's Hedra plugin which kept me entertained for quite a while nearly 2 decades ago. I think credit for that is due to Tom Hudson :-)
 
 ![Screenshot](https://github.com/Ixxy-Open-Source/wythoff-polyhedra/blob/master/0.png)

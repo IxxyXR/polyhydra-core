@@ -4,8 +4,8 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
-using AsImpL;
 using Polyhydra.Wythoff;
+using ProceduralToolkit;
 using UnityEngine;
 using UnityEngine.Rendering;
 using Random = UnityEngine.Random;
@@ -942,27 +942,31 @@ namespace Polyhydra.Core
                     }
                     else
                     {
-                        // Concave faces need ear clipping triangulation
-                        // This doesn't work well for complex (self-intersecting) faces
-                        // but those are mostly Wythoff Uniform polyhedra
-                        // and therefore have convex faces
-                        var newTris = Triangulator.Triangulate(face);
+                        var tessellator = new Tessellator();
+                        tessellator.AddContour(face.GetVertices().Select(v => v.Position).ToList());
+                        tessellator.Tessellate(normal: Vector3.back);
 
-                        for (int t = 0; t < newTris.Count; t++)
+                        Vector3 getVec(int vi)
                         {
-                            meshVertices.Add(newTris[t].v1.Position);
+                            var v = tessellator.vertices[tessellator.indices[vi]].Position;
+                            return new Vector3(v.X, v.Y, v.Z);
+                        }
+
+                        for (int t = 0; t < tessellator.indices.Length; t+=3)
+                        {
+                            meshVertices.Add(getVec(t));
                             meshUVs.Add(calcUV(meshVertices[index], xAxis, yAxis));
                             faceTris.Add(index++);
                             edgeUVs.Add(new Vector2(0, 0));
                             barycentricUVs.Add(new Vector3(0, 0, 1));
 
-                            meshVertices.Add(newTris[t].v2.Position);
+                            meshVertices.Add(getVec(t+1));
                             meshUVs.Add(calcUV(meshVertices[index], xAxis, yAxis));
                             faceTris.Add(index++);
                             edgeUVs.Add(new Vector2(1, 1));
                             barycentricUVs.Add(new Vector3(0, 1, 0));
 
-                            meshVertices.Add(newTris[t].v3.Position);
+                            meshVertices.Add(getVec(t+2));
                             meshUVs.Add(calcUV(meshVertices[index], xAxis, yAxis));
                             faceTris.Add(index++);
                             edgeUVs.Add(new Vector2(1, 1));
