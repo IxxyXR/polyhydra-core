@@ -1394,15 +1394,16 @@ namespace Polyhydra.Core
             // Create new vertices
             for (var faceIndex = 0; faceIndex < Faces.Count; faceIndex++)
             {
-                float ratio = o.GetValueA(this, faceIndex);
-                float offset = o.GetValueB(this, faceIndex);
-                var prevExtrovertTags = FaceTags[faceIndex];
-                var prevFaceTags = FaceTags[faceIndex];
                 var face = Faces[faceIndex];
-                var offsetVector = face.Normal * offset;
+                var prevFaceTags = FaceTags[faceIndex];
 
                 if (IncludeFace(faceIndex, o.filter))
                 {
+                    float ratio = o.GetValueA(this, faceIndex);
+                    float offset = o.GetValueB(this, faceIndex);
+                    var prevExtrovertTags = FaceTags[faceIndex];
+                    var offsetVector = face.Normal * offset;
+
                     var edge = face.Halfedge;
                     var centroid = face.Centroid;
 
