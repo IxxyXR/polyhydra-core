@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using Polyhydra.Core;
 using UnityEngine;
 using UnityEditor;
@@ -36,6 +38,7 @@ public class TestBase : MonoBehaviour
 
     public void Build(ColorMethods colorMethod = ColorMethods.ByRole)
     {
+        var debugVerts = poly.DebugVerts?.ToList();
         var _random = new Random();
         for (int i1 = 0; i1 < Op1Iterations; i1++)
         {
@@ -75,8 +78,13 @@ public class TestBase : MonoBehaviour
             var op2Filter = Filter.GetFilter(Op2FilterType, Op2FilterParam, Mathf.FloorToInt(Op2FilterParam), Op2FilterFlip);
             poly = poly.AppyOperation(op2, new OpParams(Op2Parameter1, Op2Parameter2, filter: op2Filter));
         }
+
+        ModifyPostOp();
+        debugVerts = poly.Vertices.Select(v => v.Position).ToList();
+        
         if (FaceInset != 0)
         {
+            Debug.Log($"Inset on {poly.Faces.Count} faces");
             poly = poly.FaceInset(new OpParams(FaceInset));
         }
 
@@ -88,6 +96,9 @@ public class TestBase : MonoBehaviour
         if (FaceScale<1f) poly = poly.FaceScale(new OpParams(FaceScale));
         var meshData = poly.BuildMeshData(colorMethod: colorMethod);
         var mesh = poly.BuildUnityMesh(meshData);
+        if (poly.DebugVerts == null) poly.DebugVerts = new List<Vector3>();
+        if (debugVerts != null) poly.DebugVerts.AddRange(debugVerts);
+        poly.DebugVerts = debugVerts;
         if (Application.isPlaying)
         {
             gameObject.GetComponent<MeshFilter>().mesh = mesh;
@@ -97,6 +108,9 @@ public class TestBase : MonoBehaviour
             gameObject.GetComponent<MeshFilter>().sharedMesh = mesh;
         }
     }
+
+    protected virtual void ModifyPostOp()
+    {}
 
     public virtual void Go(){}
     
