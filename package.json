@@ -10,6 +10,7 @@
 		"url": "http://www.andybak.net"
 	},
 	"dependencies": {
+      "com.syomus.proceduraltoolkit": "0.2.3",
       "com.nition.unity-octree": "0.0.1-preview"
     },
 	"scopedRegistries": [
