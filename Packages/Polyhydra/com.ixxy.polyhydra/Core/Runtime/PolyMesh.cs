@@ -165,6 +165,18 @@ namespace Polyhydra.Core
         }
 
         public PolyMesh(
+            IEnumerable<Vector2> verts
+        ) : this()
+        {
+            var faceIndices = new List<IEnumerable<int>>{Enumerable.Range(0, verts.Count())};
+            FaceRoles = Enumerable.Repeat(Roles.New, faceIndices.Count()).ToList();
+            FaceTags = Enumerable.Repeat(new HashSet<string>(), faceIndices.Count()).ToList();
+            VertexRoles = Enumerable.Repeat(Roles.New, verts.Count()).ToList();
+            InitIndexed(verts.Select(v => new Vector3(v.x, 0, v.y)), faceIndices);
+            CullUnusedVertices();
+        }
+
+        public PolyMesh(
             IEnumerable<Vector3> verts,
             IEnumerable<IEnumerable<int>> faceIndices
         ) : this()
