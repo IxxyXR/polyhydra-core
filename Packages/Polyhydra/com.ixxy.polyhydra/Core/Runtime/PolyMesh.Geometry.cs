@@ -3274,6 +3274,67 @@ namespace Polyhydra.Core
             SplitEdge(face.GetHalfedges()[edgeIndex % face.Sides]);
         }
 
+
+        private PolyMesh SubdivideEdges(OpParams o)
+        {
+            int subdivisions = (int)o.GetValueA(this, 0);
+            subdivisions = subdivisions < 1 ? 1 : subdivisions;
+            subdivisions = subdivisions > 64 ? 64 : subdivisions;
+
+            var faceIndices = new List<int[]>();
+            var vertexPoints = new List<Vector3>();
+            var existingVertices = new Dictionary<Vertex, int>();
+            var newEdgeVertices = new Dictionary<(Guid, Guid)?, int[]>();
+            var vertexRoles = new List<Roles>();
+
+            for (var i = 0; i < Vertices.Count; i++)
+            {
+                var vert = Vertices[i];
+                vertexPoints.Add(vert.Position);
+                vertexRoles.Add(Roles.Existing);
+                existingVertices[vert] = i;
+            }
+
+            int vertexIndex = vertexPoints.Count;
+
+            for (int faceIndex = 0; faceIndex < Faces.Count; faceIndex++)
+            {
+                var face = Faces[faceIndex];
+                var firstEdge = face.Halfedge;
+                Halfedge edge = null;
+                var newFace = new List<int>();
+                while (edge != firstEdge)
+                {
+                    edge ??= firstEdge;
+                    bool hasPair = edge.Pair != null && newEdgeVertices.ContainsKey(edge.Pair.Name);
+                    if (!newEdgeVertices.ContainsKey(edge.Name) && !hasPair)
+                    {
+                        newEdgeVertices[edge.Name] = new int[subdivisions];
+                        for (int i = 0; i < subdivisions; i++)
+                        {
+                            vertexPoints.Add(edge.PointAlongEdge((1f / (subdivisions + 1)) * (i + 1)));
+                            vertexRoles.Add(Roles.NewAlt);
+                            newEdgeVertices[edge.Name][i] = vertexIndex++;
+                        }
+                    }
+                    newFace.Add(existingVertices[edge.Vertex]);
+                    if (!newEdgeVertices.ContainsKey(edge.Name) && newEdgeVertices.ContainsKey(edge.Pair.Name))
+                    {
+                        var verts = newEdgeVertices[edge.Pair.Name];
+                        newFace.AddRange(verts.Reverse());
+                    }
+                    else
+                    {
+                        var verts = newEdgeVertices[edge.Name];
+                        newFace.AddRange(verts);
+                    }
+                    edge = edge.Prev;
+                }
+                faceIndices.Add(newFace.ToArray());
+            }
+
+            return new PolyMesh(vertexPoints, faceIndices, FaceRoles, vertexRoles, FaceTags);
+        }
         public void SplitEdges(IEnumerable<Halfedge> edgesToSplit)
         {
             foreach (var edge in edgesToSplit)
