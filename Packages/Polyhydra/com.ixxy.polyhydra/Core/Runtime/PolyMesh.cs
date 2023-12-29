@@ -1317,6 +1317,7 @@ namespace Polyhydra.Core
 
             // Topology Manipulation
 
+            SubdivideEdges = 109,
             FillHoles = 60,
             // ExtendBoundaries = 61,
             // ConnectFaces = 80,
@@ -1619,6 +1620,9 @@ namespace Polyhydra.Core
 
                 // Topology Manipulation
 
+                case Operation.SubdivideEdges:
+                    polyMesh = polyMesh.SubdivideEdges(p);
+                    break;
                 case Operation.FillHoles:
                     polyMesh = polyMesh.FillHoles();
                     break;
