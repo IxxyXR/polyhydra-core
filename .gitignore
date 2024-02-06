@@ -74,3 +74,5 @@ crashlytics-build.properties
 Recordings/*
 
 .DS_Store
+Assets/WIP/*
+Assets/WIP.meta
