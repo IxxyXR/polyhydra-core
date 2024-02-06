@@ -80,8 +80,8 @@ public class TestBase : MonoBehaviour
         }
 
         ModifyPostOp();
-        debugVerts = poly.Vertices.Select(v => v.Position).ToList();
-        
+        // debugVerts = poly.Vertices.Select(v => v.Position).ToList();
+
         if (FaceInset != 0)
         {
             Debug.Log($"Inset on {poly.Faces.Count} faces");
@@ -98,6 +98,7 @@ public class TestBase : MonoBehaviour
         var mesh = poly.BuildUnityMesh(meshData);
         if (poly.DebugVerts == null) poly.DebugVerts = new List<Vector3>();
         if (debugVerts != null) poly.DebugVerts.AddRange(debugVerts);
+        debugVerts = poly.Vertices.Select(v => v.Position).ToList();
         poly.DebugVerts = debugVerts;
         if (Application.isPlaying)
         {
@@ -121,14 +122,14 @@ public class TestBase : MonoBehaviour
     
     private void OnDrawGizmos()
     {
-        if (poly==null || poly.DebugVerts == null) return;
-        for (int i = 0; i < poly.DebugVerts.Count; i++)
-        {
-            Vector3 vert = poly.DebugVerts[i];
-            Vector3 pos = transform.TransformPoint(vert);
-            Gizmos.color = Color.red;
-            Gizmos.DrawWireSphere(pos, .025f);
-            Handles.Label(pos + new Vector3(0, 0.03f, 0), i.ToString());
-        }
+        // if (poly==null || poly.DebugVerts == null) return;
+        // for (int i = 0; i < poly.DebugVerts.Count; i++)
+        // {
+        //     Vector3 vert = poly.DebugVerts[i];
+        //     Vector3 pos = transform.TransformPoint(vert);
+        //     Gizmos.color = Color.red;
+        //     Gizmos.DrawWireSphere(pos, .025f);
+        //     Handles.Label(pos + new Vector3(0, 0.03f, 0), i.ToString());
+        // }
     }
 }
