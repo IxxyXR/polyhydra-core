@@ -28,6 +28,8 @@ public class TestBase : MonoBehaviour
     public FilterTypes Op2FilterType;
     public float Op2FilterParam;
     public bool Op2FilterFlip;
+    public float SpherizeAmount = 0;
+    public bool FastConicalize = true;
     public int CanonicalizeIterations = 0;
     public int PlanarizeIterations = 0;
     [Range(.1f, 1f)] public float FaceScale = .99f;
@@ -82,18 +84,26 @@ public class TestBase : MonoBehaviour
         ModifyPostOp();
         // debugVerts = poly.Vertices.Select(v => v.Position).ToList();
 
-        if (FaceInset != 0)
+        if (SpherizeAmount > 0) poly.Spherize(new OpParams(SpherizeAmount));
+        if (FastConicalize)
         {
-            Debug.Log($"Inset on {poly.Faces.Count} faces");
-            poly = poly.FaceInset(new OpParams(FaceInset));
+            if (CanonicalizeIterations > 0)
+            {
+                poly = poly.Kanonicalize(CanonicalizeIterations);
+            }
+        }
+        else
+        {
+            if (CanonicalizeIterations > 0 || PlanarizeIterations > 0)
+            {
+                poly = poly.Canonicalize(CanonicalizeIterations, PlanarizeIterations);
+            }
         }
 
-        if (FaceExtrude != 0)
-        {
-            poly = poly.Extrude(new OpParams(FaceExtrude));
-        }
-        if (CanonicalizeIterations > 0 || PlanarizeIterations > 0) poly = poly.Canonicalize(CanonicalizeIterations, PlanarizeIterations);
-        if (FaceScale<1f) poly = poly.FaceScale(new OpParams(FaceScale));
+        if (FaceInset != 0) poly = poly.FaceInset(new OpParams(FaceInset));
+        if (FaceExtrude != 0) poly = poly.Extrude(new OpParams(FaceExtrude));
+        if (FaceScale < 1f) poly = poly.FaceScale(new OpParams(FaceScale));
+
         var meshData = poly.BuildMeshData(colorMethod: colorMethod);
         var mesh = poly.BuildUnityMesh(meshData);
         if (poly.DebugVerts == null) poly.DebugVerts = new List<Vector3>();
