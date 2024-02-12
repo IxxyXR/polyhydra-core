@@ -2,9 +2,112 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using Vector3 = UnityEngine.Vector3;
 
 namespace Polyhydra.Core
 {
+
+    // Double Precision Vector3
+    public struct Vector3D
+    {
+        public double X, Y, Z;
+
+        public Vector3D(double x, double y, double z)
+        {
+            X = x;
+            Y = y;
+            Z = z;
+        }
+
+        public static Vector3D Cross(Vector3D v1, Vector3D v2)
+        {
+            return new Vector3D(
+                v1.Y * v2.Z - v1.Z * v2.Y,
+                v1.Z * v2.X - v1.X * v2.Z,
+                v1.X * v2.Y - v1.Y * v2.X);
+        }
+
+        public static double Dot(Vector3D v1, Vector3D v2)
+        {
+            return v1.X * v2.X + v1.Y * v2.Y + v1.Z * v2.Z;
+        }
+
+        // Normalize the vector to unit length
+        public Vector3D Normalize()
+        {
+            double len = Length;
+            if (len == 0)
+                return new Vector3D(0, 0, 0);
+            return new Vector3D(X / len, Y / len, Z / len);
+        }
+
+        public double LengthSquared => X * X + Y * Y + Z * Z;
+
+        public double Length => Math.Sqrt(LengthSquared);
+
+        public static Vector3D Zero => new Vector3D(0, 0, 0);
+
+        public static Vector3D operator *(Vector3D v, double scalar)
+        {
+            return new Vector3D(v.X * scalar, v.Y * scalar, v.Z * scalar);
+        }
+
+        public static Vector3D operator *(double scalar, Vector3D v)
+        {
+            return new Vector3D(v.X * scalar, v.Y * scalar, v.Z * scalar);
+        }
+
+        // Vector addition
+        public static Vector3D operator +(Vector3D v1, Vector3D v2)
+        {
+            return new Vector3D(v1.X + v2.X, v1.Y + v2.Y, v1.Z + v2.Z);
+        }
+
+        // Vector subtraction
+        public static Vector3D operator -(Vector3D v1, Vector3D v2)
+        {
+            return new Vector3D(v1.X - v2.X, v1.Y - v2.Y, v1.Z - v2.Z);
+        }
+
+        // Unary negation
+        public static Vector3D operator -(Vector3D v)
+        {
+            return new Vector3D(-v.X, -v.Y, -v.Z);
+        }
+
+        // Scalar division
+        public static Vector3D operator /(Vector3D v, double scalar)
+        {
+            return new Vector3D(v.X / scalar, v.Y / scalar, v.Z / scalar);
+        }
+
+        public static Vector3D Orthogonal(Vector3D v1, Vector3D v2, Vector3D v3)
+        {
+            Vector3D d1 = v2 - v1;
+            Vector3D d2 = v3 - v2;
+            return Cross(d1, d2);
+        }
+
+        // Find the point where the line v1...v2 is tangent to a sphere at the origin
+        public static Vector3D TangentPoint(Vector3D v1, Vector3D v2)
+        {
+            Vector3D d = v2 - v1;
+            return v1 - (Dot(d, v1) / d.LengthSquared) * d;
+        }
+
+        // Calculate the distance of line v1...v2 from the origin
+        public static double EdgeDist(Vector3D v1, Vector3D v2)
+        {
+            return TangentPoint(v1, v2).Length;
+        }
+
+        // reflect 3vec in unit sphere, spherical reciprocal
+        public Vector3D Reciprocal()
+        {
+            return (1.0 / this.LengthSquared) * this;
+        }
+    }
+
     public partial class PolyMesh
     {
         public void SetVertexPositions(List<Vector3> newPositions)
@@ -38,8 +141,8 @@ namespace Polyhydra.Core
                 var faceVertices = face.GetVertices();
 
                 // Keep track of the "previous" two vertices in CCW order
-                var lastlastVertex = faceVertices[faceVertices.Count - 2];
-                var lastVertex = faceVertices[faceVertices.Count - 1];
+                var lastlastVertex = faceVertices[^2];
+                var lastVertex = faceVertices[^1];
 
                 for (var i = 0; i < faceVertices.Count; i++)
                 {
@@ -308,6 +411,207 @@ namespace Polyhydra.Core
             return canonicalized;
         }
 
+        public List<Vector3D> ReciprocalN(List<Vector3D> verts, List<int>[] faceIndices)
+        {
+            var result = new List<Vector3D>();
+            foreach (var f in faceIndices)
+            {
+                Vector3D centroid = Vector3D.Zero; // Running sum of vertex coords
+                Vector3D normalV = Vector3D.Zero; // Running sum of normal vectors
+                double avgEdgeDist = 0; // Running sum for avg edge distance
+
+                var v1 = verts[f[^2]];
+                var v2 = verts[f[^1]];
+
+                foreach (var vertexIndex in f)
+                {
+                    var v3 = verts[vertexIndex];
+                    centroid += v3;
+                    normalV += Vector3D.Orthogonal(v1, v2, v3);
+                    avgEdgeDist += Vector3D.EdgeDist(v1, v2);
+                    v1 = v2;
+                    v2 = v3;
+                }
+
+                centroid = (1.0 / f.Count) * centroid;
+                normalV = normalV.Normalize();
+                avgEdgeDist /= f.Count;
+                Vector3D tmp = (Vector3D.Dot(centroid, normalV) * normalV).Reciprocal();
+                result.Add(
+                    (tmp * (1.0 + avgEdgeDist) / 2.0)
+                );
+
+            }
+            return result;
+        }
+
+        public List<Vector3D> GetVertexPositionsDouble()
+        {
+            return Vertices.Select(v =>
+                new Vector3D(v.Position.x, v.Position.y, v.Position.z))
+                .ToList();
+        }
+
+
+        // Hacky Canonicalization Algorithm
+        // Using center of gravity of vertices for each face to planarize faces
+        // get the spherical reciprocals of face centers
+        public PolyMesh Kanonicalize(int iterations = 1)
+        {
+            var poly = Duplicate();
+            if (iterations == 0) return poly;
+
+            poly.Recenter(); // Necessary
+
+            var polyV = poly.GetVertexPositionsDouble();
+            var polyI = poly.ListFacesByVertexIndices();
+
+            var dpoly = poly.Dual();
+            var dpolyV = dpoly.GetVertexPositionsDouble();
+            var dpolyI = dpoly.ListFacesByVertexIndices();
+
+            // iteratively reciprocate face normals
+            for (int count = 0; count < iterations; count++)
+            {
+                dpolyV = ReciprocalN(polyV, polyI);
+                polyV = ReciprocalN(dpolyV, dpolyI);
+            }
+
+            poly.SetVertexPositions(
+                polyV.Select(
+                    v => new Vector3((float)v.X, (float)v.Y, (float)v.Z)
+                ).ToList()
+            );
+
+            return poly;
+        }
+
+        public static PolyMesh AdjustXYZ(PolyMesh poly, int nIterations = 1)
+        {
+            poly = poly.Duplicate();
+            var dpoly = poly.Dual();
+            for (int count = 0; count < nIterations; count++)
+            {
+                // Reciprocate face centers
+                dpoly.SetVertexPositions(ReciprocalC(poly));
+                poly.SetVertexPositions(ReciprocalC(dpoly));
+            }
+            return poly;
+        }
+
+        private static List<Vector3> ReciprocalC(PolyMesh poly)
+        {
+            var centers = poly.Faces.Select(v => v.Centroid).ToList();
+            for (int i = 0; i < centers.Count; i++) {
+                float dotProduct = Vector3.Dot(centers[i], centers[i]);
+                if (dotProduct != 0)
+                {
+                    centers[i] = (1f / dotProduct) * centers[i];
+                }
+            }
+            return centers;
+        }
+
+
+        // Reimplementation. Currently not working
+        // Switch to using double precision and follow similar approach to the new Kanonicalize?
+        public PolyMesh CanonicalizeNew(int iterations, int _)
+        {
+            Vector3 _TangentPoint (Vector3 v1, Vector3 v2)
+            {
+                var d = v2 - v1;
+                return v1 - (Vector3.Dot(d, v1) / d.sqrMagnitude) * d;
+            }
+
+            Dictionary<Guid, Vector3> _Tangentify(Dictionary<Guid, Vector3> vertices, MeshHalfedgeList edges)
+            {
+                // hack to improve convergence
+                var STABILITY_FACTOR = 0.5f;
+                var newVs = new Dictionary<Guid, Vector3>(vertices); // copy vertices
+                foreach (var e in edges)
+                {
+                    // The point closest to origin
+                    var t = _TangentPoint(e.Vertex.Position, e.Pair.Vertex.Position);
+                    // Adjustment from sphere
+                    var c = STABILITY_FACTOR / 2f * (1f - Mathf.Sqrt(Vector3.Dot(t,t))) * t;
+                    vertices[e.Vertex.Name] += c;
+                    vertices[e.Pair.Vertex.Name] += c;
+                }
+                return newVs;
+            }
+
+            Dictionary<Guid, Vector3> _Recenter(Dictionary<Guid, Vector3> vertices, MeshHalfedgeList edges)
+            {
+                // Centers of edges
+                var edgecenters = edges.Select(e => e.Midpoint);
+                Vector3 polycenter = new Vector3(
+                    edgecenters.Average(v => v.x),
+                    edgecenters.Average(v => v.y),
+                    edgecenters.Average(v => v.z)
+                );
+
+                // Subtract off any deviation from center
+                return vertices.ToDictionary(pair => pair.Key, pair => pair.Value - polycenter);
+            }
+
+            Dictionary<Guid, Vector3> _Rescale(Dictionary<Guid, Vector3> vertices)
+            {
+                var maxExtent = vertices.Values.Select(v => v.magnitude).Max();
+                var s = 1f / maxExtent;
+                return vertices.ToDictionary(pair => pair.Key, pair => pair.Value * s);
+            }
+
+            Dictionary<Guid, Vector3> _Planarize(Dictionary<Guid, Vector3> vertices, MeshFaceList faces)
+            {
+                var STABILITY_FACTOR = 0f; // Hack to improve convergence
+                var newVs = new Dictionary<Guid, Vector3>(vertices); // copy vertices
+                foreach (var f in faces)
+                {
+                    var normal = f.Normal;
+                    var centroid = f.Centroid;
+
+                    if (Vector3.Dot(normal, centroid) < 0)
+                    { // correct sign if needed
+                        normal = -normal;
+                    }
+                    foreach (var v in f.GetVertices())
+                    {
+                        // Project (vertex - centroid) onto normal, subtract off this component
+                        newVs[v.Name] += normal * Vector3.Dot(
+                            normal * STABILITY_FACTOR,
+                            centroid - v.Position
+                        );
+                    }
+                }
+                return newVs;
+            }
+
+            var poly = Duplicate();
+            poly.Recenter(); // Necessary
+
+            var faces = poly.Faces;
+            var edges = poly.Halfedges;
+            var newVs = poly.Vertices.ToDictionary(pair => pair.Name, pair => pair.Position);
+
+            if (iterations < 1) iterations = 1;
+            for (var i = 0; i <= iterations; i++)
+            {
+                var oldVs = new Dictionary<Guid, Vector3>(newVs); // Copy vertices
+                newVs = _Tangentify(newVs, edges);
+                newVs = _Recenter(newVs, edges);
+                newVs = _Planarize(newVs, faces);
+                float maxChange = newVs.Values.Zip(oldVs.Values, (a, b) => Vector3.Distance(a, b)).Max();
+                if (maxChange < 1e-7f) break;
+            }
+
+            foreach (var v in poly.Vertices)
+            {
+                v.Position = newVs[v.Name];
+            }
+            poly.Recenter();
+            return poly;
+        }
+
         /**
 		 * Canonicalizes this polyhedron until the change in position does not
 		 * exceed the given threshold. That is, the algorithm terminates when no vertex
@@ -324,6 +628,8 @@ namespace Polyhydra.Core
             var previousFaceRoles = FaceRoles.ToList();
             var previousVertexRoles = VertexRoles.ToList();
             PolyMesh canonicalized = Duplicate();
+            canonicalized.Recenter(); // Necessary
+
             if (thresholdAdjust > 0) Adjust(this, thresholdAdjust);
             if (thresholdPlanarize > 0) Planarize(this, thresholdPlanarize);
             FaceRoles = previousFaceRoles;

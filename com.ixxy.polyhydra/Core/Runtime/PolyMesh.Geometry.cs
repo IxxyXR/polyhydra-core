@@ -4,6 +4,7 @@ using System.Linq;
 using GK;
 using ProceduralToolkit;
 using ProceduralToolkit.ClipperLib;
+using ProceduralToolkit.LibTessDotNet;
 using ProceduralToolkit.Skeleton;
 using UnityEngine;
 
@@ -581,6 +582,44 @@ namespace Polyhydra.Core
             // poly.Weld(0.01f);
             return poly;
         }
+        
+        public PolyMesh TessellateWithDepth(OpParams o)
+        {
+            var vertexPoints = new List<Vector3>();
+            var faceIndices = new List<IEnumerable<int>>();
+
+            int sides = Mathf.FloorToInt(Mathf.Max(3, o.OriginalParamA));
+            float depth = o.OriginalParamB;
+            var tessellator = new Tessellator();
+            for (var faceIndex = 0; faceIndex < Faces.Count; faceIndex++)
+            {
+                var face = Faces[faceIndex];
+                var includeFace = IncludeFace(faceIndex, o.filter);
+                if (includeFace)
+                {
+                    tessellator.AddContour(face.GetVertices().Select(v => v.Position).ToList());
+                }
+            }
+            tessellator.Tessellate(polySize: sides, elementType: ElementType.BoundaryContours);
+            
+            int startingIndex = vertexPoints.Count;
+            vertexPoints.AddRange(tessellator.vertices.Select(v => new Vector3(v.Position.X, v.Position.Y, v.Position.Z)));
+            // Split into faces of n sides
+            int numIndices = tessellator.indices.Length;
+            for (int i = 0; i < numIndices; i += sides)
+            {
+                var idxList = tessellator.indices.ToList().GetRange(i, sides).Where(x => x >= 0);
+                faceIndices.Add(idxList.Select(x => startingIndex + x));
+                // faceRoles.Add(FaceRoles[faceIndex]);
+                // faceTags.Add(FaceTags[faceIndex]);
+                if (i + sides >= numIndices) break;
+            }
+
+            var poly = new PolyMesh(vertexPoints, faceIndices);
+            // poly.Weld(0.01f);
+            return poly;
+        }
+
 
         public PolyMesh FaceTessellate(OpParams o)
         {
@@ -3274,6 +3313,21 @@ namespace Polyhydra.Core
             SplitEdge(face.GetHalfedges()[edgeIndex % face.Sides]);
         }
 
+        public PolyMesh SplitEdges()
+        {
+            var poly = Duplicate();
+            var uniqueEdges = new List<Halfedge>();
+            var done = new HashSet<(Guid, Guid)?>();
+            foreach (var edge in poly.Halfedges)
+            {
+                if (done.Contains(edge.PairedName)) continue;
+                uniqueEdges.Add(edge);
+                done.Add(edge.PairedName);
+            }
+            poly.SplitEdges(uniqueEdges);
+            poly.Halfedges.MatchPairs();
+            return poly;
+        }
 
         private PolyMesh SubdivideEdges(OpParams o)
         {
@@ -3335,16 +3389,36 @@ namespace Polyhydra.Core
 
             return new PolyMesh(vertexPoints, faceIndices, FaceRoles, vertexRoles, FaceTags);
         }
+
+
         public void SplitEdges(IEnumerable<Halfedge> edgesToSplit)
         {
-            foreach (var edge in edgesToSplit)
+            HashSet<(Guid, Guid)?> edgeIds = new HashSet<(Guid, Guid)?>(
+                edgesToSplit.Select(e => e.PairedName)
+            );
+            foreach (var id in edgeIds)
             {
+                var edge = Halfedges.FirstOrDefault(e => e.Name == id);
+                if (edge == null) continue;
                 SplitEdge(edge);
             }
         }
 
+        public void SplitEdge(Halfedge edge)
+        {
+            var nextEdge = edge.Next;
+            var v1 = edge.Vertex;
+            var v2 = edge.Next.Vertex;
+            var face1 = edge.Face;
+            var newVert = new Vertex(Vector3.Lerp(v1.Position, v2.Position, 0.5f), edge);
+            Vertices.Add(newVert);
+            var newEdge = new Halfedge(newVert, nextEdge, edge, face1, edge.Pair);
+            Halfedges.Add(newEdge);
+            edge.Next = newEdge;
+            nextEdge.Prev = newEdge;
+        }
 
-        public void SplitEdge(Halfedge edgeToSplit)
+        public void SplitEdge2(Halfedge edgeToSplit)
         {
             var newVert = new Vertex(edgeToSplit.Midpoint);
             Vertices.Add(newVert);

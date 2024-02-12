@@ -162,6 +162,14 @@ public static class RadialSolids
     {
         return Antiprism(sides, _CalcAntiprismHeight(sides));
     }
+
+    public static PolyMesh Trapezohedron(int sides)
+    {
+        var antiprism = Antiprism(sides);
+        var poly = antiprism.Dual();
+        poly.Recenter();
+        return poly.Kanonicalize(16); // TODO figure out the minimum iterations
+    }
     
     public static PolyMesh Antiprism(int sides, float height)
     {
@@ -603,6 +611,7 @@ public static class RadialSolids
           {
               RadialPolyType.Prism => Prism(sides),
               RadialPolyType.Antiprism => Antiprism(sides),
+              RadialPolyType.Trapezohedron => Trapezohedron(sides),
               RadialPolyType.Pyramid => Pyramid(sides),
               RadialPolyType.ElongatedPyramid => ElongatedPyramid(sides),
               RadialPolyType.GyroelongatedPyramid => GyroelongatedPyramid(sides),
@@ -664,6 +673,7 @@ public static class RadialSolids
         GyroBicupola,
         ElongatedOrthoBicupola,
         ElongatedGyroBicupola,
-        GyroelongatedBicupola
+        GyroelongatedBicupola,
+        Trapezohedron
     }
 }
