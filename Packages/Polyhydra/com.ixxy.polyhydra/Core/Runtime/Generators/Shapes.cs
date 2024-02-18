@@ -83,7 +83,7 @@ namespace Polyhydra.Core
 
             if (method == Method.Grid)
             {
-                var poly = Grids.Build(GridEnums.GridTypes.K_4_4_4_4, GridEnums.GridShapes.Plane, 2, 3);
+                var poly = Grids.Build(GridEnums.GridTypes.Square, GridEnums.GridShapes.Plane, 2, 3);
                 poly = poly.FaceRemove(false, new List<int>{0, 2});
                 return poly;
             }
@@ -120,7 +120,7 @@ namespace Polyhydra.Core
 
             if (method == Method.Grid)
             {
-                var poly = Grids.Build(GridEnums.GridTypes.K_4_4_4_4, GridEnums.GridShapes.Plane, 2, 3);
+                var poly = Grids.Build(GridEnums.GridTypes.Square, GridEnums.GridShapes.Plane, 2, 3);
                 poly = poly.FaceRemove(false, new List<int>{2});
                 return poly;
             }
@@ -159,7 +159,7 @@ namespace Polyhydra.Core
 
             if (method == Method.Grid)
             {
-                var poly = Grids.Build(GridEnums.GridTypes.K_4_4_4_4, GridEnums.GridShapes.Plane, 3, 3);
+                var poly = Grids.Build(GridEnums.GridTypes.Square, GridEnums.GridShapes.Plane, 3, 3);
                 poly = poly.FaceRemove(false, new List<int>{1, 7});
                 return poly;
             }
@@ -326,5 +326,20 @@ namespace Polyhydra.Core
             return arcPoints;
         }
 
+        public static PolyMesh Rhombus(float angle, float edgeLength)
+        {
+            float angleRadians = angle * Mathf.Deg2Rad;
+            float halfLength = edgeLength / 2f;
+            float offsetX = Mathf.Cos(angleRadians) * halfLength;
+            float offsetY = Mathf.Sin(angleRadians) * halfLength;
+
+            Vector3 V1 = new Vector2(halfLength, 0);
+            Vector3 V2 = new Vector2(offsetX, offsetY);
+            Vector3 V3 = new Vector2(-halfLength, 0);
+            Vector3 V4 = new Vector2(-offsetX, -offsetY);
+
+            var vertices = new List<Vector2> { V1, V2, V3, V4 };
+            return new PolyMesh(vertices);
+        }
     }
 }

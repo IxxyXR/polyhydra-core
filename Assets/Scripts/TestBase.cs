@@ -36,6 +36,10 @@ public class TestBase : MonoBehaviour
     [Range(-1f, 1f)] public float FaceExtrude = 0;
     [Range(-1f, 1f)] public float FaceInset = 0;
 
+    public bool debugFaces;
+    public bool debugEdges;
+    public bool debugVerts;
+    
     [NonSerialized] public PolyMesh poly;
 
     public void Build(ColorMethods colorMethod = ColorMethods.ByRole)
@@ -132,14 +136,37 @@ public class TestBase : MonoBehaviour
     
     private void OnDrawGizmos()
     {
-        // if (poly==null || poly.DebugVerts == null) return;
-        // for (int i = 0; i < poly.DebugVerts.Count; i++)
-        // {
-        //     Vector3 vert = poly.DebugVerts[i];
-        //     Vector3 pos = transform.TransformPoint(vert);
-        //     Gizmos.color = Color.red;
-        //     Gizmos.DrawWireSphere(pos, .025f);
-        //     Handles.Label(pos + new Vector3(0, 0.03f, 0), i.ToString());
-        // }
+        if (poly==null || poly.DebugVerts == null) return;
+        if (debugFaces)
+        {
+            for (var f = 0; f < poly.Faces.Count; f++)
+            {
+                var face = poly.Faces[f];
+                var pos = transform.TransformPoint(face.Centroid);
+                Handles.Label(pos + new Vector3(0, 0.03f, 0), $"F{f}");
+                if (debugEdges)
+                {
+                    var list = face.GetHalfedges();
+                    for (var e = 0; e < list.Count; e++)
+                    {
+                        var edge = list[e];
+                        pos = transform.TransformPoint(edge.Midpoint);
+                        Handles.Label(pos + new Vector3(0, 0.03f, 0), $"{e}");
+                    }
+                }
+            }
+        }
+
+        if (debugVerts)
+        {
+            for (int i = 0; i < poly.DebugVerts.Count; i++)
+            {
+                Vector3 vert = poly.DebugVerts[i];
+                Vector3 pos = transform.TransformPoint(vert);
+                Gizmos.color = Color.red;
+                Gizmos.DrawWireSphere(pos, .025f);
+                Handles.Label(pos + new Vector3(0, 0.03f, 0), i.ToString());
+            }
+        }
     }
 }
