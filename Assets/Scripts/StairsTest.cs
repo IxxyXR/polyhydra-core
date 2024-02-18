@@ -11,11 +11,11 @@ public class StairsTest : TestBase
     public float Scaling = 0;
     public float Distance = 1f;
     public Vector3 vector;
-    
+
     [ContextMenu("Go")]
     public override void Go()
     {
-        poly = Grids.Build(GridEnums.GridTypes.K_4_4_4_4, GridEnums.GridShapes.Plane, 1, 1);
+        poly = Grids.Build(GridEnums.GridTypes.Square, GridEnums.GridShapes.Plane, 1, 1);
         for (var i = 0; i < Segments; i++)
         {
             poly = poly.Loft(new OpParams(0, Distance, filter: Filter.Role(Roles.Existing)));

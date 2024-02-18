@@ -381,21 +381,17 @@ namespace Polyhydra.Core
         {
             var gridTypeMap = new Dictionary<string, GridEnums.GridTypes>
             {
-                {"333333", GridEnums.GridTypes.K_3_3_3_3_3_3},
-                {"4444", GridEnums.GridTypes.K_4_4_4_4},
-                {"666", GridEnums.GridTypes.K_6_6_6},
-                {"33336", GridEnums.GridTypes.K_3_3_3_3_6},
-                {"33344", GridEnums.GridTypes.K_3_3_3_4_4},
-                {"33434", GridEnums.GridTypes.K_3_3_4_3_4},
-                {"3464", GridEnums.GridTypes.K_3_4_6_4},
-                {"3636", GridEnums.GridTypes.K_3_6_3_6},
-                {"31212", GridEnums.GridTypes.K_3_12_12},
-                {"4612", GridEnums.GridTypes.K_4_6_12},
-                {"488", GridEnums.GridTypes.K_4_8_8},
-                {"33412333333", GridEnums.GridTypes.K_3_3_4_12__3_3_3_3_3_3},
-                {"33663636", GridEnums.GridTypes.K_3_3_6_6__3_6_3_6},
-                {"3431231212", GridEnums.GridTypes.K_3_4_3_12__3_12_12},
-                {"34463636", GridEnums.GridTypes.K_3_4_4_6__3_6_3_6},
+                {"333333", GridEnums.GridTypes.Triangular},
+                {"4444", GridEnums.GridTypes.Square},
+                {"666", GridEnums.GridTypes.Hexagonal},
+                {"33336", GridEnums.GridTypes.SnubTrihexagonal},
+                {"33344", GridEnums.GridTypes.ElongatedTriangular},
+                {"33434", GridEnums.GridTypes.SnubSquare},
+                {"3464", GridEnums.GridTypes.Rhombitrihexagonal},
+                {"3636", GridEnums.GridTypes.Trihexagonal},
+                {"31212", GridEnums.GridTypes.TruncatedHexagonal},
+                {"4612", GridEnums.GridTypes.TruncatedTrihexagonal},
+                {"488", GridEnums.GridTypes.TruncatedSquare}
             };
 
             PolyMesh poly = null;
