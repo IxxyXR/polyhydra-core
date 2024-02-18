@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using UnityEngine;
 
 namespace Polyhydra.Core {
-    
+
     public class Vertex {
-        
+
         #region constructors
 
         public Vertex(float x, float y, float z)
@@ -56,6 +56,7 @@ namespace Polyhydra.Core {
             }
         }
 
+        // TODO - is this the same as HalfEdges?
         public List<Vertex> Neighbours
         {
             get {
