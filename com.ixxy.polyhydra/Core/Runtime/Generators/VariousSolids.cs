@@ -26,7 +26,7 @@ namespace Polyhydra.Core
 
         public static PolyMesh Box(int x, int y, int z)
         {
-            var shape = Grids.Build(GridEnums.GridTypes.K_4_4_4_4, GridEnums.GridShapes.Plane, x, z);
+            var shape = Grids.Build(GridEnums.GridTypes.Square, GridEnums.GridShapes.Plane, x, z);
 
             shape = shape.LayeredExtrude(y, 1.4142f);
 
@@ -124,13 +124,13 @@ namespace Polyhydra.Core
             if (splitAlongWidth)
             {
                 // Uses an x/z grid to create multiple x segments - so width will be cast to int
-                poly = Grids.Build(GridEnums.GridTypes.K_4_4_4_4, GridEnums.GridShapes.Plane, Mathf.FloorToInt(width), steps);
+                poly = Grids.Build(GridEnums.GridTypes.Square, GridEnums.GridShapes.Plane, Mathf.FloorToInt(width), steps);
                 func = new OpFunc(x => x.index / width / (1f / height) + height);
             }
             else
             {
                 // A single width division
-                poly = Grids.Build(GridEnums.GridTypes.K_4_4_4_4, GridEnums.GridShapes.Plane, 1, steps);
+                poly = Grids.Build(GridEnums.GridTypes.Square, GridEnums.GridShapes.Plane, 1, steps);
                 // Scale in x to give the desired width
                 poly.Scale(new Vector3(width, 1, 1));
                 func = new OpFunc(x => x.index / (1f / height) + height);
