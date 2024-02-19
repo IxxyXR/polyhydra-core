@@ -203,6 +203,7 @@ namespace Polyhydra.Core
         public PolyMesh Rotate(Vector3 axis, float amount)
         {
             var copy = Duplicate();
+            if (amount == 0) return copy;
             for (var i = 0; i < copy.Vertices.Count; i++)
             {
                 var v = copy.Vertices[i];
@@ -1868,7 +1869,9 @@ namespace Polyhydra.Core
         public PolyMesh Duplicate()
         {
             // Export to face/vertex and rebuild
-            return new PolyMesh(ListVerticesByPoints(), ListFacesByVertexIndices(), FaceRoles, VertexRoles, FaceTags);
+            var poly = new PolyMesh(ListVerticesByPoints(), ListFacesByVertexIndices(), FaceRoles, VertexRoles, FaceTags);
+            poly.DebugVerts = DebugVerts?.ToList();
+            return poly;
         }
 
         public PolyMesh Duplicate(Matrix4x4 matrix)
@@ -3254,9 +3257,9 @@ namespace Polyhydra.Core
 
             var newVert1 = new Vertex(
                 Quaternion.AngleAxis(
-                    -angle,
+                    angle,
                     normal
-                ) * (edge.Next.Vertex.Position - pivot) + pivot
+                ) * (edge.Prev.Vertex.Position - pivot) + pivot
             );
             Vertices.Add(newVert1);
             VertexRoles.Add(Roles.New);
@@ -3265,7 +3268,7 @@ namespace Polyhydra.Core
             var pivot2 = newVert1.Position;
             var newVert2 = new Vertex(
                 Quaternion.AngleAxis(
-                    -angle2,
+                    angle2,
                     normal
                 ) * (edge.Vertex.Position - pivot2) + pivot2
             );
@@ -3274,10 +3277,10 @@ namespace Polyhydra.Core
 
             var verts = new List<Vertex>()
             {
-                edge.Next.Vertex,
                 edge.Vertex,
-                newVert1,
+                edge.Prev.Vertex,
                 newVert2,
+                newVert1,
             };
             var result = Faces.Add(verts);
             if (result)

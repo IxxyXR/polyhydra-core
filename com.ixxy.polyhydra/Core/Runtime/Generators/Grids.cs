@@ -19,10 +19,12 @@ namespace Polyhydra.Core
         
 		public enum GridTypes
 		{
+			// Regular
 			Triangular = 0,
 			Square = 1,
 			Hexagonal = 2,
 
+			// Archimedean, uniform or semiregular
 			SnubTrihexagonal = 3,
 			ElongatedTriangular = 4, // 3.3.3.4.4
 			SnubSquare = 5, // 3.3.4.3.4
@@ -32,9 +34,21 @@ namespace Polyhydra.Core
 			TruncatedTrihexagonal = 9, // 4.6.12
 			TruncatedSquare = 10, // 4.8.8
 
+			// Laves or Catalan
+			TetrakisSquare = 34, // Dual of TruncatedSquare
+			CairoPentagonal = 35, // Dual of SnubSquare
+			Rhombille = 36, // Dual of Trihexagonal
+			TriakisTriangular = 37, // Dual of TruncatedHexagonal
+			DeltoidalTrihexagonal = 38, // Dual of Rhombitrihexagonal
+			Kisrhombille = 39, // Dual of TruncatedTrihexagonal
+			FloretPentagonal = 40, // Dual of SnubTrihexagonal
+			PrismaticPentagonal = 41, // Dual of ElongatedTriangular
+
+			// Durer
 			Durer1 = 16,
 			Durer2 = 17,
 
+			// 2-Uniform
 			DissectedRhombitrihexagonal = 18, // 3.3.3.3.3.3;3.3.4.3.4
 			DissectedTruncatedHexagonal1  = 19, // 3.4.6.4;3.3.4.3.4
 			DissectedTruncatedHexagonal2 = 20, // 3.4.6.4;3.3.3.4.4
@@ -234,11 +248,12 @@ namespace Polyhydra.Core
 				        }
 			        }
 			        poly.Append(tiledef.tile, tileOffset);
-			        newFaceRoles.AddRange(
-				        tiledef.roleSet[
-					        y % roleCountY] [(x + colOffset) % roleCountX
-				        ].GetRange(rowOffset, tileCount)
-				    );
+
+			        int rowRoleIndex = (y % roleCountY) % tiledef.roleSet.Count;
+			        var rowRoles = tiledef.roleSet[rowRoleIndex];
+			        int colRoleIndex = ((x + colOffset) % roleCountX) % rowRoles.Count;
+			        var roles = rowRoles[colRoleIndex].GetRange(rowOffset, tileCount);
+			        newFaceRoles.AddRange(roles);
 		        }
 	        }
 
@@ -261,6 +276,8 @@ namespace Polyhydra.Core
 			        poly = poly.Weld(0.01f);
 			        break;
 	        }
+
+	        poly.DebugVerts = tiledef.tile.DebugVerts;
 	        return poly;
         }
 
@@ -666,6 +683,143 @@ namespace Polyhydra.Core
 				        }
 			        };
 			        break;
+
+		        case GridEnums.GridTypes.TetrakisSquare:
+			        tile = Shapes.Polygon(4);
+			        tile = tile.Rotate(Vector3.up, 45);
+			        tile = tile.Kis(new OpParams());
+			        xOffset = tile.Vertices[0].Position - tile.Vertices[1].Position;
+			        yOffset = tile.Vertices[1].Position - tile.Vertices[2].Position;
+			        roleSet = new List<List<List<Roles>>>
+			        {
+				        new List<List<Roles>>
+				        {
+					        new List<Roles>
+					        {
+						        Roles.ExistingAlt,
+						        Roles.NewAlt,
+						        Roles.ExistingAlt,
+						        Roles.NewAlt,
+					        }
+				        }
+			        };
+			        break;
+		        case GridEnums.GridTypes.CairoPentagonal:
+			        var sqrt3 = Mathf.Sqrt(3);
+			        float halfBaseLength = (sqrt3 - 1) / 2;
+			        var points = new List<Vector3>
+			        {
+				        new (-halfBaseLength, 0, 0),
+				        new (halfBaseLength, 0, 0),
+				        new (0.5f + halfBaseLength,0, sqrt3 / 2),
+				        new (0, 0, (sqrt3 / 2) + 0.5f),
+				        new (-(0.5f + halfBaseLength), 0, sqrt3 / 2)
+			        };
+			        var oneTile = new PolyMesh(points);
+			        tile = oneTile.Duplicate();
+			        tile.Append(new PolyMesh(points.Select(p => new Vector3(p.x, 0, -p.z))));
+			        oneTile.Transform(new Vector3(0, 0, -(halfBaseLength + (sqrt3 / 2) + 0.5f)));
+			        tile.Append(oneTile.Rotate(Vector3.up, 90));
+			        tile.Append(oneTile.Rotate(Vector3.up, -90));
+			        xOffset = tile.Vertices[15].Position - tile.Vertices[11].Position;
+			        yOffset = tile.Vertices[16].Position - tile.Vertices[8].Position;
+			        roleSet = new List<List<List<Roles>>>
+			        {
+				        new()
+				        {
+					        new()
+					        {
+						        Roles.New,
+						        Roles.NewAlt,
+						        Roles.Existing,
+						        Roles.ExistingAlt,
+					        }
+				        }
+			        };
+			        break;
+
+		        case GridEnums.GridTypes.Rhombille:
+			        // Create a rhombus by joining two triangles
+			        var rhomb = Shapes.Polygon(3);
+			        rhomb.Transform(Vector3.zero, new Vector3(0, 30, 0));
+			        rhomb.ExtendFace(0, 0, 3);
+			        var rhombusVerts = rhomb.Vertices.Select(v => v.Position).ToList();
+			        rhomb = new PolyMesh(rhombusVerts);
+
+			        // Move it so v0 is on the origin
+			        rhomb.Transform(-rhomb.Vertices[0].Position);
+
+			        // Create a tile by joining three rhombuses
+			        tile = rhomb.Duplicate();
+			        rhomb.Transform(Vector3.zero, new Vector3(0, 120, 0));
+			        tile.Append(rhomb);
+			        rhomb.Transform(Vector3.zero, new Vector3(0, 120, 0));
+			        tile.Append(rhomb);
+
+			        xOffset = tile.Vertices[2].Position - tile.Vertices[6].Position;
+			        yOffset = tile.Vertices[10].Position - tile.Vertices[6].Position;
+			        roleSet = new List<List<List<Roles>>>
+			        {
+				        new()
+				        {
+					        new()
+					        {
+						        Roles.Existing,
+						        Roles.ExistingAlt,
+						        Roles.New
+					        }
+				        }
+			        };
+			        offsetAlternateRows = false;
+			        break;
+
+		        case GridEnums.GridTypes.TriakisTriangular:
+			        break;
+
+		        case GridEnums.GridTypes.DeltoidalTrihexagonal:
+			        break;
+
+		        case GridEnums.GridTypes.Kisrhombille:
+			        break;
+
+		        case GridEnums.GridTypes.FloretPentagonal:
+			        break;
+
+		        case GridEnums.GridTypes.PrismaticPentagonal:
+			        halfBaseLength = (Mathf.Sqrt(3) - 1) / 2;
+			        points = new List<Vector3>
+			        {
+				        new (-0.5f, 0, 0),
+				        new (0.5f, 0, 0),
+				        new (0.5f,0, halfBaseLength * 2),
+				        new (0, 0, halfBaseLength * 3),
+				        new (-0.5f, 0, halfBaseLength* 2)
+			        };
+			        var pentile = new PolyMesh(points);
+			        tile = pentile.Duplicate();
+			        tile.Append(new PolyMesh(points.Select(p => new Vector3(p.x, 0, -p.z))));
+			        xOffset = tile.Vertices[0].Position - tile.Vertices[1].Position;
+			        yOffset = tile.Vertices[8].Position - tile.Vertices[2].Position;
+			        tile.DebugVerts = tile.Vertices.Select(v => v.Position).ToList();
+			        roleSet = new List<List<List<Roles>>>
+			        {
+				        new()
+				        {
+					        new()
+					        {
+						        Roles.NewAlt,
+						        Roles.New,
+					        },
+					        new()
+					        {
+						        Roles.Existing,
+						        Roles.ExistingAlt,
+					        },
+				        }
+			        };
+			        offsetAlternateRows = false;
+			        break;
+
 		        case GridEnums.GridTypes.Durer1:
 			        tile = Shapes.Polygon(5);
 			        tile = tile.Rotate(Vector3.up, 54);
@@ -686,6 +840,7 @@ namespace Polyhydra.Core
 				        }
 			        };
 			        break;
+
 		        case GridEnums.GridTypes.Durer2:
 			        tile = Shapes.Polygon(5);
 			        tile = tile.Rotate(Vector3.up, 54);
@@ -1140,6 +1295,7 @@ namespace Polyhydra.Core
 					vert.Position = newPos;
 				}
 			}
+
             return grid;
 		}
     }
