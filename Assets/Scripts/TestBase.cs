@@ -39,7 +39,7 @@ public class TestBase : MonoBehaviour
     public bool debugFaces;
     public bool debugEdges;
     public bool debugVerts;
-    
+
     [NonSerialized] public PolyMesh poly;
 
     public void Build(ColorMethods colorMethod = ColorMethods.ByRole)
@@ -48,7 +48,7 @@ public class TestBase : MonoBehaviour
         for (int i1 = 0; i1 < Op1Iterations; i1++)
         {
             var op1Filter = Filter.GetFilter(Op1FilterType, Op1FilterParam, Mathf.FloorToInt(Op1FilterParam), Op1FilterFlip);
-            
+
             var op1Func1 = new OpFunc(_ => Mathf.Lerp(0, Op1Parameter1, (float)_random.NextDouble()));
             var op1Func2 = new OpFunc(_ => Mathf.Lerp(0, Op1Parameter2, (float)_random.NextDouble()));
 
@@ -79,7 +79,7 @@ public class TestBase : MonoBehaviour
         }
         if (MergeThreshold > 0) poly.MergeCoplanarFaces(MergeThreshold);
         for (int i2 = 0; i2 < Op2Iterations; i2++)
-        {   
+        {
             var op2Filter = Filter.GetFilter(Op2FilterType, Op2FilterParam, Mathf.FloorToInt(Op2FilterParam), Op2FilterFlip);
             poly = poly.AppyOperation(op2, new OpParams(Op2Parameter1, Op2Parameter2, filter: op2Filter));
         }
@@ -123,16 +123,16 @@ public class TestBase : MonoBehaviour
     {}
 
     public virtual void Go(){}
-    
+
     private void OnValidate()
     {
         Go();
     }
-    
+
     private void OnDrawGizmos()
     {
         if (poly==null) return;
-        
+
         if (debugFaces)
         {
             for (var f = 0; f < poly.Faces.Count; f++)
@@ -161,7 +161,7 @@ public class TestBase : MonoBehaviour
                 Vector3 pos = transform.TransformPoint(vert);
                 Gizmos.color = Color.red;
                 Gizmos.DrawWireSphere(pos, .025f);
-                Handles.Label(pos + new Vector3(0, 0.03f, 0), i.ToString());
+                Handles.Label(pos + new Vector3(0, 0.1f, 0), i.ToString());
             }
         }
     }
