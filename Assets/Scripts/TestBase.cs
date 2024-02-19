@@ -44,7 +44,6 @@ public class TestBase : MonoBehaviour
 
     public void Build(ColorMethods colorMethod = ColorMethods.ByRole)
     {
-        var debugVerts = poly.DebugVerts?.ToList();
         var _random = new Random();
         for (int i1 = 0; i1 < Op1Iterations; i1++)
         {
@@ -86,7 +85,6 @@ public class TestBase : MonoBehaviour
         }
 
         ModifyPostOp();
-        // debugVerts = poly.Vertices.Select(v => v.Position).ToList();
 
         if (SpherizeAmount > 0) poly.Spherize(new OpParams(SpherizeAmount));
         if (FastConicalize)
@@ -110,10 +108,7 @@ public class TestBase : MonoBehaviour
 
         var meshData = poly.BuildMeshData(colorMethod: colorMethod);
         var mesh = poly.BuildUnityMesh(meshData);
-        if (poly.DebugVerts == null) poly.DebugVerts = new List<Vector3>();
-        if (debugVerts != null) poly.DebugVerts.AddRange(debugVerts);
-        debugVerts = poly.Vertices.Select(v => v.Position).ToList();
-        poly.DebugVerts = debugVerts;
+
         if (Application.isPlaying)
         {
             gameObject.GetComponent<MeshFilter>().mesh = mesh;
@@ -136,7 +131,8 @@ public class TestBase : MonoBehaviour
     
     private void OnDrawGizmos()
     {
-        if (poly==null || poly.DebugVerts == null) return;
+        if (poly==null) return;
+        
         if (debugFaces)
         {
             for (var f = 0; f < poly.Faces.Count; f++)
@@ -157,7 +153,7 @@ public class TestBase : MonoBehaviour
             }
         }
 
-        if (debugVerts)
+        if (debugVerts && poly.DebugVerts != null)
         {
             for (int i = 0; i < poly.DebugVerts.Count; i++)
             {

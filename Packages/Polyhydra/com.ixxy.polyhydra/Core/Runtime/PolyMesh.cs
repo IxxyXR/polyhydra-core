@@ -164,17 +164,18 @@ namespace Polyhydra.Core
             InitTags();
         }
 
-        public PolyMesh(
-            IEnumerable<Vector2> verts
-        ) : this()
+        public PolyMesh(IEnumerable<Vector3> verts) : this()
         {
             var faceIndices = new List<IEnumerable<int>>{Enumerable.Range(0, verts.Count())};
-            FaceRoles = Enumerable.Repeat(Roles.New, faceIndices.Count()).ToList();
+            FaceRoles = Enumerable.Repeat(Roles.New, faceIndices.Count).ToList();
             FaceTags = Enumerable.Repeat(new HashSet<string>(), faceIndices.Count()).ToList();
             VertexRoles = Enumerable.Repeat(Roles.New, verts.Count()).ToList();
-            InitIndexed(verts.Select(v => new Vector3(v.x, 0, v.y)), faceIndices);
+            InitIndexed(verts, faceIndices);
             CullUnusedVertices();
         }
+
+        public PolyMesh(IEnumerable<Vector2> verts) : this(verts.Select(v => new Vector3(v.x, 0, v.y)))
+        { }
 
         public PolyMesh(
             IEnumerable<Vector3> verts,
@@ -361,7 +362,7 @@ namespace Polyhydra.Core
 
                 if (op==Operation.Canonicalize)
                 {
-                    poly.Canonicalize(tokens[i].Item2, tokens[i].Item2);
+                    poly.Canonicalize((int)tokens[i].Item2, (int)tokens[i].Item2);
                 }
                 else
                 {
@@ -454,8 +455,11 @@ namespace Polyhydra.Core
                     break;
                 case SeedShape.Grid:
                     var typeString = paramInt.ToString();
-                    var gridType = gridTypeMap[typeString];
-                    poly = Grids.Build(gridType, GridEnums.GridShapes.Plane, 5, 5);
+                    GridEnums.GridTypes gridType;
+                    if (Enum.TryParse(typeString, out gridType))
+                    {
+                        poly = Grids.Build(gridType, GridEnums.GridShapes.Plane, 5, 5);
+                    }
                     break;
             }
 
@@ -666,6 +670,8 @@ namespace Polyhydra.Core
 
         public void InitOctree()
         {
+            // TODO Should we ignore non-boundary vertices?
+            // When would we ever weld those?
             octree = new PointOctree<Vertex>(1, Vector3.zero, 1);
             for (var i = 0; i < Vertices.Count; i++)
             {
@@ -1681,8 +1687,8 @@ namespace Polyhydra.Core
                         // TODO - iterations or tolerance?
                         // Mathf.FloorToInt(p.OriginalParamA),
                         // Mathf.FloorToInt(p.OriginalParamB)
-                        p.OriginalParamA,
-                        p.OriginalParamB
+                        (int)p.OriginalParamA,
+                        (int)p.OriginalParamB
                     );
                     break;
                 case Operation.Relax:
