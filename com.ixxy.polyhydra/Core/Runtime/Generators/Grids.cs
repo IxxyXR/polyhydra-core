@@ -16,7 +16,7 @@ namespace Polyhydra.Core
 			Sphere,
 			Polar,
 		}
-        
+
 		public enum GridTypes
 		{
 			// Regular
@@ -72,7 +72,7 @@ namespace Polyhydra.Core
 			TriTriSquare1 = 32, // 3.3.3.3.3.3;3.3.3.4.4: A
 			TriTriSquare2 = 33, // 3.3.3.3.3.3;3.3.3.4.4: B
 		}
-		
+
 	}
 
 	public static class Grids
@@ -182,7 +182,7 @@ namespace Polyhydra.Core
 	        foreach (var line in lines.Skip(3))
 	        {
 		        parts = line.Trim().Split(' ');
-		        if (line == "" || parts.Length < 1)
+		        if (string.IsNullOrEmpty(line) || parts.Length < 1)
 		        {
 			        continue;
 		        }
@@ -774,15 +774,133 @@ namespace Polyhydra.Core
 			        break;
 
 		        case GridEnums.GridTypes.TriakisTriangular:
+			        tile = Shapes.Polygon(6);
+			        tile = tile.Stake(new OpParams(1f / 3));
+			        tile = tile.SplitFaces(new OpParams(0));
+			        xOffset = tile.Vertices[4].Position - tile.Vertices[2].Position;
+			        yOffset = tile.Vertices[3].Position - tile.Vertices[1].Position;
+			        roleSet = new List<List<List<Roles>>>
+			        {
+				        new()
+				        {
+					        new()
+					        {
+						        Roles.Existing,
+						        Roles.ExistingAlt,
+						        Roles.New,
+						        Roles.Existing,
+						        Roles.ExistingAlt,
+						        Roles.New,
+						        Roles.Existing,
+						        Roles.ExistingAlt,
+						        Roles.New,
+						        Roles.Existing,
+						        Roles.ExistingAlt,
+						        Roles.New,
+						        Roles.Existing,
+						        Roles.ExistingAlt,
+						        Roles.New,
+						        Roles.Existing,
+						        Roles.ExistingAlt,
+						        Roles.New,
+					        }
+				        }
+			        };
+
 			        break;
 
 		        case GridEnums.GridTypes.DeltoidalTrihexagonal:
+			        tile = Shapes.Polygon(6);
+			        tile = tile.Ortho(new OpParams(0));
+			        xOffset = tile.Vertices[4].Position - tile.Vertices[12].Position;
+			        yOffset = tile.Vertices[4].Position - tile.Vertices[8].Position;
+			        roleSet = new List<List<List<Roles>>>
+			        {
+				        new()
+				        {
+					        new()
+					        {
+						        Roles.Existing,
+						        Roles.ExistingAlt,
+						        Roles.Existing,
+						        Roles.ExistingAlt,
+						        Roles.Existing,
+						        Roles.ExistingAlt
+					        }
+				        }
+			        };
 			        break;
 
 		        case GridEnums.GridTypes.Kisrhombille:
+			        tile = Shapes.Polygon(6);
+			        tile = tile.Meta(new OpParams(0));
+			        xOffset = tile.Vertices[5].Position - tile.Vertices[1].Position;
+			        yOffset = tile.Vertices[3].Position - tile.Vertices[1].Position;
+			        roleSet = new List<List<List<Roles>>>
+			        {
+				        new()
+				        {
+					        new()
+					        {
+						        Roles.Existing,
+						        Roles.ExistingAlt,
+						        Roles.Existing,
+						        Roles.ExistingAlt,
+						        Roles.Existing,
+						        Roles.ExistingAlt,
+						        Roles.Existing,
+						        Roles.ExistingAlt,
+						        Roles.Existing,
+						        Roles.ExistingAlt,
+						        Roles.Existing,
+						        Roles.ExistingAlt
+					        }
+				        }
+			        };
 			        break;
 
+
 		        case GridEnums.GridTypes.FloretPentagonal:
+			        var floret  = Shapes.Polygon(6);
+			        floret.ExtendFace(0, 4, 3);
+			        var verts = floret.Vertices.Select(v => v.Position).ToList();
+			        verts = new List<Vector3>
+			        {
+				        verts[0],
+				        verts[1],
+				        verts[2],
+				        verts[6],
+				        verts[5],
+			        };
+			        floret = Shapes.Polygon(5);
+			        floret.SetVertexPositions(verts.ToList());
+			        floret.Transform(new Vector3(0, 0, -floret.Vertices[3].Position.z / 2), scale: Vector3.one / 2);
+
+			        tile = floret.Duplicate();
+			        for (int i = 1; i < 6; i++)
+			        {
+				        floret.Transform(Vector3.zero, new Vector3(0, 60, 0));
+				        tile.Append(floret);
+			        }
+
+			        xOffset = tile.Vertices[25].Position - tile.Vertices[5].Position;
+			        yOffset = tile.Vertices[0].Position - tile.Vertices[20].Position;
+
+			        roleSet = new List<List<List<Roles>>>
+			        {
+				        new()
+				        {
+					        new()
+					        {
+						        Roles.Existing,
+						        Roles.ExistingAlt,
+						        Roles.Existing,
+						        Roles.ExistingAlt,
+						        Roles.Existing,
+						        Roles.ExistingAlt
+					        }
+				        }
+			        };
 			        break;
 
 		        case GridEnums.GridTypes.PrismaticPentagonal:
@@ -800,7 +918,6 @@ namespace Polyhydra.Core
 			        tile.Append(new PolyMesh(points.Select(p => new Vector3(p.x, 0, -p.z))));
 			        xOffset = tile.Vertices[0].Position - tile.Vertices[1].Position;
 			        yOffset = tile.Vertices[8].Position - tile.Vertices[2].Position;
-			        tile.DebugVerts = tile.Vertices.Select(v => v.Position).ToList();
 			        roleSet = new List<List<List<Roles>>>
 			        {
 				        new()
@@ -905,7 +1022,6 @@ namespace Polyhydra.Core
 			        format = @"6 0 0
 12 17
 15 10
-
 0 0 4 1
 0 1 4 1
 0 2 4 1
@@ -1239,7 +1355,7 @@ namespace Polyhydra.Core
 
         public static PolyMesh ShapeWrap(PolyMesh grid, GridEnums.GridShapes gridShape, float heightScale, float maxHeight)
 		{
-		
+
 			// Cylinder
 			for (var i = 0; i < grid.Vertices.Count; i++)
 			{
@@ -1254,7 +1370,7 @@ namespace Polyhydra.Core
 			}
 			// Weld cylinder edges.
 			// Other shapes might not work with welding tips etc
-			grid = grid.Weld(0.01f);  
+			grid = grid.Weld(0.01f);
 
 			// Change cylinder profile for cone etc
 			if (gridShape != GridEnums.GridShapes.Plane)
@@ -1299,7 +1415,7 @@ namespace Polyhydra.Core
             return grid;
 		}
     }
-    
 
-    
+
+
 }
