@@ -170,10 +170,10 @@ public static class RadialSolids
         poly.Recenter();
         return poly.Kanonicalize(16); // TODO figure out the minimum iterations
     }
-    
+
     public static PolyMesh Antiprism(int sides, float height)
     {
-    
+
         return _MakePrism(sides, height, true);
     }
 
@@ -312,7 +312,7 @@ public static class RadialSolids
         return poly;
     }
 
-    public static PolyMesh 
+    public static PolyMesh
     GyroelongatedPyramid(int sides)
     {
         return GyroelongatedPyramid(sides, _CalcAntiprismHeight(sides), _CalcPyramidHeight(sides));
@@ -419,10 +419,10 @@ public static class RadialSolids
         PolyMesh poly = Antiprism(sides * 2, height);
         Face topFace = poly.Faces[1];
         PolyMesh cap1 = Shapes.Polygon(
-            sides, 
-            false, 
-            0f, 
-            height + capHeight, 
+            sides,
+            false,
+            0f,
+            height + capHeight,
             _CalcCupolaCapRadius(sides)
         );
         poly.Append(cap1);
@@ -651,6 +651,7 @@ public static class RadialSolids
             RadialPolyType.ElongatedOrthoBicupola => ElongatedBicupola(sides, height, capHeight, false),
             RadialPolyType.ElongatedGyroBicupola => ElongatedBicupola(sides, height, capHeight, true),
             RadialPolyType.GyroelongatedBicupola => GyroelongatedBicupola(sides, height, capHeight, true),
+            RadialPolyType.Trapezohedron => Trapezohedron(sides),
             _ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
         };
         return poly;

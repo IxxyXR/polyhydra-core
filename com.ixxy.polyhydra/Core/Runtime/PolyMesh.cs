@@ -1235,6 +1235,7 @@ namespace Polyhydra.Core
             Identity = 0,
             Kis = 1,
             Ambo = 2,
+            Girih = 110,
             Zip = 3,
             Expand = 4,
             Bevel = 5,
@@ -1336,6 +1337,7 @@ namespace Polyhydra.Core
             // ExtendBoundaries = 61,
             // ConnectFaces = 80,
             // FaceMerge = 62,
+            MergeCoplanar = 111,
             Weld = 63,
             ConvexHull = 68,
 
@@ -1393,6 +1395,9 @@ namespace Polyhydra.Core
                     break;
                 case Operation.Ambo:
                     polyMesh = polyMesh.Ambo();
+                    break;
+                case Operation.Girih:
+                    polyMesh = polyMesh.Girih(p);
                     break;
                 case Operation.Zip:
                     polyMesh = polyMesh.Zip(p);
@@ -1537,7 +1542,7 @@ namespace Polyhydra.Core
                     polyMesh.Recenter();
                     break;
                 case Operation.SitLevel:
-                    polyMesh.SitLevel();
+                    polyMesh.SitLevel(p.OriginalParamA);
                     break;
 
                 // Face Transforms
@@ -1649,6 +1654,9 @@ namespace Polyhydra.Core
                 // case Operation.FaceMerge:
                 //     polyMesh = polyMesh.FaceMerge(p);
                 //     break;
+                case Operation.MergeCoplanar:
+                    polyMesh.MergeCoplanarFaces(p.OriginalParamA);
+                    break;
                 case Operation.Weld:
                     polyMesh = polyMesh.Weld(p.OriginalParamA);
                     break;
