@@ -1,0 +1,57 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5bf388923ca042dbaaa277a440745831, type: 3}
+  m_Name: GridSettings 17
+  m_EditorClassIdentifier: 
+  Operators:
+  - Active: 1
+    OpType: 110
+    Parameter1: -1
+    Parameter2: 0
+    Iterations: 1
+    Parameter1Randomize: 0
+    Parameter2Randomize: 0
+    FilterType: 0
+    FilterParam: 0
+    FilterFlip: 0
+  - Active: 1
+    OpType: 8
+    Parameter1: 0
+    Parameter2: 0
+    Iterations: 1
+    Parameter1Randomize: 0
+    Parameter2Randomize: 0
+    FilterType: 0
+    FilterParam: 0
+    FilterFlip: 0
+  - Active: 1
+    OpType: 96
+    Parameter1: 0.5
+    Parameter2: 0
+    Iterations: 1
+    Parameter1Randomize: 0
+    Parameter2Randomize: 0
+    FilterType: 0
+    FilterParam: 0
+    FilterFlip: 0
+  SpherizeAmount: 0
+  FastConicalize: 1
+  CanonicalizeIterations: 0
+  PlanarizeIterations: 0
+  FaceScale: 1
+  FaceExtrude: 0
+  FaceInset: 0.01
+  type: 10
+  shape: 0
+  X: 6
+  Y: 6
+  Faces: 

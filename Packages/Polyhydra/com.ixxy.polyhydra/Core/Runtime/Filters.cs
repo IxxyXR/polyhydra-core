@@ -29,11 +29,17 @@ namespace Polyhydra.Core
         LastN,
         Random,
 
-        // Edges
+        // Boundary
         Inner,
+
+        // Angles
         MinimumAngle,
         AverageAngle,
         MaximumAngle,
+        MinimumEdgeAngle,
+        AverageEdgeAngle,
+        MaximumEdgeAngle,
+
 
         // Distance or position
         PositionX,
@@ -45,11 +51,11 @@ namespace Polyhydra.Core
     public class Filter
     {
         public static Filter All = new (
-            p => true, 
+            p => true,
             p => true
         );
-        public static Filter None = new (            
-            p => false, 
+        public static Filter None = new (
+            p => false,
             p => false
         );
         public static Filter Outer = new (
@@ -98,6 +104,9 @@ namespace Polyhydra.Core
                 FilterTypes.MinimumAngle => MinimumAngle(filterParamFloat, filterNot),
                 FilterTypes.AverageAngle => AverageAngle(filterParamFloat, filterNot),
                 FilterTypes.MaximumAngle => MaximumAngle(filterParamFloat, filterNot),
+                FilterTypes.MinimumEdgeAngle => MinimumEdgeAngle(filterParamFloat, filterNot),
+                FilterTypes.AverageEdgeAngle => AverageEdgeAngle(filterParamFloat, filterNot),
+                FilterTypes.MaximumEdgeAngle => MaximumEdgeAngle(filterParamFloat, filterNot),
                 FilterTypes.EvenSided => filterNot ? EvenSided : OddSided,
                 FilterTypes.EveryNth => EveryNth(filterParamInt, filterNot),
                 FilterTypes.FirstN => Range(filterParamInt, filterNot),
@@ -242,6 +251,55 @@ namespace Polyhydra.Core
                     var vert = p.poly.Vertices[p.index];
                     var edges = vert.Halfedges;
                     float angle = edges.Select(e => e.DihedralAngle).Sum() / edges.Count;
+                    bool result = angle < inputAngle;
+                    return not ? !result : result;
+                }
+            );
+        }
+
+        public static Filter AverageEdgeAngle(float inputAngle, bool not = false)
+        {
+            return _CompareEdgeAngle(inputAngle, not, 0);
+        }
+
+        public static Filter MinimumEdgeAngle(float inputAngle, bool not = false)
+        {
+            return _CompareEdgeAngle(inputAngle, not, -1);
+        }
+
+        public static Filter MaximumEdgeAngle(float inputAngle, bool not = false)
+        {
+            return _CompareEdgeAngle(inputAngle, not, 1);
+        }
+
+        private static Filter _CompareEdgeAngle(float inputAngle, bool not = false, int minMaxAvg = 0)
+        {
+            return new Filter(
+                p =>
+                {
+                    var face = p.poly.Faces[p.index];
+                    var edges = face.GetHalfedges();
+                    float angle = minMaxAvg switch
+                    {
+                        -1 => edges.Select(e => e.Angle).Min(),
+                        0 => edges.Select(e => e.Angle).Sum() / edges.Count,
+                        1 => edges.Select(e => e.Angle).Max(),
+                        _ => throw new ArgumentOutOfRangeException(nameof(minMaxAvg), minMaxAvg, null)
+                    };
+                    bool result = angle < inputAngle;
+                    return not ? !result : result;
+                },
+                p =>
+                {
+                    var vert = p.poly.Vertices[p.index];
+                    var edges = vert.Halfedges;
+                    float angle = minMaxAvg switch
+                    {
+                        -1 => edges.Select(e => e.Angle).Min(),
+                        0 => edges.Select(e => e.Angle).Sum() / edges.Count,
+                        1 => edges.Select(e => e.Angle).Max(),
+                        _ => throw new ArgumentOutOfRangeException(nameof(minMaxAvg), minMaxAvg, null)
+                    };
                     bool result = angle < inputAngle;
                     return not ? !result : result;
                 }

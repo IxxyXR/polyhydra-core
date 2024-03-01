@@ -29,8 +29,8 @@ namespace Polyhydra.Core
         {
             return type switch
             {
-                ShapeTypes.Polygon => Polygon(Mathf.FloorToInt(a)),
-                ShapeTypes.Star => Polygon(Mathf.FloorToInt(a * 2), stellate: b),
+                ShapeTypes.Polygon => Polygon(Mathf.FloorToInt(Mathf.Max(a, 3))),
+                ShapeTypes.Star => Polygon(Mathf.FloorToInt(Mathf.Max(a * 2, 3)), stellate: b),
                 ShapeTypes.C_Shape => C_Shape(a, b, c, method),
                 ShapeTypes.L_Shape => L_Shape(a, b, c, method),
                 ShapeTypes.H_Shape => H_Shape(a, b, c, method),

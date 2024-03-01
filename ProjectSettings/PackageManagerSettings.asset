@@ -34,7 +34,6 @@ MonoBehaviour:
     - com.nomnom.new-package-helper
     - com.openupm
     - com.syomus.proceduraltoolkit
-    - jillejr.newtonsoft.json-for-unity
     m_IsDefault: 0
     m_Capabilities: 0
     m_ConfigSource: 4

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using GK;
 using ProceduralToolkit;
 using ProceduralToolkit.ClipperLib;
@@ -583,7 +584,7 @@ namespace Polyhydra.Core
             // poly.Weld(0.01f);
             return poly;
         }
-        
+
         public PolyMesh TessellateWithDepth(OpParams o)
         {
             var vertexPoints = new List<Vector3>();
@@ -602,7 +603,7 @@ namespace Polyhydra.Core
                 }
             }
             tessellator.Tessellate(polySize: sides, elementType: ElementType.BoundaryContours);
-            
+
             int startingIndex = vertexPoints.Count;
             vertexPoints.AddRange(tessellator.vertices.Select(v => new Vector3(v.Position.X, v.Position.Y, v.Position.Z)));
             // Split into faces of n sides
@@ -1848,22 +1849,30 @@ namespace Polyhydra.Core
         public void Append(PolyMesh other, Matrix4x4 matrix)
         {
             if (other == null) return;
-            PolyMesh dup = other.Duplicate(matrix);
 
-            Vertices.AddRange(dup.Vertices);
-            for (var i = 0; i < dup.Halfedges.Count; i++)
+            int originalVertexCount = Vertices.Count;
+            Vertices.AddRange(other.Vertices);
+            if (matrix != Matrix4x4.identity)
             {
-                Halfedges.Add(dup.Halfedges[i]);
+                for (int i = originalVertexCount; i < originalVertexCount + other.Vertices.Count; i++)
+                {
+                    Vertices[i].Position = matrix.MultiplyPoint(Vertices[i].Position);
+                }
             }
 
-            for (var i = 0; i < dup.Faces.Count; i++)
+            for (var i = 0; i < other.Halfedges.Count; i++)
             {
-                Faces.Add(dup.Faces[i]);
+                Halfedges.Add(other.Halfedges[i]);
             }
 
-            FaceRoles.AddRange(dup.FaceRoles);
-            VertexRoles.AddRange(dup.VertexRoles);
-            FaceTags?.AddRange(dup.FaceTags);
+            for (var i = 0; i < other.Faces.Count; i++)
+            {
+                Faces.Add(other.Faces[i]);
+            }
+
+            FaceRoles.AddRange(other.FaceRoles);
+            VertexRoles.AddRange(other.VertexRoles);
+            FaceTags?.AddRange(other.FaceTags);
         }
 
         public PolyMesh Duplicate()
@@ -2997,10 +3006,11 @@ namespace Polyhydra.Core
         // }
 
         // Attempt to collapse all edges that are between faces with s1 sides and faces with s2 sides
-        public void CollapseEdges(int s1, int s2, bool either = true)
+        public PolyMesh CollapseEdges(int s1, int s2, bool either = true)
         {
+            var poly = Duplicate();
             var edgesToCollapse = new List<Halfedge>();
-            foreach (var edge in Halfedges)
+            foreach (var edge in poly.Halfedges)
             {
                 if (edge.Face == null || edge.Pair == null || edge.Pair.Face == null) continue;
                 if (
@@ -3011,29 +3021,43 @@ namespace Polyhydra.Core
                     edgesToCollapse.Add(edge);
                 }
             }
-            CollapseEdges(edgesToCollapse);
+            bool needsWeld = poly.CollapseEdges(edgesToCollapse);
+            if (needsWeld)
+            {
+                poly = poly.Weld(0.01f);
+            }
+            return poly;
         }
 
-        private void CollapseEdges(List<Halfedge> edgesToCollapse)
+        private bool CollapseEdges(List<Halfedge> edgesToCollapse)
         {
+            var needsWeld = false;
             foreach (var edge in edgesToCollapse)
             {
-                CollapseEdge(edge);
+                needsWeld |= CollapseEdge(edge);
             }
+            return needsWeld;
         }
 
-        public Face CollapseEdge(Halfedge edge)
+        public bool CollapseEdge(Halfedge edge)
         {
-            if (edge.Pair == null) return null;
-            var edgePair = edge.Pair;
+            if (edge.Pair == null) return false;
 
             var face1 = edge.Face;
             var face1firstEdge = edge;
             var face2firstEdge = face1firstEdge.Pair;
             var face2 = face2firstEdge.Face;
 
+            bool needsWeld = false;
+
             var hole1Verts = face1.GetHalfedges().Select(e=>e.Vertex).ToList();
-            FaceRoles.RemoveAt(Faces.IndexOf(face1));
+            var faceIndex = Faces.IndexOf(face1);
+            if (faceIndex < 0)
+            {
+                Debug.Log("Failed. Face not found");
+                return false;
+            }
+            FaceRoles.RemoveAt(faceIndex);
             Faces.Remove(face1);
             var hole2Verts = face2.GetHalfedges().Select(e=>e.Vertex).ToList();
             FaceRoles.RemoveAt(Faces.IndexOf(face2));
@@ -3050,19 +3074,28 @@ namespace Polyhydra.Core
                 success = Faces.Add(newFaceVerts);
                 if (!success)
                 {
-                    //     newFaceVerts.Reverse();
-                    Debug.LogError($"Failed to add new face with {newFaceVerts.Count} verts");
+                    needsWeld = true;
+                    var duplicateVertices = new List<Vertex>();
+                    foreach (var vert in newFaceVerts)
+                    {
+                        var duplicateVertex = new Vertex(vert.Position);
+                        duplicateVertices.Add(duplicateVertex);
+                        Vertices.Add(duplicateVertex);
+                    }
+                    success = Faces.Add(duplicateVertices);
+                    if (!success)
+                    {
+                        Debug.LogError($"Failed to add new face with {newFaceVerts.Count} verts");
+                    }
                 }
             }
 
             if (success)
             {
-                newFace = Faces.Last();
                 FaceRoles.Add(Roles.ExistingAlt); // Not really the right role but works visually.
                 Halfedges.MatchPairs();
             }
-
-            return newFace;
+            return needsWeld;
         }
 
         private static List<Vertex> _FillHole(Halfedge edge, List<Vertex> hole1Verts, List<Vertex> hole2Verts)

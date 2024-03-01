@@ -8,7 +8,7 @@ namespace Polyhydra.Core
 {
     public partial class PolyMesh
     {
-        
+
         public PolyMesh Dual()
         {
             var newFaceTags = new List<HashSet<string>>();
@@ -213,7 +213,7 @@ namespace Polyhydra.Core
         /// Conway's ambo operator
         /// </summary>
         /// <returns>the ambo as a new mesh</returns>
-        public PolyMesh Ambo()
+        public PolyMesh AlternatingAmbo()
         {
             var newFaceTags = new List<HashSet<string>>();
 
@@ -284,7 +284,171 @@ namespace Polyhydra.Core
 
             return new PolyMesh(vertexPoints, faceIndices, faceRoles, vertexRoles, newFaceTags);
         }
-        
+
+                public PolyMesh Ambo()
+        {
+            var newFaceTags = new List<HashSet<string>>();
+
+            var faceRoles = new List<Roles>();
+            var vertexRoles = new List<Roles>();
+
+            // Create points at midpoint of unique halfedges (edges to vertices) and create lookup table
+            var vertexPoints = new List<Vector3>(); // vertices as points
+            var hlookup = new Dictionary<(Guid, Guid)?, int>();
+            int count = 0;
+
+            foreach (var edge in Halfedges)
+            {
+                // if halfedge's pair is already in the table, give it the same index
+                if (edge.Pair != null && hlookup.ContainsKey(edge.Pair.Name))
+                {
+                    hlookup.Add(edge.Name, hlookup[edge.Pair.Name]);
+                }
+                else
+                {
+                    // otherwise create a new vertex and increment the index
+                    hlookup.Add(edge.Name, count++);
+                    vertexPoints.Add(edge.Midpoint);
+                    vertexRoles.Add(Roles.New);
+                }
+            }
+
+            var faceIndices = new List<IEnumerable<int>>(); // faces as vertex indices
+            // faces to faces
+            for (var faceIndex = 0; faceIndex < Faces.Count; faceIndex++)
+            {
+                var prevFaceTagSet = FaceTags[faceIndex];
+                var face = Faces[faceIndex];
+                faceIndices.Add(face.GetHalfedges().Select(edge => hlookup[edge.Name]));
+                faceRoles.Add(Roles.Existing);
+                newFaceTags.Add(new HashSet<string>(prevFaceTagSet));
+            }
+
+            // vertices to faces
+            for (var vertIndex = 0; vertIndex < Vertices.Count; vertIndex++)
+            {
+                var vertex = Vertices[vertIndex];
+                var halfedges = vertex.Halfedges;
+                if (halfedges.Count == 0) continue; // no halfedges (naked vertex, ignore)
+                var newHalfedges = halfedges.Select(edge => hlookup[edge.Name]); // halfedge indices for vertex-loop
+                if (halfedges[0].Next.Pair == null)
+                {
+                    // Handle boundary vertex, add itself and missing boundary halfedge
+                    newHalfedges = newHalfedges.Concat(new[] {vertexPoints.Count, hlookup[halfedges[0].Next.Name]});
+                    vertexPoints.Add(vertex.Position);
+                    vertexRoles.Add(Roles.NewAlt);
+                }
+
+                if (newHalfedges.Count() >= 3)
+                {
+                    faceIndices.Add(newHalfedges);
+                    faceRoles.Add(Roles.New);
+                    var vertexFaceIndices = vertex.GetVertexFaces().Select(f => Faces.IndexOf(f)).Where(x=>x!=-1);  // No idea why IndexOf is failing to match
+                    var existingTagSets = vertexFaceIndices.Select(fi => FaceTags[fi]);
+                    var newFaceTagSet = existingTagSets.Aggregate(new HashSet<string>(), (rs, i) =>
+                    {
+                        rs.UnionWith(i);
+                        return rs;
+                    });
+                    newFaceTags.Add(newFaceTagSet);
+                }
+            }
+
+            return new PolyMesh(vertexPoints, faceIndices, faceRoles, vertexRoles, newFaceTags);
+        }
+
+        public PolyMesh Girih(OpParams o)
+        {
+            var newFaceTags = new List<HashSet<string>>();
+
+            var faceRoles = new List<Roles>();
+            var vertexRoles = new List<Roles>();
+
+            // Create points at midpoint of unique halfedges (edges to vertices) and create lookup table
+            var edgeVertexPoints = new List<Vector3>(); // vertices as points
+            var midpointVertexPoints = new List<Vector3>(); // vertices as points
+            var edgeIndices = new Dictionary<(Guid, Guid)?, int>();
+            var midpointIndices = new Dictionary<(Guid, Guid)?, int>();
+            int count = 0;
+
+            foreach (var edge in Halfedges)
+            {
+                // if halfedge's pair is already in the table, give it the same index
+                if (edge.Pair != null && edgeIndices.ContainsKey(edge.Pair.Name))
+                {
+                    edgeIndices.Add(edge.Name, edgeIndices[edge.Pair.Name]);
+                }
+                else
+                {
+                    // otherwise create a new vertex and increment the index
+                    edgeIndices.Add(edge.Name, count++);
+                    edgeVertexPoints.Add(edge.Midpoint);
+                    vertexRoles.Add(Roles.New);
+                }
+            }
+
+            for (var i = 0; i < Halfedges.Count; i++)
+            {
+                var edge = Halfedges[i];
+                float param1 = o.GetValueA(this, Faces.IndexOf(edge.Face));
+
+                midpointIndices.Add(edge.Name, edgeVertexPoints.Count + i);
+                var pos = Vector3.Lerp(edge.Midpoint, edge.Next.Midpoint, 0.5f);
+                midpointVertexPoints.Add(Vector3.LerpUnclamped(pos, edge.Vertex.Position, param1));
+                vertexRoles.Add(Roles.New);
+            }
+
+            var faceIndices = new List<IEnumerable<int>>(); // faces as vertex indices
+            // faces to faces
+            for (var faceIndex = 0; faceIndex < Faces.Count; faceIndex++)
+            {
+                var prevFaceTagSet = FaceTags[faceIndex];
+                var face = Faces[faceIndex];
+                var thisFaceIndices = face.GetHalfedges().Select(edge => edgeIndices[edge.Name]);
+                var thisMidpointIndices = face.GetHalfedges().Select(edge => midpointIndices[edge.Name]);
+                faceIndices.Add(thisFaceIndices.Zip(thisMidpointIndices, (a, b) => new[] { a, b })
+                    .SelectMany(pair => pair).ToList());
+                faceRoles.Add(Roles.Existing);
+                newFaceTags.Add(new HashSet<string>(prevFaceTagSet));
+            }
+
+            // vertices to faces
+            for (var vertIndex = 0; vertIndex < Vertices.Count; vertIndex++)
+            {
+                var vertex = Vertices[vertIndex];
+                var halfedges = vertex.Halfedges;
+                if (halfedges.Count == 0) continue; // no halfedges (naked vertex, ignore)
+                var edgeHalfedges = halfedges.Select(edge => edgeIndices[edge.Name]);
+                var midpointHalfedges = halfedges.Select(edge => midpointIndices[edge.Name]);
+            // if (halfedges[0].Next.Pair == null)
+            // {
+            //     // Handle boundary vertex, add itself and missing boundary halfedge
+            //     edgeHalfedges = edgeHalfedges.Concat(new[]
+            //         { edgeVertexPoints.Count, edgeIndices[halfedges[0].Next.Name] });
+            //     edgeVertexPoints.Add(vertex.Position);
+            //     vertexRoles.Add(Roles.NewAlt);
+            // }
+
+                if (edgeHalfedges.Count() >= 3)
+                {
+                    var newHalfEdges = midpointHalfedges.Zip(edgeHalfedges, (a, b) => new[] { a, b }).SelectMany(pair => pair).ToList();
+                    faceIndices.Add(newHalfEdges);
+                    faceRoles.Add(Roles.New);
+                    var vertexFaceIndices = vertex.GetVertexFaces().Select(f => Faces.IndexOf(f)).Where(x=>x!=-1);  // No idea why IndexOf is failing to match
+                    var existingTagSets = vertexFaceIndices.Select(fi => FaceTags[fi]);
+                    var newFaceTagSet = existingTagSets.Aggregate(new HashSet<string>(), (rs, i) =>
+                    {
+                        rs.UnionWith(i);
+                        return rs;
+                    });
+                    newFaceTags.Add(newFaceTagSet);
+                }
+            }
+
+            return new PolyMesh(edgeVertexPoints.Concat(midpointVertexPoints), faceIndices, faceRoles, vertexRoles, newFaceTags);
+        }
+
+
         public PolyMesh Truncate(OpParams o)
         {
             int GetVertID(Vertex v)
@@ -550,23 +714,23 @@ namespace Polyhydra.Core
             {
                 Vector3 pos;
                 float count = 0;
-                        
+
                 pos = e.Midpoint;
                 count++;
-                        
+
                 pos += e.Face.Centroid;
                 count++;
-                        
+
                 if (e.Pair != null)
                 {
                     pos += e.Pair.Face.Centroid;
                     count++;
                 }
-                        
+
                 pos /= count;
                 return pos;
             }
-            
+
             var newFaceTags = new List<HashSet<string>>();
 
             var existingVerts = new Dictionary<string, int>();
@@ -582,9 +746,9 @@ namespace Polyhydra.Core
             {
                 var prevFaceTagSet = FaceTags[faceIndex];
                 var oldFace = Faces[faceIndex];
-                
+
                 float param1 = o.GetValueA(this, faceIndex);
-                
+
                 Vector3 facePos;
                 if (catmullClarke)
                 {
@@ -596,7 +760,7 @@ namespace Polyhydra.Core
                     // Explicit offset
                     facePos = oldFace.Centroid + oldFace.Normal * param1;
                 }
-                
+
                 vertexPoints.Add(facePos);
                 vertexRoles.Add(Roles.New);
                 int centroidIndex = vertexPoints.Count - 1;
@@ -625,16 +789,16 @@ namespace Polyhydra.Core
                         if (catmullClarke)
                         {
                             // Catmull-Clarke style
-                            
+
                             var Q = Vector3.zero;
                             var sharedFaces = seedVertex.GetVertexFaces();
-                            
+
                             foreach (var face in sharedFaces)
                             {
                                 Q += face.Centroid;
                             }
                             Q /= (float)sharedFaces.Count;
-                            
+
                             var R = Vector3.zero;
                             var sharedEdges = seedVertex.Halfedges;
                             foreach (var edge in sharedEdges)
@@ -642,9 +806,9 @@ namespace Polyhydra.Core
                                 R += edge.Midpoint;
                             }
                             R /= sharedEdges.Count;
-                            
+
                             float n = sharedFaces.Count;
-                            
+
                             seedVertexPos = (Q + (R * 2) + (seedVertex.Position * (n - 3)))/n;
                             seedVertexPos = Vector3.LerpUnclamped(seedVertex.Position, seedVertexPos, param1);
                         }
@@ -660,7 +824,7 @@ namespace Polyhydra.Core
                     }
 
                     Vector3 edgePos;
-                    
+
                     if (catmullClarke)
                     {
                         edgePos = calcEdgePos(edges[j]);
@@ -956,7 +1120,7 @@ namespace Polyhydra.Core
 
             var faceRoles = new List<Roles>();
             var vertexRoles = new List<Roles>();
-            
+
             for (var i = 0; i < Vertices.Count; i++)
             {
                 vertexPoints.Add(Vertices[i].Position);
@@ -1289,7 +1453,7 @@ namespace Polyhydra.Core
             var poly = new PolyMesh(vertexPoints, faceIndices, faceRoles, vertexRoles, newFaceTags);
             return poly;
         }
-        
+
         public PolyMesh Subdivide(OpParams o)
         {
             var newFaceTags = new List<HashSet<string>>();
@@ -2232,7 +2396,7 @@ namespace Polyhydra.Core
 
                         int centroidIndex = newCentroidVertices[face.Name];
                         var prevFaceTagSet = prevFaceTagSets[face.Name];
-                        
+
                         // One quadrilateral face
                         int[] quad;
 
@@ -2799,7 +2963,7 @@ namespace Polyhydra.Core
                 var face = Faces[faceIndex];
                 var centroid = face.Centroid;
                 var edges = face.GetHalfedges();
-                
+
                 for (int j = 0; j < edges.Count; j++)
                 {
                     float amount = o.GetValueA(this, faceIndex);
@@ -2807,7 +2971,7 @@ namespace Polyhydra.Core
                     float offset = 0; // Sigh. Need more params
                     var edge = edges[j];
 
-                    
+
                     var offsetCentroid = offset > 0 ? centroid + (face.Normal * offset) : centroid;
                     var newVert = Vector3.LerpUnclamped(offsetCentroid, edge.Vertex.Position, amount);
                     vertexPoints.Add(newVert);
@@ -2854,7 +3018,7 @@ namespace Polyhydra.Core
                 {
                     var edge = edges[j];
 
-                    
+
                     List<int> innerFace;
                     if (edge.Pair == null)
                     {
@@ -2904,7 +3068,7 @@ namespace Polyhydra.Core
                             newEdgeVertices[edge.Next.Pair.Face.Name + edge.Next.Pair.Vertex.Name],
                         };
                     }
-                    
+
                     faceIndices.Add(vertexFace);
                     faceRoles.Add(Roles.NewAlt);
                     newFaceTags.Add(new HashSet<string>(prevFaceTagSet));
@@ -2944,7 +3108,7 @@ namespace Polyhydra.Core
             result = result.Kis(o);
             return result;
         }
-        
+
         public PolyMesh Gable(OpParams o, int edgeOffset=0)
         {
             var newFaceTags = new List<HashSet<string>>();
@@ -2989,7 +3153,7 @@ namespace Polyhydra.Core
                     vertexPoints.Add(oppositeNewVertPos);
                     vertexRoles.Add(Roles.New);
                     int oppositeVertIndex = vertexPoints.Count - 1;
-                    
+
                     faceIndices.Add(
                         new[]
                         {
@@ -3000,7 +3164,7 @@ namespace Polyhydra.Core
                     );
                     faceRoles.Add(Roles.NewAlt);
                     newFaceTags.Add(new HashSet<string>(prevFaceTagSet));
-                    
+
                     faceIndices.Add(
                         new[]
                         {
@@ -3023,7 +3187,7 @@ namespace Polyhydra.Core
                     faceIndices.Add(newFace1);
                     faceRoles.Add(Roles.New);
                     newFaceTags.Add(new HashSet<string>(prevFaceTagSet));
-                    
+
                     var newFace2 = new List<int>();
                     for (var edgeIndex = oppositeEdgeIndex; edgeIndex != initialEdgeIndex; edgeIndex=(edgeIndex+1)%edges.Count)
                     {
@@ -3085,7 +3249,7 @@ namespace Polyhydra.Core
                     faceIndices.Add(newFace1);
                     faceRoles.Add(Roles.New);
                     newFaceTags.Add(new HashSet<string>(prevFaceTagSet));
-                    
+
                     var newFace2 = new List<int>();
                     for (var edgeIndex = oppositeVertexIndex; edgeIndex != vertexOffset; edgeIndex=(edgeIndex+1)%face.Sides)
                     {
