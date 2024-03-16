@@ -5,21 +5,6 @@ using UnityEditor;
 using UnityEngine;
 using Random = System.Random;
 
-[Serializable]
-public class Operator
-{
-    public bool Active = true;
-    public PolyMesh.Operation OpType;
-    public float Parameter1 = .3f;
-    public float Parameter2 = 0;
-    public int Iterations = 1;
-    public bool Parameter1Randomize = false;
-    public bool Parameter2Randomize = false;
-    public FilterTypes FilterType;
-    public float FilterParam;
-    public bool FilterFlip;
-}
-
 [RequireComponent(typeof(MeshFilter), typeof(MeshRenderer))]
 public class PolyhydraGenerator : MonoBehaviour
 {
@@ -44,6 +29,7 @@ public class PolyhydraGenerator : MonoBehaviour
 
     private void Start()
     {
+        Camera.main.transform.rotation = Quaternion.LookRotation(transform.position - Camera.main.transform.position);
         AttachActions();
     }
 

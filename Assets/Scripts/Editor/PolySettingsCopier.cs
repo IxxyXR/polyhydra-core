@@ -35,13 +35,10 @@ public static class PolySettingsCopier
         {
             Undo.RecordObject(targetSettings, "Paste Settings");
 
-            targetSettings.Operators = new List<Operator>(copiedSettings.Operators);
-            targetSettings.SpherizeAmount = copiedSettings.SpherizeAmount;
+            targetSettings.Operators = new List<BaseSettings.Operator>(copiedSettings.Operators);
             targetSettings.FastConicalize = copiedSettings.FastConicalize;
             targetSettings.CanonicalizeIterations = copiedSettings.CanonicalizeIterations;
             targetSettings.PlanarizeIterations = copiedSettings.PlanarizeIterations;
-            targetSettings.FaceScale = copiedSettings.FaceScale;
-            targetSettings.FaceExtrude = copiedSettings.FaceExtrude;
             targetSettings.FaceInset = copiedSettings.FaceInset;
 
             EditorUtility.SetDirty(targetSettings);

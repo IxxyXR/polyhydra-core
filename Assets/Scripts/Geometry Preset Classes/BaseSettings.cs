@@ -6,14 +6,25 @@ using Random = System.Random;
 
 public abstract class BaseSettings : ScriptableObject
 {
-    [Header("Modifications")]
+    [Serializable]
+    public class Operator
+    {
+        public bool Active = true;
+        public PolyMesh.Operation OpType;
+        public float Parameter1 = .3f;
+        public float Parameter2 = 0;
+        public int Iterations = 1;
+        public bool Parameter1Randomize = false;
+        public bool Parameter2Randomize = false;
+        public FilterTypes FilterType;
+        public float FilterParam;
+        public bool FilterFlip;
+    }
+
     public List<Operator> Operators;
-    public float SpherizeAmount = 0;
     public bool FastConicalize = true;
     public int CanonicalizeIterations = 0;
     public int PlanarizeIterations = 0;
-    [Range(.1f, 1f)] public float FaceScale = 1f;
-    [Range(-1f, 1f)] public float FaceExtrude = 0;
     [Range(-1f, 1f)] public float FaceInset = 0;
 
     public event Action OnSettingsChanged;
@@ -95,7 +106,6 @@ public abstract class BaseSettings : ScriptableObject
 
         poly = ModifyPostOp(poly);
 
-        if (SpherizeAmount > 0) poly.Spherize(new OpParams(SpherizeAmount));
         if (FastConicalize)
         {
             if (CanonicalizeIterations > 0)
@@ -112,8 +122,6 @@ public abstract class BaseSettings : ScriptableObject
         }
 
         if (FaceInset != 0) poly = poly.FaceInset(new OpParams(FaceInset));
-        if (FaceExtrude != 0) poly = poly.Extrude(new OpParams(FaceExtrude));
-        if (FaceScale < 1f) poly = poly.FaceScale(new OpParams(FaceScale));
         return poly;
     }
 
