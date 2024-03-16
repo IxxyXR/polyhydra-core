@@ -1811,49 +1811,57 @@ namespace Polyhydra.Core
         /// Appends a copy of another mesh to this one.
         /// </summary>
         /// <param name="other">Mesh to append to this one.</param>
-        public void Append(PolyMesh other)
+        public void Append(PolyMesh other, bool forceDuplicate = false)
         {
-            Append(other, Vector3.zero, Quaternion.identity, 1.0f);
+            Append(other, Vector3.zero, Quaternion.identity, 1.0f, forceDuplicate);
         }
 
-        private void Append(PolyMesh other, Vector3 position, Quaternion rotation, Vector3 scale)
+        private void Append(PolyMesh other, Vector3 position, Quaternion rotation, Vector3 scale, bool forceDuplicate = false)
         {
-            Append(other, Matrix4x4.TRS(position, rotation, scale));
+            Append(other, Matrix4x4.TRS(position, rotation, scale), forceDuplicate);
         }
 
-        public void Append(PolyMesh other, Vector3 position, Quaternion rotation, float scale)
+        public void Append(PolyMesh other, Vector3 position, Quaternion rotation, float scale, bool forceDuplicate = false)
         {
-            Append(other, position, rotation, Vector3.one * scale);
+            Append(other, position, rotation, Vector3.one * scale, forceDuplicate);
         }
 
-        public void Append(PolyMesh other, Vector3 position)
+        public void Append(PolyMesh other, Vector3 position, bool forceDuplicate = false)
         {
-            Append(other, position, Quaternion.identity, Vector3.one);
+            Append(other, position, Quaternion.identity, Vector3.one, forceDuplicate);
         }
 
-        public void Append(PolyMesh other, Vector3 position, Quaternion rotation)
+        public void Append(PolyMesh other, Vector3 position, Quaternion rotation, bool forceDuplicate = false)
         {
-            Append(other, position, rotation, Vector3.one);
+            Append(other, position, rotation, Vector3.one, forceDuplicate);
         }
 
-        public void Append(PolyMesh other, Vector3 position, Vector3 rotation, Vector3 scale)
+        public void Append(PolyMesh other, Vector3 position, Vector3 rotation, Vector3 scale, bool forceDuplicate = false)
         {
-            Append(other, position, Quaternion.Euler(rotation), scale);
+            Append(other, position, Quaternion.Euler(rotation), scale, forceDuplicate);
         }
 
-        public void Append(PolyMesh other, Vector3 position, float scale)
+        public void Append(PolyMesh other, Vector3 position, float scale, bool forceDuplicate = false)
         {
-            Append(other, position, Quaternion.identity, Vector3.one * scale);
+            Append(other, position, Quaternion.identity, Vector3.one * scale, forceDuplicate);
         }
 
-        public void Append(PolyMesh other, Matrix4x4 matrix)
+        public void Append(PolyMesh other, Matrix4x4 matrix, bool forceDuplicate = false)
         {
             if (other == null) return;
+
+            // If you append a poly to itself or append the same poly twice
+            // You'll get duplicate vertex names and some ops will fail
+            if (forceDuplicate)
+            {
+                other = other.Duplicate();
+            }
 
             int originalVertexCount = Vertices.Count;
             Vertices.AddRange(other.Vertices);
             if (matrix != Matrix4x4.identity)
             {
+                // Hopefully a fast path
                 for (int i = originalVertexCount; i < originalVertexCount + other.Vertices.Count; i++)
                 {
                     Vertices[i].Position = matrix.MultiplyPoint(Vertices[i].Position);
