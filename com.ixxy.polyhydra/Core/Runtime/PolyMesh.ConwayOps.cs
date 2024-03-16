@@ -431,7 +431,10 @@ namespace Polyhydra.Core
 
                 if (edgeHalfedges.Count() >= 3)
                 {
-                    var newHalfEdges = midpointHalfedges.Zip(edgeHalfedges, (a, b) => new[] { a, b }).SelectMany(pair => pair).ToList();
+                    var newHalfEdges = midpointHalfedges
+                        .Zip(edgeHalfedges, (a, b) => new[] { a, b })
+                        .SelectMany(pair => pair)
+                        .ToList();
                     faceIndices.Add(newHalfEdges);
                     faceRoles.Add(Roles.New);
                     var vertexFaceIndices = vertex.GetVertexFaces().Select(f => Faces.IndexOf(f)).Where(x=>x!=-1);  // No idea why IndexOf is failing to match
@@ -447,7 +450,6 @@ namespace Polyhydra.Core
 
             return new PolyMesh(edgeVertexPoints.Concat(midpointVertexPoints), faceIndices, faceRoles, vertexRoles, newFaceTags);
         }
-
 
         public PolyMesh Truncate(OpParams o)
         {
