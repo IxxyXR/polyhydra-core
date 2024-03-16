@@ -13,7 +13,8 @@ MonoBehaviour:
   m_Name: IsohedralGridSettings
   m_EditorClassIdentifier: 
   Operators:
-  - OpType: 110
+  - Active: 1
+    OpType: 110
     Parameter1: 0.49
     Parameter2: 0
     Iterations: 1
@@ -22,15 +23,10 @@ MonoBehaviour:
     FilterType: 0
     FilterParam: 0
     FilterFlip: 0
-  MergeThreshold: 0
-  SpherizeAmount: 0
   FastConicalize: 1
   CanonicalizeIterations: 0
   PlanarizeIterations: 0
-  FaceScale: 0.99
-  FaceExtrude: 0
-  FaceInset: 0.01
-  ColorMethod: 1
+  FaceInset: 0.0125
   TilingType: 30
   NewVerts:
   - {x: 0, y: 0.33}

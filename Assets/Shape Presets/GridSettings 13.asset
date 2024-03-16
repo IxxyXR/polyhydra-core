@@ -63,14 +63,10 @@ MonoBehaviour:
     FilterType: 0
     FilterParam: 0
     FilterFlip: 0
-  SpherizeAmount: 0
   FastConicalize: 1
   CanonicalizeIterations: 0
   PlanarizeIterations: 0
-  FaceScale: 0.98
-  FaceExtrude: 0
-  FaceInset: 0
-  ColorMethod: 1
+  FaceInset: 0.005
   type: 9
   shape: 0
   X: 6

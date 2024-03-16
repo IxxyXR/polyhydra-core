@@ -13,7 +13,8 @@ MonoBehaviour:
   m_Name: GridSettings 3
   m_EditorClassIdentifier: 
   Operators:
-  - OpType: 36
+  - Active: 1
+    OpType: 36
     Parameter1: 3
     Parameter2: 1
     Iterations: 1
@@ -22,15 +23,10 @@ MonoBehaviour:
     FilterType: 0
     FilterParam: 0
     FilterFlip: 0
-  MergeThreshold: 0
-  SpherizeAmount: 0
   FastConicalize: 1
   CanonicalizeIterations: 0
   PlanarizeIterations: 0
-  FaceScale: 0.97
-  FaceExtrude: 0
-  FaceInset: 0
-  ColorMethod: 1
+  FaceInset: 0.02
   type: 1
   shape: 0
   X: 5
