@@ -247,7 +247,7 @@ namespace Polyhydra.Core
 					        tileOffset.x -= tiledef.yOffset.x * Mathf.FloorToInt(y + 1);
 				        }
 			        }
-			        poly.Append(tiledef.tile, tileOffset);
+			        poly.Append(tiledef.tile, tileOffset, forceDuplicate: true);
 
 			        int rowRoleIndex = (y % roleCountY) % tiledef.roleSet.Count;
 			        var rowRoles = tiledef.roleSet[rowRoleIndex];
