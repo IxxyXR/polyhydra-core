@@ -9,22 +9,12 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: bcdd704e9dd94c86b0d2f7d8638f92e9, type: 3}
-  m_Name: Trapezohedron 1
+  m_Script: {fileID: 11500000, guid: 5bf388923ca042dbaaa277a440745831, type: 3}
+  m_Name: GridSettings 18
   m_EditorClassIdentifier: 
   Operators:
   - Active: 1
-    OpType: 40
-    Parameter1: 0.35
-    Parameter2: 0
-    Iterations: 1
-    Parameter1Randomize: 0
-    Parameter2Randomize: 0
-    FilterType: 0
-    FilterParam: 0
-    FilterFlip: 0
-  - Active: 1
-    OpType: 79
+    OpType: 8
     Parameter1: 0
     Parameter2: 0
     Iterations: 1
@@ -33,15 +23,35 @@ MonoBehaviour:
     FilterType: 0
     FilterParam: 0
     FilterFlip: 0
+  - Active: 1
+    OpType: 10
+    Parameter1: 0.72
+    Parameter2: 0
+    Iterations: 1
+    Parameter1Randomize: 0
+    Parameter2Randomize: 0
+    FilterType: 1
+    FilterParam: 6
+    FilterFlip: 0
+  - Active: 1
+    OpType: 81
+    Parameter1: 0.31
+    Parameter2: 0
+    Iterations: 1
+    Parameter1Randomize: 0
+    Parameter2Randomize: 0
+    FilterType: 1
+    FilterParam: 6
+    FilterFlip: 0
   SpherizeAmount: 0
   FastConicalize: 1
   CanonicalizeIterations: 0
   PlanarizeIterations: 0
   FaceScale: 1
   FaceExtrude: 0
-  FaceInset: 0
-  type: 16
-  Sides: 5
-  SetHeight: 0
-  Height: 1
-  CapHeight: 1
+  FaceInset: 0.01
+  type: 2
+  shape: 0
+  X: 6
+  Y: 6
+  Faces: 

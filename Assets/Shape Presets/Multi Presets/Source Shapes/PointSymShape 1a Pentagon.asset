@@ -9,13 +9,13 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9802e798c8d84fc69d0f8d39a71bcdd8, type: 3}
-  m_Name: LayeredShapeSettings
+  m_Script: {fileID: 11500000, guid: 2c2880ed5b584425b92968f04cae7e21, type: 3}
+  m_Name: PointSymShape 1a Pentagon
   m_EditorClassIdentifier: 
   Operators:
   - Active: 0
-    OpType: 36
-    Parameter1: 0.44
+    OpType: 31
+    Parameter1: 0.54
     Parameter2: 0
     Iterations: 1
     Parameter1Randomize: 0
@@ -30,14 +30,10 @@ MonoBehaviour:
   FaceScale: 1
   FaceExtrude: 0
   FaceInset: 0
-  Layers:
-  - Active: 1
-    ShapeSettings: {fileID: 11400000, guid: 3c5738b89c6fb554d9908754d903b4f5, type: 2}
-    Transforms: []
-  - Active: 1
-    ShapeSettings: {fileID: 11400000, guid: 939f11ce7350ff844997aa3c8cfbe8a6, type: 2}
-    Transforms:
-    - Translation: {x: 0, y: 0, z: 0}
-      Rotation: {x: 0, y: 0, z: 0}
-      Scale: 0.9
-      NonUniformScale: {x: 1, y: 0.82, z: 1}
+  type: 0
+  method: 0
+  A: 5
+  B: 0
+  C: 0
+  Layers: 0
+  LayerHeight: 0.25

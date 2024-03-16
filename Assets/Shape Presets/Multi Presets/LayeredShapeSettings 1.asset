@@ -9,13 +9,13 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: bcdd704e9dd94c86b0d2f7d8638f92e9, type: 3}
-  m_Name: DiPyramid 1
+  m_Script: {fileID: 11500000, guid: 9802e798c8d84fc69d0f8d39a71bcdd8, type: 3}
+  m_Name: LayeredShapeSettings 1
   m_EditorClassIdentifier: 
   Operators:
-  - Active: 1
-    OpType: 64
-    Parameter1: 0
+  - Active: 0
+    OpType: 36
+    Parameter1: 0.44
     Parameter2: 0
     Iterations: 1
     Parameter1Randomize: 0
@@ -30,8 +30,14 @@ MonoBehaviour:
   FaceScale: 1
   FaceExtrude: 0
   FaceInset: 0
-  type: 5
-  Sides: 10
-  SetHeight: 1
-  Height: 1
-  CapHeight: 0.68
+  Layers:
+  - Active: 1
+    ShapeSettings: {fileID: 11400000, guid: 3c5738b89c6fb554d9908754d903b4f5, type: 2}
+    Transforms: []
+  - Active: 1
+    ShapeSettings: {fileID: 11400000, guid: 939f11ce7350ff844997aa3c8cfbe8a6, type: 2}
+    Transforms:
+    - Translation: {x: 0, y: 0, z: 0}
+      Rotation: {x: 0, y: 0, z: 0}
+      Scale: 0.9
+      NonUniformScale: {x: 1, y: 0.82, z: 1}

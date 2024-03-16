@@ -10,12 +10,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5bf388923ca042dbaaa277a440745831, type: 3}
-  m_Name: GridSettings
+  m_Name: Layered Shape 2d Grid
   m_EditorClassIdentifier: 
   Operators:
   - Active: 1
-    OpType: 110
-    Parameter1: -1
+    OpType: 3
+    Parameter1: 0.41
     Parameter2: 0
     Iterations: 1
     Parameter1Randomize: 0
@@ -23,25 +23,16 @@ MonoBehaviour:
     FilterType: 0
     FilterParam: 0
     FilterFlip: 0
-  - Active: 1
-    OpType: 56
-    Parameter1: 0
-    Parameter2: 0
-    Iterations: 1
-    Parameter1Randomize: 0
-    Parameter2Randomize: 0
-    FilterType: 1
-    FilterParam: 16
-    FilterFlip: 1
   SpherizeAmount: 0
   FastConicalize: 1
   CanonicalizeIterations: 0
   PlanarizeIterations: 0
   FaceScale: 1
   FaceExtrude: 0
-  FaceInset: 0.01
+  FaceInset: 0.02
+  ColorMethod: 0
   type: 10
   shape: 0
-  X: 6
-  Y: 6
+  X: 5
+  Y: 4
   Faces: 

@@ -9,30 +9,21 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5bf388923ca042dbaaa277a440745831, type: 3}
-  m_Name: Layered Grid Layer 4
+  m_Script: {fileID: 11500000, guid: 2c2880ed5b584425b92968f04cae7e21, type: 3}
+  m_Name: PointSymShape 2 Square
   m_EditorClassIdentifier: 
-  Operators:
-  - Active: 1
-    OpType: 3
-    Parameter1: 0.41
-    Parameter2: 0
-    Iterations: 1
-    Parameter1Randomize: 0
-    Parameter2Randomize: 0
-    FilterType: 0
-    FilterParam: 0
-    FilterFlip: 0
+  Operators: []
   SpherizeAmount: 0
   FastConicalize: 1
   CanonicalizeIterations: 0
   PlanarizeIterations: 0
   FaceScale: 1
   FaceExtrude: 0
-  FaceInset: 0.02
-  ColorMethod: 0
-  type: 10
-  shape: 0
-  X: 5
-  Y: 4
-  Faces: 
+  FaceInset: 0
+  type: 0
+  method: 0
+  A: 4
+  B: 0
+  C: 0
+  Layers: 0
+  LayerHeight: 0.25

@@ -1,0 +1,37 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9802e798c8d84fc69d0f8d39a71bcdd8, type: 3}
+  m_Name: LayeredShapeSettings 4
+  m_EditorClassIdentifier: 
+  Operators: []
+  SpherizeAmount: 0
+  FastConicalize: 1
+  CanonicalizeIterations: 0
+  PlanarizeIterations: 0
+  FaceScale: 1
+  FaceExtrude: 0
+  FaceInset: 0
+  Layers:
+  - Active: 0
+    ShapeSettings: {fileID: 11400000, guid: 0f792d083f24c0448b7d89d38a7a6294, type: 2}
+    Transforms:
+    - Translation: {x: 0, y: 0.1, z: 0}
+      Rotation: {x: 0, y: 0, z: 0}
+      Scale: 1
+      NonUniformScale: {x: 1, y: 1, z: 1}
+  - Active: 1
+    ShapeSettings: {fileID: 11400000, guid: ab854375780c05f418714b15d08fd7fa, type: 2}
+    Transforms:
+    - Translation: {x: 0, y: 0, z: 0}
+      Rotation: {x: 0, y: 0, z: 0}
+      Scale: 1
+      NonUniformScale: {x: 1, y: 1, z: 1}

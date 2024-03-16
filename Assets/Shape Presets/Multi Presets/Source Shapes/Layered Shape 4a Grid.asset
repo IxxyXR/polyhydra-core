@@ -10,27 +10,37 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5bf388923ca042dbaaa277a440745831, type: 3}
-  m_Name: GridSettings
+  m_Name: Layered Shape 4a Grid
   m_EditorClassIdentifier: 
   Operators:
   - Active: 1
-    OpType: 22
-    Parameter1: 0.44
+    OpType: 16
+    Parameter1: 0.02
     Parameter2: 0
     Iterations: 1
     Parameter1Randomize: 0
     Parameter2Randomize: 0
     FilterType: 0
+    FilterParam: 1
+    FilterFlip: 0
+  - Active: 1
+    OpType: 56
+    Parameter1: 0.05
+    Parameter2: 0
+    Iterations: 1
+    Parameter1Randomize: 0
+    Parameter2Randomize: 0
+    FilterType: 7
     FilterParam: 0
     FilterFlip: 0
   - Active: 1
     OpType: 36
-    Parameter1: 0.2
+    Parameter1: 0.05
     Parameter2: 0
     Iterations: 1
     Parameter1Randomize: 0
     Parameter2Randomize: 0
-    FilterType: 0
+    FilterType: 7
     FilterParam: 0
     FilterFlip: 0
   SpherizeAmount: 0
@@ -40,8 +50,8 @@ MonoBehaviour:
   FaceScale: 1
   FaceExtrude: 0
   FaceInset: 0
-  type: 2
+  type: 16
   shape: 0
-  X: 1
-  Y: 1
+  X: 6
+  Y: 6
   Faces: 
