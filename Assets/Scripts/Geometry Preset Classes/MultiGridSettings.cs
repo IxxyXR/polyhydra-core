@@ -15,7 +15,7 @@ public class MultiGridSettings : BaseSettings
         Abs
     }
 
-    [Header("Base Shape Parameters")]
+    [Header("Multigrid Parameters")]
     [Range(1, 30)] public int Divisions = 5;
     [Range(3, 30)] public int Dimensions = 5;
     public float Offset = .2f;

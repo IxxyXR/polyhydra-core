@@ -4,7 +4,7 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "VariousGeometrySettings", menuName = "Polyhydra/VariousGeometrySettings", order = 1)]
 public class VariousGeometrySettings : BaseSettings
 {
-    [Header("Base Shape Parameters")]
+    [Header("Various Geometry Parameters")]
     public VariousSolidTypes type;
     [Range(1, 64)] public int X = 3;
     [Range(.01f, 64f)] public float Y = 3;

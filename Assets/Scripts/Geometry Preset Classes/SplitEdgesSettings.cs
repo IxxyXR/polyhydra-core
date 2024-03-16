@@ -13,7 +13,7 @@ public class SplitEdgesSettings : GridSettings
         [Range(1,24)] public int edge = 2;
     }
 
-    [Header("Base Shape Parameters")]
+    [Header("Split Edge Parameters")]
     public List<SplitEdgeSetting> splitEdgeSettings;
 
     public override PolyMesh ModifyPostOp(PolyMesh poly)

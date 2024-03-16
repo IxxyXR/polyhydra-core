@@ -4,7 +4,7 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "RadialSolidsSettings", menuName = "Polyhydra/RadialSolidsSettings", order = 1)]
 public class RadialSolidsSettings : BaseSettings
 {
-    [Header("Base Shape Parameters")]
+    [Header("Radial Solid Parameters")]
     public RadialSolids.RadialPolyType type;
     [Range(3, 64)] public int Sides = 5;
     public bool SetHeight;

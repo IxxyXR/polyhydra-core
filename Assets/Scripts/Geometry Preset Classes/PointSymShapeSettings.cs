@@ -5,6 +5,7 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "PointSymShapeSettings", menuName = "PolyhydraMulti/PointSymShapeSettings", order = 1)]
 public class PointSymShapeSettings : BaseSettings
 {
+    [Header("Point Symmetry Parameters")]
     public BaseSettings ShapeSettings;
     public PointSymmetry.Family Family;
     public PolyTransform Transform;

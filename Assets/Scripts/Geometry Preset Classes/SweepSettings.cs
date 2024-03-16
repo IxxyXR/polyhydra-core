@@ -5,7 +5,7 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "SweepSettings", menuName = "Polyhydra/SweepSettings", order = 1)]
 public class SweepSettings : BaseSettings
 {
-    [Header("Base Shape Parameters")]
+    [Header("Sweep Parameters")]
     [Range(3, 64)] public int PathSteps = 5;
     [Range(3, 64)] public int ShapeSides = 5;
     public bool ClosedPath;

@@ -5,7 +5,7 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "GridSettings", menuName = "Polyhydra/GridSettings", order = 1)]
 public class GridSettings : BaseSettings
 {
-    [Header("Base Shape Parameters")]
+    [Header("Grid Parameters")]
     public GridEnums.GridTypes type;
     public GridEnums.GridShapes shape;
     [Range(1, 64)] public int X = 3;

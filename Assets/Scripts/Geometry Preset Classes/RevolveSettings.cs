@@ -5,7 +5,7 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "RevolveSettings", menuName = "Polyhydra/RevolveSettings", order = 1)]
 public class RevolveSettings : BaseSettings
 {
-    [Header("Base Shape Parameters")]
+    [Header("Revolve Parameters")]
     [Range(3, 128)] public int Segments = 32;
     [Range(1, 360)] public float Angle = 360;
 

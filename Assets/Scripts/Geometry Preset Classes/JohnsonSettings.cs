@@ -6,7 +6,7 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "JohnsonSettings", menuName = "Polyhydra/JohnsonSettings", order = 1)]
 public class JohnsonSettings : BaseSettings
 {
-    [Header("Base Shape Parameters")]
+    [Header("Johnson Parameters")]
     public string SolidName = "";
     [Range(1,92)] public int type = 1;
 

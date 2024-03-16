@@ -4,7 +4,7 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "TileGenSettings", menuName = "Polyhydra/TileGenSettings", order = 1)]
 public class TileGenSettings : BaseSettings
 {
-    [Header("Base Shape Parameters")]
+    [Header("Tile Gen Parameters")]
     [Multiline(20)]
     public string format;
     [Range(1, 64)] public int X = 3;

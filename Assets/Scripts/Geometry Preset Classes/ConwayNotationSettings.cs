@@ -4,7 +4,7 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "ConwayNotationSettings", menuName = "Polyhydra/ConwayNotationSettings", order = 1)]
 public class ConwayNotationSettings : BaseSettings
 {
-    [Header("Base Shape Parameters")]
+    [Header("Conway Notation Parameters")]
     public string input = "kC";
 
     public override PolyMesh BuildBaseShape()

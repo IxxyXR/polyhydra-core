@@ -5,7 +5,7 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "WythoffSettings", menuName = "Polyhydra/WythoffSettings", order = 1)]
 public class WythoffSettings : BaseSettings
 {
-    [Header("Base Shape Parameters")]
+    [Header("Wythoff Polyhedron Parameters")]
     public string PolyhedraName = "";
     [Range(6, 80)] public int type = 6;
 

@@ -4,7 +4,7 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "StairsSettings", menuName = "Polyhydra/StairsSettings", order = 1)]
 public class StairsSettings : BaseSettings
 {
-    [Header("Base Shape Parameters")]
+    [Header("Stair Parameters")]
     public int Segments = 4;
     public float Rotation;
     public float Scaling = 0;

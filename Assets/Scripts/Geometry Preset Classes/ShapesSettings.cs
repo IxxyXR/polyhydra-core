@@ -5,7 +5,7 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "ShapesSettings", menuName = "Polyhydra/ShapesSettings", order = 1)]
 public class ShapesSettings : BaseSettings
 {
-    [Header("Base Shape Parameters")]
+    [Header("Shape Parameters")]
     public ShapeTypes type;
     public Shapes.Method method;
 

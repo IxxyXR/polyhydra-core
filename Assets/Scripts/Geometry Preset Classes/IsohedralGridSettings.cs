@@ -6,7 +6,7 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "IsohedralGridSettings", menuName = "Polyhydra/IsohedralGridSettings", order = 1)]
 public class IsohedralGridSettings : BaseSettings
 {
-    [Header("Base Shape Parameters")]
+    [Header("Isohedral Grid Parameters")]
     [Range(1,93)]
     public int TilingType = 1;
     public List<Vector2> NewVerts;

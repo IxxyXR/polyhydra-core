@@ -5,6 +5,7 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "WallpaperSymShapeSettings", menuName = "PolyhydraMulti/WallpaperSymShapeSettings", order = 1)]
 public class WallpaperSymShapeSettings : BaseSettings
 {
+    [Header("Wallpaper Symmetry Parameters")]
     public BaseSettings ShapeSettings;
     public SymmetryGroup.R SymmetryGroup;
     public PolyTransform Transform;

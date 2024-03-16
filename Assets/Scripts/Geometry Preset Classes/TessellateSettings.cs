@@ -20,7 +20,7 @@ public class TessellateSettings : BaseSettings
         public Vector3 scale = Vector3.one;
     }
 
-    [Header("Base Shape Parameters")]
+    [Header("Tessellate Parameters")]
     public List<ShapeSetting> shapeSettings;
     public int sides;
     [Range(0, 2)] public float height;

@@ -31,6 +31,7 @@ public class LayeredShapeSettings : BaseSettings
         public List<PolyTransform> Transforms;
     }
 
+    [Header(" ")]
     public List<ShapeLayer> Layers;
 
     public override PolyMesh BuildBaseShape()

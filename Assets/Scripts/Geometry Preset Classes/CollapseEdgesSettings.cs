@@ -7,8 +7,7 @@ using UnityEngine.Serialization;
 public class CollapseEdgesSettings : GridSettings
 {
 
-    [FormerlySerializedAs("face1")]
-    [Header("Base Shape Parameters")]
+    [Header("Collapse Edge Parameters")]
     [Range(0,24)] public int Face1 = 3;
     [Range(0,24)] public int Face2 = 4;
     public bool Either = false;

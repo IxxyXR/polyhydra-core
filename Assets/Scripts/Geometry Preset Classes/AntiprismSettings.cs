@@ -29,7 +29,7 @@ using Debug = UnityEngine.Debug;
 [CreateAssetMenu(fileName = "AntiprismSettings", menuName = "Polyhydra/AntiprismSettings", order = 1)]
 public class AntiprismSettings : BaseSettings
 {
-    [Header("Base Shape Parameters")]
+    [Header("Antiprism Parameters")]
     public string command = "conway kC";
 
     public override PolyMesh BuildBaseShape()
