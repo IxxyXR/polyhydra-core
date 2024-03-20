@@ -4,21 +4,21 @@ using UnityEngine;
 
 
 namespace Polyhydra.Core {
-    
+
     public class Halfedge {
-        
+
         #region constructors
-    
+
             public Halfedge(Vertex vertex) {
                 Vertex = vertex;
             }
-    
+
             public Halfedge(Vertex vertex, Halfedge next, Halfedge prev, Face face) : this(vertex) {
                 Next = next;
                 Prev = prev;
                 Face = face;
             }
-    
+
             public Halfedge(Vertex vertex, Halfedge next, Halfedge prev, Face face, Halfedge pair)  : this(vertex, next, prev, face) {
                 Pair = pair;
             }
@@ -32,7 +32,7 @@ namespace Polyhydra.Core {
         public Halfedge Pair { get; set; }
         public Vertex Vertex { get; private set; }
         public Face Face { get; set; }
-        
+
         public (Guid, Guid)? Name {
             get
             {
@@ -48,7 +48,7 @@ namespace Polyhydra.Core {
                 return name;
             }
         }
-    
+
         public (Guid, Guid)? PairedName {
             // A unique name for the half-edge pair
             // A half-edge will have the same PairedName as it's pair
@@ -77,7 +77,7 @@ namespace Polyhydra.Core {
         public Vector3 Vector => Vertex.Position - Prev.Vertex.Position;
 
         // The angle between this edge and the next one
-        public float Angle => Vector3.Angle(Vector, Next.Vector);
+        public float Angle => 180f - Vector3.Angle(Vector, Next.Vector);
 
         // The angle between the faces shared by this edge. Naked edges return Infinity
         public float DihedralAngle => Pair != null ? Vector3.Angle(Face.Normal, Pair.Face.Normal) : Mathf.Infinity;
