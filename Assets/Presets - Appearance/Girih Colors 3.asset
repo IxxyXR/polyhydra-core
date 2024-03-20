@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2eb335f98d5428dac5b6a5c00309583, type: 3}
+  m_Name: Girih Colors 3
+  m_EditorClassIdentifier: 
+  ColorMethod: 0
+  ColorList:
+  - {r: 0.67058825, g: 0.63529414, b: 0.5411765, a: 0}
+  - {r: 0.6792453, g: 0.5476705, b: 0.23389105, a: 0}
+  - {r: 0.3010413, g: 0.5188679, b: 0.3234634, a: 0}
+  - {r: 0.20784314, g: 0.24313726, b: 0.34901962, a: 0}
+  - {r: 0.4245283, g: 0.21426664, b: 0.25571677, a: 0}
+  - {r: 0.38968495, g: 0.5943396, b: 0.52210855, a: 0}
+  - {r: 0, g: 0, b: 0, a: 0}
+  - {r: 0.6981132, g: 0.5481541, b: 0.31283376, a: 0}
+  - {r: 0.3773585, g: 0.3773585, b: 0.3773585, a: 0}
+  - {r: 0.5660378, g: 0.3337487, b: 0.44015586, a: 0}
+  - {r: 0.17359379, g: 0.3744467, b: 0.4433962, a: 0}
+  - {r: 0.3448291, g: 0.44582096, b: 0.5943396, a: 0}

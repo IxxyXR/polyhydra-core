@@ -10,12 +10,42 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9921cdb1176842969be227582e5efe0e, type: 3}
-  m_Name: MultiGridSettings
+  m_Name: MultiGridSettings 3
   m_EditorClassIdentifier: 
   Operators:
-  - Active: 1
-    OpType: 110
-    Parameter1: 0.2
+  - Active: 0
+    OpType: 10
+    Parameter1: 0.4
+    Parameter2: 0
+    Iterations: 1
+    Parameter1Randomize: 0
+    Parameter2Randomize: 0
+    FilterType: 16
+    FilterParam: 7.7
+    FilterFlip: 0
+  - Active: 0
+    OpType: 11
+    Parameter1: 0
+    Parameter2: 0
+    Iterations: 1
+    Parameter1Randomize: 0
+    Parameter2Randomize: 0
+    FilterType: 0
+    FilterParam: 0
+    FilterFlip: 0
+  - Active: 0
+    OpType: 109
+    Parameter1: 1
+    Parameter2: 0
+    Iterations: 1
+    Parameter1Randomize: 0
+    Parameter2Randomize: 0
+    FilterType: 0
+    FilterParam: 0
+    FilterFlip: 0
+  - Active: 0
+    OpType: 81
+    Parameter1: 0.73
     Parameter2: 0
     Iterations: 1
     Parameter1Randomize: 0
@@ -23,32 +53,40 @@ MonoBehaviour:
     FilterType: 1
     FilterParam: 6
     FilterFlip: 0
-  - Active: 1
-    OpType: 81
-    Parameter1: 0.5
+  - Active: 0
+    OpType: 17
+    Parameter1: 0.25
     Parameter2: 0
     Iterations: 1
     Parameter1Randomize: 0
     Parameter2Randomize: 0
-    FilterType: 1
-    FilterParam: 10
+    FilterType: 0
+    FilterParam: 0
     FilterFlip: 0
-  SpherizeAmount: 0
+  - Active: 1
+    OpType: 104
+    Parameter1: 0.00151
+    Parameter2: 0
+    Iterations: 1
+    Parameter1Randomize: 0
+    Parameter2Randomize: 0
+    FilterType: 0
+    FilterParam: 0
+    FilterFlip: 0
   FastConicalize: 1
   CanonicalizeIterations: 0
   PlanarizeIterations: 0
-  FaceScale: 1
-  FaceExtrude: 0
-  FaceInset: 0.00075
-  Divisions: 5
-  Dimensions: 10
-  Offset: 0.2
+  FaceInset: 0
+  Dimensions: 7
+  Divisions: 3
+  Offset: 0.61
   randomize: 0
   MinDistance: 0
   MaxDistance: 1
-  colorRatio: 1
-  colorIndex: 0
-  colorIntersect: 0
+  GenerateColorTags: 0
+  ColorRatio: 1
+  ColorIndex: 0
+  ColorIntersect: 0
   ColorGradient:
     serializedVersion: 2
     key0: {r: 1, g: 1, b: 1, a: 1}
