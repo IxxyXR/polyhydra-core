@@ -47,7 +47,7 @@ namespace Polyhydra.Wythoff {
 	    public readonly string Name;
 	    public readonly string Dual;
 	    public int Coxeter, Wenninger;
-	
+
 		public Uniform(int index, string wythoff, string name, string dual, int coxeter, int wenninger)
         {
             Index = index;
@@ -57,11 +57,96 @@ namespace Polyhydra.Wythoff {
 			Coxeter = coxeter;
 			Wenninger = wenninger;
 		}
-        
+
         public static Uniform FromCoxeter(int coxeter)
         {
             return Uniforms.First(u => u.Coxeter == coxeter);
         }
+
+        public enum WythoffNames
+        {
+            PolygonalPrism = 1,
+            PolygonalAntiprism = 2,
+            PolygrammicPrism = 3,
+            PolygrammicAntiprism = 4,
+            PolygrammicCrossedAntiprism = 5,
+            Tetrahedron = 6,
+            TruncatedTetrahedron = 7,
+            Octahemioctahedron = 8,
+            Tetrahemihexahedron = 9,
+            Octahedron = 10,
+            Cube = 11,
+            Cuboctahedron = 12,
+            TruncatedOctahedron = 13,
+            TruncatedCube = 14,
+            Rhombicuboctahedron = 15,
+            TruncatedCuboctahedron = 16,
+            SnubCube = 17,
+            SmallCubicuboctahedron = 18,
+            GreatCubicuboctahedron = 19,
+            Cubohemioctahedron = 20,
+            CubitruncatedCuboctahedron = 21,
+            GreatRhombicuboctahedron = 22,
+            SmallRhombihexahedron = 23,
+            StellatedTruncatedHexahedron = 24,
+            GreatTruncatedCuboctahedron = 25,
+            GreatRhombihexahedron = 26,
+            Icosahedron = 27,
+            Dodecahedron = 28,
+            Icosidodecahedron = 29,
+            TruncatedIcosahedron = 30,
+            TruncatedDodecahedron = 31,
+            Rhombicosidodecahedron = 32,
+            TruncatedIcosidodechedon = 33,
+            SnubDodecahedron = 34,
+            SmallDitrigonalIcosidodecahedron = 35,
+            SmallIcosicosidodecahedron = 36,
+            SmallSnubIcosicosidodecahedron = 37,
+            SmallDodecicosidodecahedron = 38,
+            SmallStellatedDodecahedron = 39,
+            GreatDodecahedron = 40,
+            GreatDodecadodecahedron = 41,
+            TruncatedGreatDodecahedron = 42,
+            Rhombidodecadodecahedron = 43,
+            SmallRhombidodecahedron = 44,
+            SnubDodecadodecahedron = 45,
+            DitrigonalDodecadodecahedron = 46,
+            GreatDitrigonalDodecicosidodecahedron = 47,
+            SmallDitrigonalDodecicosidodecahedron = 48,
+            Icosidodecadodecahedron = 49,
+            IcositruncatedDodecadodecahedron = 50,
+            SnubIcosidodecadodecahedron = 51,
+            GreatDitrigonalIcosidodecahedron = 52,
+            GreatIcosicosidodecahedron = 53,
+            SmallIcosihemidodecahedron = 54,
+            SmallDodecicosahedron = 55,
+            SmallDodecahemidodecahedron = 56,
+            GreatStellatedDodecahedron = 57,
+            GreatIcosahedron = 58,
+            GreatIcosidodecahedron = 59,
+            GreatTruncatedIcosahedron = 60,
+            Rhombicosahedron = 61,
+            GreatSnubIcosidodecahedron = 62,
+            SmallStellatedTruncatedDodecahedron = 63,
+            TruncatedDodecadodecahedron = 64,
+            InvertedSnubDodecadodecahedron = 65,
+            GreatDodecicosidodecahedron = 66,
+            SmallDodecahemicosahedron = 67,
+            GreatDodecicosahedron = 68,
+            GreatSnubDodecicosidodecahedron = 69,
+            GreatDodecahemicosahedron = 70,
+            GreatStellatedTruncatedDodecahedron = 71,
+            GreatRhombicosidodecahedron = 72,
+            GreatTruncatedIcosidodecahedron = 73,
+            GreatInvertedSnubIcosidodecahedron = 74,
+            GreatDodecahemidodecahedron = 75,
+            GreatIcosihemidodecahedron = 76,
+            SmallRetrosnubIcosicosidodecahedron = 77,
+            GreatRhombidodecahedron = 78,
+            GreatRetrosnubIcosidodecahedron = 79,
+            GreatDirhombicosidodecahedron = 80
+        }
+
 
         public static Uniform[] Uniforms = {
 
@@ -73,10 +158,10 @@ namespace Polyhydra.Wythoff {
                 "",
                 0, 0
                 ),
-            
+
             // Dihedral Schwarz Triangles (D5 only)
 
-            // (2 2 5) (D1/5) 
+            // (2 2 5) (D1/5)
 
             new Uniform(
                 1,
@@ -93,7 +178,7 @@ namespace Polyhydra.Wythoff {
                 0, 0
             ),
 
-            // (2 2 5/2) (D2/5) 
+            // (2 2 5/2) (D2/5)
 
             new Uniform(
                 3,
@@ -110,7 +195,7 @@ namespace Polyhydra.Wythoff {
                 0, 0
             ),
 
-            // (5/3 2 2) (D3/5) 
+            // (5/3 2 2) (D3/5)
 
             new Uniform(
                 5,
@@ -122,7 +207,7 @@ namespace Polyhydra.Wythoff {
 
             // Tetrahedral Schwarz Triangles
 
-            // (2 3 3) (T1) 
+            // (2 3 3) (T1)
 
             new Uniform(
                 6,
@@ -139,7 +224,7 @@ namespace Polyhydra.Wythoff {
                 16, 6
             ),
 
-            // (3/2 3 3) (T2) 
+            // (3/2 3 3) (T2)
 
             new Uniform(
                 8,
@@ -149,7 +234,7 @@ namespace Polyhydra.Wythoff {
                 37, 68
             ),
 
-            // (3/2 2 3) (T3) 
+            // (3/2 2 3) (T3)
 
             new Uniform(
                 9,
@@ -161,7 +246,7 @@ namespace Polyhydra.Wythoff {
 
             // Octahedral Schwarz Triangles
 
-            // (2 3 4) (O1) 
+            // (2 3 4) (O1)
 
             new Uniform(
                 10,
@@ -220,7 +305,7 @@ namespace Polyhydra.Wythoff {
                 24, 17
             ),
 
-            // (3/2 4 4) (O2b) 
+            // (3/2 4 4) (O2b)
 
             new Uniform(
                 18,
@@ -230,7 +315,7 @@ namespace Polyhydra.Wythoff {
                 38, 69
             ),
 
-            // (4/3 3 4) (O4) 
+            // (4/3 3 4) (O4)
 
             new Uniform(
                 19,
@@ -257,7 +342,7 @@ namespace Polyhydra.Wythoff {
                 52, 79
             ),
 
-            // (3/2 2 4) (O5) 
+            // (3/2 2 4) (O5)
 
             new Uniform(
                 22,
@@ -275,7 +360,7 @@ namespace Polyhydra.Wythoff {
                 60, 86
             ),
 
-            // (4/3 2 3) (O7) 
+            // (4/3 2 3) (O7)
 
             new Uniform(
                 24,
@@ -294,7 +379,7 @@ namespace Polyhydra.Wythoff {
                 67, 93
             ),
 
-            // (4/3 3/2 2) (O11) 
+            // (4/3 3/2 2) (O11)
 
             // TODO Fix
             new Uniform(
@@ -307,7 +392,7 @@ namespace Polyhydra.Wythoff {
 
             // Icosahedral Schwarz Triangles
 
-            // (2 3 5) (I1) 
+            // (2 3 5) (I1)
 
             new Uniform(
                 27,
@@ -366,7 +451,7 @@ namespace Polyhydra.Wythoff {
                 32, 18
             ),
 
-            // (5/2 3 3) (I2a) 
+            // (5/2 3 3) (I2a)
 
             new Uniform(
                 35,
@@ -390,7 +475,7 @@ namespace Polyhydra.Wythoff {
                 41, 110
             ),
 
-            // (3/2 5 5) (I2b) 
+            // (3/2 5 5) (I2b)
 
             new Uniform(
                 38,
@@ -400,7 +485,7 @@ namespace Polyhydra.Wythoff {
                 42, 72
             ),
 
-            // (2 5/2 5) (I3) 
+            // (2 5/2 5) (I3)
 
             new Uniform(
                 39,
@@ -454,7 +539,7 @@ namespace Polyhydra.Wythoff {
                 49, 111
             ),
 
-            // (5/3 3 5) (I4) 
+            // (5/3 3 5) (I4)
 
             new Uniform(
                 46,
@@ -499,7 +584,7 @@ namespace Polyhydra.Wythoff {
                 58, 112
             ),
 
-            // (3/2 3 5) (I6b) 
+            // (3/2 3 5) (I6b)
 
             new Uniform(
                 52,
@@ -534,7 +619,7 @@ namespace Polyhydra.Wythoff {
                 64, 90
             ),
 
-            // (5/4 5 5) (I6c) 
+            // (5/4 5 5) (I6c)
 
             // TODO Fix
             new Uniform(
@@ -545,7 +630,7 @@ namespace Polyhydra.Wythoff {
                 65, 91
             ),
 
-            // (2 5/2 3) (I7) 
+            // (2 5/2 3) (I7)
 
             new Uniform(
                 57,
@@ -592,7 +677,7 @@ namespace Polyhydra.Wythoff {
                 73, 113
             ),
 
-            // (5/3 2 5) (I9) 
+            // (5/3 2 5) (I9)
 
             new Uniform(
                 63,
@@ -616,7 +701,7 @@ namespace Polyhydra.Wythoff {
                 76, 114
             ),
 
-            // (5/3 5/2 3) (I10a) 
+            // (5/3 5/2 3) (I10a)
 
             new Uniform(
                 66,
@@ -651,7 +736,7 @@ namespace Polyhydra.Wythoff {
                 80, 115
             ),
 
-            // (5/4 3 5) (I10b) 
+            // (5/4 3 5) (I10b)
 
             // TODO Fix
             new Uniform(
@@ -662,7 +747,7 @@ namespace Polyhydra.Wythoff {
                 81, 102
             ),
 
-            // (5/3 2 3) (I13) 
+            // (5/3 2 3) (I13)
 
             new Uniform(
                 71,
@@ -693,7 +778,7 @@ namespace Polyhydra.Wythoff {
                 88, 116
             ),
 
-            // (5/3 5/3 5/2) (I18a) 
+            // (5/3 5/3 5/2) (I18a)
 
             new Uniform(
                 75,
@@ -703,7 +788,7 @@ namespace Polyhydra.Wythoff {
                 86, 107
             ),
 
-            // (3/2 5/3 3) (I18b) 
+            // (3/2 5/3 3) (I18b)
 
             // TODO Fix
             new Uniform(
@@ -714,7 +799,7 @@ namespace Polyhydra.Wythoff {
                 85, 106
             ),
 
-            // (3/2 3/2 5/3) (I22) 
+            // (3/2 3/2 5/3) (I22)
 
             new Uniform(
                 77,
@@ -724,7 +809,7 @@ namespace Polyhydra.Wythoff {
                 91, 118
             ),
 
-            // (3/2 5/3 2) (I23) 
+            // (3/2 5/3 2) (I23)
 
             // TODO Fix
             new Uniform(
