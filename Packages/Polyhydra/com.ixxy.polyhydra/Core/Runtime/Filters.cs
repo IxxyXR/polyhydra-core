@@ -286,7 +286,7 @@ namespace Polyhydra.Core
                         1 => edges.Select(e => e.Angle).Max(),
                         _ => throw new ArgumentOutOfRangeException(nameof(minMaxAvg), minMaxAvg, null)
                     };
-                    bool result = angle < inputAngle;
+                    bool result = Math.Round(angle, 3) >= inputAngle;
                     return not ? !result : result;
                 },
                 p =>
@@ -300,7 +300,7 @@ namespace Polyhydra.Core
                         1 => edges.Select(e => e.Angle).Max(),
                         _ => throw new ArgumentOutOfRangeException(nameof(minMaxAvg), minMaxAvg, null)
                     };
-                    bool result = angle < inputAngle;
+                    bool result = Math.Round(angle, 3) >= inputAngle;
                     return not ? !result : result;
                 }
             );
