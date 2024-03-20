@@ -19,8 +19,6 @@ namespace Polyhydra.Core
         private float colorIndex = 0.0f;
         private float colorIntersect = 0.0f;
 
-
-
         public MultiGrid(int divisions, int dimensions, float offset, float MinDistance, float MaxDistance, float colorRatio = 1.0f, float colorIndex = 0.0f, float colorIntersect = 0.0f)
         {
             this.divisions = divisions;
