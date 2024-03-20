@@ -40,7 +40,7 @@ namespace Polyhydra.Core
             // (angle in degrees, position is 0 to 1 with 0 being on the centroid and 1 being on the edge
             // The face can be concave but the algorithm assumes so overhangs or "ears"
             // As it starts by doing a fan triangulation from the centroid.
-            
+
             var verts = GetVertices();
             var centroid = Centroid;
             angle = angle % 360;
@@ -65,7 +65,7 @@ namespace Polyhydra.Core
 
             return result;
         }
-        
+
         public float GetArea()
         {
             float area = 0;
@@ -109,11 +109,11 @@ namespace Polyhydra.Core
                     avg.y += v.Position.y;
                     avg.z += v.Position.z;
                 }
-                
+
                 avg.x /= vcount;
                 avg.y /= vcount;
                 avg.z /= vcount;
-                
+
                 return avg;
             }
         }
@@ -122,7 +122,7 @@ namespace Polyhydra.Core
         {
             Vector3 t1, t2;
 
-            
+
             t1 = Tangent;
 
             t2 = Vector3.Cross(Normal, t1);
@@ -134,8 +134,8 @@ namespace Polyhydra.Core
         {
             // WIP - not currently correct.
             // See https://stackoverflow.com/questions/9692448/how-can-you-find-the-centroid-of-a-concave-irregular-polygon-in-javascript
-            
-            
+
+
             List<Vector2> vertices = Get2DVertices();
             vertices.Add(vertices[0]);
             float twicearea = 0;
@@ -183,9 +183,9 @@ namespace Polyhydra.Core
         public int Sides {
             get { return GetVertices().Count; }
         }
-        
+
         public Vector3 Tangent => (Centroid - Halfedge.Vertex.Position).normalized;
-        
+
         public static Vector2 Vector3toVector2(Vector3 v, Vector3 tangent)
         {
             return new Vector2(
@@ -193,8 +193,6 @@ namespace Polyhydra.Core
                 Vector3.Dot(v, Quaternion.Euler(0, 90, 0) * tangent)
             );
         }
-
-        
 
         // Gets the vertices of this face as a list of Vector2s
         // in the plane of the face relative to it's centroid
@@ -250,13 +248,13 @@ namespace Polyhydra.Core
                 return true;
             }
         }
-        
+
         public bool AreAllVertsVisibleFromCentroid()
         {
             // Is every vertex reachable from the given point
             // Cycles through vertices and returns false if the
             // angle between vertex and center changes direction
-            
+
             var centroid = Centroid;
             var normal = Normal;
             var verts = GetHalfedges().Select(e => e.Vertex.Position).ToList();
@@ -276,7 +274,7 @@ namespace Polyhydra.Core
         #endregion
 
         #region methods
-    
+
             public List<Vertex> GetVertices() {
                 List<Vertex> vertices = new List<Vertex>();
                 Halfedge edge = Halfedge;
@@ -284,10 +282,10 @@ namespace Polyhydra.Core
                     vertices.Add(edge.Vertex); // add vertex to list
                     edge = edge.Next; // move on to next halfedge
                 } while (edge != Halfedge);
-    
+
                 return vertices;
             }
-    
+
             public List<Halfedge> GetHalfedges()
             {
                 List<Halfedge> halfedges = new List<Halfedge>();
@@ -296,7 +294,7 @@ namespace Polyhydra.Core
                     halfedges.Add(edge); // add halfedge to list
                     edge = edge.Next; // move on to next halfedge
                 } while (edge != Halfedge);
-    
+
                 return halfedges;
             }
 
@@ -306,27 +304,27 @@ namespace Polyhydra.Core
                 while (e1.Vertex != v1) {
                     e1 = e1.Next;
                 }
-    
+
                 if (v2 == e1.Next.Vertex) {
                     throw new Exception("Vertices adjacent");
                 }
-    
+
                 if (v2 == e1.Prev.Vertex) {
                     throw new Exception("Vertices adjacent");
                 }
-    
+
                 f_new = new Face(e1.Next);
-    
+
                 Halfedge e2 = e1;
                 while (e2.Vertex != v2) {
                     e2 = e2.Next;
                     e2.Face = f_new;
                 }
-    
+
                 he_new = new Halfedge(v1, e1.Next, e2, f_new);
                 he_new_pair = new Halfedge(v2, e2.Next, e1, this, he_new);
                 he_new.Pair = he_new_pair;
-    
+
                 e1.Next.Prev = he_new;
                 e1.Next = he_new_pair;
                 e2.Next.Prev = he_new_pair;
@@ -360,10 +358,10 @@ namespace Polyhydra.Core
             // i.e. UV mapping etc.
             // Fairly arbitrary choice of "best"
             // I've gone with "So the edge that is at the top - of forwards if the face is flat"
-            // The vector from the center to this edge midpoint 
+            // The vector from the center to this edge midpoint
             // will at least always point in a consistent direction.
             // TODO "highest midpoint by y coord" is a fairly poor interpretation of edge direction
-            // Should probably calculate a Vector2 angle based on one pair of possible coords 
+            // Should probably calculate a Vector2 angle based on one pair of possible coords
             var faceNormal = Normal;
             Halfedge bestEdge = null;
             float bestScore = -9999999;
