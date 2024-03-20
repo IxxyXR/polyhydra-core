@@ -27,6 +27,19 @@ public static class PolySettingsCopier
         return copiedSettings != null && selected && selected is BaseSettings;
     }
 
+    [MenuItem("Assets/Assign to First Scene Generator")]
+    public static void AssignToScene()
+    {
+        var targetSettings = Selection.activeObject as BaseSettings;
+        var generators = GameObject.FindObjectsByType<PolyhydraGenerator>(
+            FindObjectsInactive.Exclude,
+            FindObjectsSortMode.None
+        );
+        if (generators.Length == 0) return;
+        generators[0].settings = targetSettings;
+        generators[0].AttachActions();
+    }
+
     [MenuItem("Assets/Paste Poly Settings")]
     private static void PasteSettings()
     {

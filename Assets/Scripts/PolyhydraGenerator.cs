@@ -1,9 +1,7 @@
 using System;
-using System.Collections.Generic;
 using Polyhydra.Core;
 using UnityEditor;
 using UnityEngine;
-using Random = System.Random;
 
 [RequireComponent(typeof(MeshFilter), typeof(MeshRenderer))]
 public class PolyhydraGenerator : MonoBehaviour
@@ -45,16 +43,17 @@ public class PolyhydraGenerator : MonoBehaviour
         }
     }
 
-    private void AttachActions()
+    public void AttachActions()
     {
         if (settings != null)
         {
-            settings.AttachAction(SettingsChanged);
+            settings.AttachAction(SettingsChanged, this);
             appearanceSettings.OnSettingsChanged += SettingsChanged;
-            Build();
+            NeedsRebuild = true;
         }
     }
 
+    [ContextMenu("Force Rebuild")]
     private void Build()
     {
         var mf = gameObject.GetComponent<MeshFilter>();
@@ -89,7 +88,7 @@ public class PolyhydraGenerator : MonoBehaviour
 
     private void SettingsChanged()
     {
-        Build();
+        NeedsRebuild = true;
     }
 
     public void Update()

@@ -62,18 +62,18 @@ public class LayeredShapeSettings : BaseSettings
         finalPoly = ApplyModifiers(finalPoly);
 
         var meshData = finalPoly.BuildMeshData(
-            colorMethod: appearanceSettings.ColorMethod,
-            colors: appearanceSettings.CalculateColorList()
+            colorMethod: GetColorMethod(appearanceSettings),
+            colors: CalculateColorList(appearanceSettings)
         );
         return finalPoly.BuildUnityMesh(meshData);
     }
 
-    public override void AttachAction(Action settingsChanged)
+    public override void AttachAction(Action settingsChanged, PolyhydraGenerator generator)
     {
         OnSettingsChanged += settingsChanged;
         foreach (var layer in Layers)
         {
-            layer.ShapeSettings.AttachAction(settingsChanged);
+            layer.ShapeSettings.AttachAction(settingsChanged, generator);
         }
     }
 

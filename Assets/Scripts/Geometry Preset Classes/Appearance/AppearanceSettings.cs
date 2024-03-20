@@ -1,13 +1,21 @@
 ﻿using System;
 using System.Collections.Generic;
-using Polyhydra.Core;
+using System.Linq;
 using UnityEngine;
 
 [CreateAssetMenu(fileName = "AppearanceSettings", menuName = "Polyhydra/AppearanceSettings", order = 1)]
 public class AppearanceSettings : ScriptableObject
 {
-    public ColorMethods ColorMethod = ColorMethods.ByRole;
+    [Serializable]
+    public enum Mode
+    {
+        List,
+        Gradient
+    }
+
+    public Mode ColorMode;
     public List<Color> ColorList;
+    public Gradient ColorGradient;
 
     public event Action OnSettingsChanged;
 
@@ -22,13 +30,17 @@ public class AppearanceSettings : ScriptableObject
             OnSettingsChanged?.Invoke();
     }
 
-    public Color[] CalculateColorList()
+    public Color[] CalculateColors()
     {
-        if (ColorList != null && ColorList.Count == 12)
+        switch (ColorMode)
         {
-            return ColorList?.ToArray();
+            case Mode.List:
+                return ColorList is { Count: 12 } ? ColorList?.ToArray() : null;
+            case Mode.Gradient:
+                return Enumerable.Range(0, 12).Select(t => ColorGradient.Evaluate(t / 12f)).ToArray();
+            default:
+                return null;
         }
-        return null;
     }
 
 }

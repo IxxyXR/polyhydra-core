@@ -6,14 +6,12 @@ using UnityEngine;
 public class WythoffSettings : BaseSettings
 {
     [Header("Wythoff Polyhedron Parameters")]
-    public string PolyhedraName = "";
-    [Range(6, 80)] public int type = 6;
+    public Uniform.WythoffNames WythoffType;
 
     public override PolyMesh BuildBaseShape()
     {
-        var wythoff = new WythoffPoly(type);
+        var wythoff = new WythoffPoly((int)WythoffType);
         var poly = wythoff.Build();
-        PolyhedraName = Uniform.Uniforms[type].Name;
         return poly;
     }
 }

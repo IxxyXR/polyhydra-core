@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Runtime.InteropServices;
 using Polyhydra.Core;
 using UnityEngine;
 using Random = System.Random;
@@ -26,8 +28,11 @@ public abstract class BaseSettings : ScriptableObject
     public int CanonicalizeIterations = 0;
     public int PlanarizeIterations = 0;
     [Range(-1f, 1f)] public float FaceInset = 0;
+    public ColorMethods ColorMethod = ColorMethods.ByRole;
 
     public event Action OnSettingsChanged;
+
+    private PolyhydraGenerator _Generator;
 
     void OnEnable()
     {
@@ -52,11 +57,21 @@ public abstract class BaseSettings : ScriptableObject
         var poly = BuildBaseShape();
         poly = ApplyModifiers(poly);
         var meshData = poly.BuildMeshData(
-            colorMethod: appearanceSettings.ColorMethod,
-            colors: appearanceSettings.CalculateColorList()
+            colorMethod: GetColorMethod(appearanceSettings),
+            colors: CalculateColorList(appearanceSettings)
         );
+        _Generator.poly = poly;
         return poly.BuildUnityMesh(meshData);
+    }
 
+    protected virtual ColorMethods GetColorMethod(AppearanceSettings appearanceSettings)
+    {
+        return ColorMethod;
+    }
+
+    protected virtual Color[] CalculateColorList(AppearanceSettings appearanceSettings)
+    {
+        return appearanceSettings.CalculateColors();
     }
 
     public virtual PolyMesh ApplyModifiers(PolyMesh poly)
@@ -125,9 +140,10 @@ public abstract class BaseSettings : ScriptableObject
         return poly;
     }
 
-    public virtual void AttachAction(Action settingsChanged)
+    public virtual void AttachAction(Action settingsChanged, PolyhydraGenerator generator)
     {
         OnSettingsChanged += settingsChanged;
+        _Generator = generator;
     }
 
     public virtual void DetachAction(Action settingsChanged)

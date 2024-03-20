@@ -16,19 +16,27 @@ public class MultiGridSettings : BaseSettings
     }
 
     [Header("Multigrid Parameters")]
-    [Range(1, 30)] public int Divisions = 5;
     [Range(3, 30)] public int Dimensions = 5;
+    [Range(1, 30)] public int Divisions = 5;
     public float Offset = .2f;
-    public bool randomize;
 
+    [Header("Misc Settings")]
+    public bool randomize;
+    public bool SharedVertices;
+
+    [Header("Cropping")]
     public float MinDistance = 0f;
     public float MaxDistance = 1f;
 
-    public float colorRatio = 1.0f;
-    public float colorIndex;
-    public float colorIntersect;
+    [Header("Initial Role Coloring")]
+    [Range(-2, 2)] public float ColorRatio = 1.0f;
+    [Range(-2, 2)] public float ColorIntersect;
+    [Range(-2, 2)] public float ColorIndex;
+
+    [Header("Color Tagging")]
+    public bool GenerateColorTags;
     public Gradient ColorGradient;
-    public bool SharedVertices;
+
 
     private List<List<Vector2>> shapes;
     private List<float> colors;
@@ -37,12 +45,12 @@ public class MultiGridSettings : BaseSettings
 
     public override PolyMesh BuildBaseShape()
     {
-        var multigrid = new MultiGrid(Divisions, Dimensions, Offset, MinDistance, MaxDistance, colorRatio, colorIndex, colorIntersect);
-        PolyMesh poly = null;
+        var multigrid = new MultiGrid(Divisions, Dimensions, Offset, MinDistance, MaxDistance, ColorRatio, ColorIndex, ColorIntersect);
+        PolyMesh poly;
         (poly, shapes, colors) = multigrid.Build(SharedVertices, randomize);
 
         if (shapes.Count == 0) return poly;
-        if (true) // TODO ColorMethod == ColorMethods.ByTags
+        if (GenerateColorTags)
         {
             float colorMin = colors.Min();
             float colorMax = colors.Max();
@@ -75,5 +83,10 @@ public class MultiGridSettings : BaseSettings
             }
         }
         return poly;
+    }
+
+    protected override ColorMethods GetColorMethod(AppearanceSettings appearanceSettings)
+    {
+        return GenerateColorTags ? ColorMethods.ByTags : ColorMethod;
     }
 }
