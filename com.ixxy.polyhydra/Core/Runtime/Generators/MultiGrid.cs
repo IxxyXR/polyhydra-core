@@ -9,28 +9,28 @@ namespace Polyhydra.Core
     public class MultiGrid
     {
 
-        private int divisions, dimensions;
-        private float offset;
+        private int Divisions, Dimensions;
+        private float Offset;
 
         private float MinDistance;
         private float MaxDistance;
 
-        private float colorRatio = 1.0f;
-        private float colorIndex = 0.0f;
-        private float colorIntersect = 0.0f;
+        private float ColorRatio = 1.0f;
+        private float ColorIndex = 0.0f;
+        private float ColorIntersect = 0.0f;
 
-        public MultiGrid(int divisions, int dimensions, float offset, float MinDistance, float MaxDistance, float colorRatio = 1.0f, float colorIndex = 0.0f, float colorIntersect = 0.0f)
+        public MultiGrid(int divisions, int dimensions, float offset, float minDistance, float maxDistance, float colorRatio = 1.0f, float colorIndex = 0.0f, float colorIntersect = 0.0f)
         {
-            this.divisions = divisions;
-            this.dimensions = dimensions;
-            this.offset = offset;
+            Divisions = divisions;
+            Dimensions = dimensions;
+            Offset = offset;
 
-            this.MinDistance = MinDistance;
-            this.MaxDistance = MaxDistance;
+            MinDistance = minDistance;
+            MaxDistance = maxDistance;
 
-            this.colorRatio = colorRatio;
-            this.colorIndex = colorIndex;
-            this.colorIntersect = colorIntersect;
+            ColorRatio = colorRatio;
+            ColorIndex = colorIndex;
+            ColorIntersect = colorIntersect;
         }
 
 
@@ -111,20 +111,17 @@ namespace Polyhydra.Core
 
         public (List<List<Vector2>> shapes, List<float> colors) GenerateShapes(Vector2 size, bool random=false)
         {
-
-            (Vector2 topLeft, Vector2 bottomRight) bounds = (Vector2.zero, -size);
-
             float diameter = size.magnitude;
-            float scale = diameter / 2f / divisions;
+            float scale = diameter / 2f / Divisions;
 
-            var rhombs = generateRhombs(divisions, dimensions , offset, random);
+            var rhombs = generateRhombs(Divisions, Dimensions , Offset, random);
 
             var tf = new Vector2(size.x / 2f, size.y / 2f);
             tf *= scale;
-            if (dimensions % 2 > 0)
+            if (Dimensions % 2 > 0)
             {
                 // Rotate around origin?
-                tf = Quaternion.Euler(0, (Mathf.PI / dimensions) * 0.5f, 0) * tf;
+                tf = Quaternion.Euler(0, (Mathf.PI / Dimensions) * 0.5f, 0) * tf;
             }
 
             var shapes = new List<List<Vector2>>();
@@ -146,51 +143,49 @@ namespace Polyhydra.Core
 
                 var lineWidthTransform = Vector2.one;
 
-                if (true)
+                var p = new List<Vector2>();
+                p.AddRange(shape.Select(x=>x * lineWidthTransform));
+                float gradientPos = 1;
+
+                float w1 = (shape[2] - shape[0]).magnitude;
+                float w2 = (shape[3] - shape[1]).magnitude;
+                float shapeRatio = Mathf.Min(w1, w2) / Mathf.Max(w1, w2);
+
+                float intersectRatio = rhomb.line1/Dimensions;
+                intersectRatio += rhomb.line2/Dimensions;
+                intersectRatio *= 0.5f;
+
+                float indexRatio = 1f - Mathf.Abs((float)rhomb.parallel1/Divisions/2.0f);
+                indexRatio *= 1f - Mathf.Abs((float)rhomb.parallel2/Divisions/2.0f);
+
+                if (ColorRatio >= 0)
                 {
-                    var p = new List<Vector2>();
-                    p.AddRange(shape.Select(x=>x * lineWidthTransform));
-                    float gradientPos = 1;
-
-                    float w1 = (shape[2] - shape[0]).magnitude;
-                    float w2 = (shape[3] - shape[1]).magnitude;
-                    float shapeRatio = Mathf.Min(w1, w2) / Mathf.Max(w1, w2);
-
-                    float intersectRatio = rhomb.line1/dimensions;
-                    intersectRatio += rhomb.line2/dimensions;
-                    intersectRatio *= 0.5f;
-
-                    float indexRatio = 1f - Mathf.Abs(rhomb.parallel1/divisions/2.0f);
-                    indexRatio *= 1f - Mathf.Abs(rhomb.parallel2/divisions/2.0f);
-
-                    if (colorRatio >= 0)
-                    {
-                        gradientPos *= 1f - (shapeRatio * colorRatio);
-                    }
-                    else
-                    {
-                        gradientPos *= 1f - ((1f - shapeRatio) * Mathf.Abs(colorRatio));
-                    }
-
-                    if (colorIntersect >= 0)
-                    {
-                        gradientPos *= 1f - (intersectRatio * colorIntersect);
-                    }
-                    else
-                    {
-                        gradientPos *= 1f - ((1f - intersectRatio) * Mathf.Abs(colorIntersect));
-                    }
-
-                    if (colorIndex >= 0)
-                    {
-                        gradientPos *= 1 - (indexRatio * colorIndex);
-                    }
-                    else
-                    {
-                        gradientPos *= 1 - ((1 - indexRatio) * Mathf.Abs(colorIndex));
-                    }
-                    colors.Add(float.IsNaN(gradientPos) ? 0 : gradientPos);
+                    gradientPos *= 1f - (shapeRatio * ColorRatio);
                 }
+                else
+                {
+                    gradientPos *= 1f - ((1f - shapeRatio) * Mathf.Abs(ColorRatio));
+                }
+
+                if (ColorIntersect >= 0)
+                {
+                    gradientPos *= 1f - (intersectRatio * ColorIntersect);
+                }
+                else
+                {
+                    gradientPos *= 1f - ((1f - intersectRatio) * Mathf.Abs(ColorIntersect));
+                }
+
+                if (ColorIndex >= 0)
+                {
+                    gradientPos *= 1 - (indexRatio * ColorIndex);
+                }
+                else
+                {
+                    gradientPos *= 1 - (1f - indexRatio) * Mathf.Abs(ColorIndex);
+                }
+
+                colors.Add(float.IsNaN(gradientPos) ? 0 : gradientPos);
                 shapes.Add(shape);
             }
 
