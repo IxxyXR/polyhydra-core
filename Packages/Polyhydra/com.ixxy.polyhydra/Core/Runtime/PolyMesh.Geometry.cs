@@ -762,14 +762,14 @@ namespace Polyhydra.Core
         public PolyMesh FaceInset(OpParams o)
         {
             var vertexPoints = new List<Vector3>();
-            var faceIndices = new List<IEnumerable<int>>();
+            var faceIndices = new List<List<int>>();
             var faceRoles = new List<Roles>();
+            var faceTags = new List<HashSet<string>>();
             var vertexRoles = new List<Roles>();
 
             for (var faceIndex = 0; faceIndex < Faces.Count; faceIndex++)
             {
                 var face = Faces[faceIndex];
-                var includeFace = IncludeFace(faceIndex, o.filter);
                 var amount = o.GetValueA(this, faceIndex);
                 var polygon2d= face.Get2DVertices();
                 var result = PolygonOffset(polygon2d, -amount);
@@ -787,13 +787,12 @@ namespace Polyhydra.Core
 
                     faceIndices.Add(faceVertices);
                     faceRoles.Add(FaceRoles[faceIndex]);
-                    var vertexRole = includeFace ? Roles.Existing : Roles.Ignored;
+                    faceTags.Add(FaceTags[faceIndex]);
+                    var vertexRole = FaceRoles[faceIndex];
                     vertexRoles.AddRange(Enumerable.Repeat(vertexRole, faceVertices.Count));
-                    break;
                 }
             }
-
-            return new PolyMesh(vertexPoints, faceIndices, faceRoles, vertexRoles, FaceTags);
+            return new PolyMesh(vertexPoints, faceIndices, faceRoles, vertexRoles, faceTags);
         }
 
         public static List<List<Vector2>> PolygonOffset(List<Vector2> polygon2d, float amount)
