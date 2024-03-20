@@ -752,9 +752,9 @@ namespace Polyhydra.Core
 			        // Create a tile by joining three rhombuses
 			        tile = rhomb.Duplicate();
 			        rhomb.Transform(Vector3.zero, new Vector3(0, 120, 0));
-			        tile.Append(rhomb);
+			        tile.Append(rhomb, forceDuplicate: true);
 			        rhomb.Transform(Vector3.zero, new Vector3(0, 120, 0));
-			        tile.Append(rhomb);
+			        tile.Append(rhomb, forceDuplicate: true);
 
 			        xOffset = tile.Vertices[2].Position - tile.Vertices[6].Position;
 			        yOffset = tile.Vertices[10].Position - tile.Vertices[6].Position;
