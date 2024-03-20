@@ -84,9 +84,33 @@ namespace Polyhydra.Core
             FaceRoles = Enumerable.Repeat(role, Faces.Count).ToList();
         }
 
+        public void SetFaceRoles(OpParams o)
+        {
+            foreach (var faceIndex in Enumerable.Range(0, Faces.Count))
+            {
+                if (faceIndex >= FaceRoles.Count) FaceRoles.Add(Roles.New);
+                if (IncludeFace(faceIndex, o.filter))
+                {
+                    FaceRoles[faceIndex] = (Roles)o.GetValueA(this, faceIndex);
+                }
+            }
+        }
+
         public void SetVertexRoles(Roles role)
         {
             VertexRoles = Enumerable.Repeat(role, Vertices.Count).ToList();
+        }
+
+        public void SetVertexRoles(OpParams o)
+        {
+            foreach (var vertexIndex in Enumerable.Range(0, Vertices.Count))
+            {
+                if (vertexIndex >= VertexRoles.Count) VertexRoles.Add(Roles.New);
+                if (IncludeVertex(vertexIndex, o.filter))
+                {
+                    VertexRoles[vertexIndex] = (Roles)o.GetValueA(this, vertexIndex);
+                }
+            }
         }
 
         public bool IsValid
@@ -1235,7 +1259,6 @@ namespace Polyhydra.Core
             Identity = 0,
             Kis = 1,
             Ambo = 2,
-            Girih = 110,
             Zip = 3,
             Expand = 4,
             Bevel = 5,
@@ -1269,6 +1292,8 @@ namespace Polyhydra.Core
             Cross = 33,
             Subdiv = 96,
             Ortho3 = 97,
+            Zellige = 114,
+            Girih = 110,
             StraightSkeleton = 105,
             FaceTessellate = 106,
             Tessellate = 107,
@@ -1364,6 +1389,8 @@ namespace Polyhydra.Core
             // Unstash = 75,
             // UnstashToVerts = 76,
             // UnstashToFaces = 77,
+            SetFaceRole = 112,
+            SetVertexRole = 113,
             AddTag = 90,
             RemoveTag = 91,
             ClearTags = 92,
@@ -1395,6 +1422,9 @@ namespace Polyhydra.Core
                     break;
                 case Operation.Ambo:
                     polyMesh = polyMesh.Ambo();
+                    break;
+                case Operation.Zellige:
+                    polyMesh = polyMesh.Zellige();
                     break;
                 case Operation.Girih:
                     polyMesh = polyMesh.Girih(p);
@@ -1714,7 +1744,12 @@ namespace Polyhydra.Core
                 case Operation.PerlinNoiseZ:
                     polyMesh.PerlinNoise(Vector3.forward,p.OriginalParamA, p.OriginalParamB, p.OriginalParamB);
                     break;
-
+                case Operation.SetFaceRole:
+                    polyMesh.SetFaceRoles(p);
+                    break;
+                case Operation.SetVertexRole:
+                    polyMesh.SetVertexRoles(p);
+                    break;
                 case Operation.AddTag:
                     polyMesh.AddTag(p);
                     break;

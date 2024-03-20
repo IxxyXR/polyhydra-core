@@ -11,6 +11,16 @@ namespace Polyhydra.Core
 
         public PolyMesh Dual()
         {
+            return _Dual(false);
+        }
+
+        public PolyMesh Zellige()
+        {
+            return _Dual(true);
+        }
+
+        public PolyMesh _Dual(bool edgeVertex = true)
+        {
             var newFaceTags = new List<HashSet<string>>();
             var faceRoles = new List<Roles>();
             var vertexRoles = new List<Roles>();
@@ -55,6 +65,7 @@ namespace Polyhydra.Core
             // List new faces by their vertex indices
             // (i.e. old vertices by their face indices)
             var flookup = new Dictionary<string, int>();
+            var edgeLookup = new Dictionary<(Guid, string), int>();
 
             for (int i = 0; i < Faces.Count; i++)
             {
@@ -68,6 +79,16 @@ namespace Polyhydra.Core
                 var vertex = Vertices[vertexIndex];
                 var fIndex = new List<int>();
 
+                if (edgeVertex)
+                {
+                    foreach (var edge in vertex.Halfedges)
+                    {
+                        vertexPoints.Add(edge.Midpoint);
+                        vertexRoles.Add(Roles.NewAlt);
+                        edgeLookup.Add((vertex.Name, edge.Face.Name), vertexPoints.Count - 1);
+                    }
+                }
+
                 var vertexFaces = vertex.GetVertexFaces();
                 if (vertexFaces.Count < 3) continue;
                 for (var faceIndex = 0; faceIndex < vertexFaces.Count; faceIndex++)
@@ -76,6 +97,11 @@ namespace Polyhydra.Core
                     if (flookup.ContainsKey(f.Name))
                     {
                         fIndex.Add(flookup[f.Name]);
+                    }
+
+                    if (edgeVertex)
+                    {
+                        fIndex.Add(edgeLookup[(vertex.Name, f.Name)]);
                     }
                 }
 
