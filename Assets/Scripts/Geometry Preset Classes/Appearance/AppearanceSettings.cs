@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 [CreateAssetMenu(fileName = "AppearanceSettings", menuName = "Polyhydra/AppearanceSettings", order = 1)]
 public class AppearanceSettings : ScriptableObject
@@ -16,7 +17,7 @@ public class AppearanceSettings : ScriptableObject
     public Mode ColorMode;
     public List<Color> ColorList;
     public Gradient ColorGradient;
-
+    public AnimationCurve GradientMapping = AnimationCurve.Linear(0, 0, 1, 1);
     public event Action OnSettingsChanged;
 
     void OnEnable()
@@ -37,7 +38,9 @@ public class AppearanceSettings : ScriptableObject
             case Mode.List:
                 return ColorList is { Count: 12 } ? ColorList?.ToArray() : null;
             case Mode.Gradient:
-                return Enumerable.Range(0, 12).Select(t => ColorGradient.Evaluate(t / 12f)).ToArray();
+                return Enumerable.Range(0, 12).Select(t => ColorGradient
+                    .Evaluate(GradientMapping.Evaluate(t / 12f)))
+                    .ToArray();
             default:
                 return null;
         }
