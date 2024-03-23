@@ -16,7 +16,7 @@ namespace Polyhydra.Core
 			Sphere,
 			Polar,
 		}
-
+		
 		public enum GridTypes
 		{
 			// Regular
@@ -73,6 +73,68 @@ namespace Polyhydra.Core
 			TriTriSquare2 = 33, // 3.3.3.3.3.3;3.3.3.4.4: B
 		}
 
+		public static List<GridTypes> RegularGridTypes = new()
+		{
+			GridTypes.Triangular,
+			GridTypes.Square,
+			GridTypes.Hexagonal,
+		};
+
+		public static List<GridTypes> ArchimedeanGridTypes = new()
+		{
+			GridTypes.SnubTrihexagonal,
+			GridTypes.ElongatedTriangular, // 3.3.3.4.4
+			GridTypes.SnubSquare, // 3.3.4.3.4
+			GridTypes.Rhombitrihexagonal, // 3.4.6.4
+			GridTypes.Trihexagonal, // 3.6.3.6
+			GridTypes.TruncatedHexagonal, // 3.12.12
+			GridTypes.TruncatedTrihexagonal, // 4.6.12
+			GridTypes.TruncatedSquare, // 4.8.8
+		};
+
+		public static List<GridTypes> CatalanGridTypes = new()
+		{
+			GridTypes.TetrakisSquare, // Dual of TruncatedSquare
+			GridTypes.CairoPentagonal, // Dual of SnubSquare
+			GridTypes.Rhombille, // Dual of Trihexagonal
+			GridTypes.TriakisTriangular, // Dual of TruncatedHexagonal
+			GridTypes.DeltoidalTrihexagonal, // Dual of Rhombitrihexagonal
+			GridTypes.Kisrhombille, // Dual of TruncatedTrihexagonal
+			GridTypes.FloretPentagonal, // Dual of SnubTrihexagonal
+			GridTypes.PrismaticPentagonal, // Dual of ElongatedTriangular
+		};
+
+		public static List<GridTypes> DurerGridTypes = new()
+		{
+			GridTypes.Durer1,
+			GridTypes.Durer2,
+		};
+
+		public static List<GridTypes> TwoUniformGridTypes = new()
+		{
+			GridTypes.DissectedRhombitrihexagonal, // 3.3.3.3.3.3;3.3.4.3.4
+			GridTypes.DissectedTruncatedHexagonal1, // 3.4.6.4;3.3.4.3.4
+			GridTypes.DissectedTruncatedHexagonal2, // 3.4.6.4;3.3.3.4.4
+			GridTypes.HexagonalTruncatedTriangular, // 3.4.6.4;3.4.4.6 ??
+			GridTypes.DemiregularHexagonal, // 4.6.12;3.4.6.4
+			GridTypes.DissectedTruncatedTrihexagonal1, // 3.3.3.3.3.3;3.3.4.12
+			GridTypes.DemiregularSquare, // 3.12.12;3.4.3.12
+
+			GridTypes.DissectedHexagonal1, // 3.3.3.3.3.3;3.3.6.6
+			GridTypes.DissectedHexagonal2, // 3.3.3.3.3.3;3.3.3.3.6: A
+			GridTypes.DissectedHexagonal3, // 3.3.3.3.3.3;3.3.3.3.6: B ??
+			GridTypes.AlternatingTrihexagonal, // 3.3.6.6;3.3.3.3.6 ???
+			GridTypes.DissectedRhombiHexagonal, // 3.6.3.6;3.3.6.6
+			GridTypes.AlternatingTrihexSquare, // 3.4.4.6;3.6.3.6: A ???
+			GridTypes.TrihexSquare, // 3.4.4.6;3.6.3.6: B
+
+			GridTypes.AlternatingTriSquare, // 3.3.3.4.4;3.3.4.3.4: A
+			GridTypes.SemiSnubTriSquare, // 3.3.3.4.4;3.3.4.3.4: B
+			GridTypes.TriSquareSquare1, // 4.4.4.4;3.3.3.4.4: A
+			GridTypes.TriSquareSquare2, // 4.4.4.4;3.3.3.4.4: B
+			GridTypes.TriTriSquare1, // 3.3.3.3.3.3;3.3.3.4.4: A
+			GridTypes.TriTriSquare2, // 3.3.3.3.3.3;3.3.3.4.4: B
+		};
 	}
 
 	public static class Grids
