@@ -417,7 +417,29 @@ namespace Polyhydra.Core
                         // matrix = new [,]{{0,3,1},{0,8,0},{1,4,0}}
                     }
                 },
-
+                {
+                    PolyMesh.Operation.Zellige,
+                    new OpConfig
+                    {
+                        usesAmount = false
+                    }
+                },
+                {
+                    PolyMesh.Operation.Girih,
+                    new OpConfig
+                    {
+                        amountDefault = 0.49f,
+                        amountMin = -3, amountMax = 3, amountSafeMin = -1, amountSafeMax = 1,
+                    }
+                },
+                {
+                    PolyMesh.Operation.SubdivideEdges,
+                    new OpConfig
+                    {
+                        amountDefault = 1,
+                        amountMin = 1, amountMax = 8, amountSafeMin = 1, amountSafeMax = 32,
+                    }
+                },
                 {
                     PolyMesh.Operation.SplitFaces,
                     new OpConfig
@@ -941,9 +963,16 @@ namespace Polyhydra.Core
                     PolyMesh.Operation.FaceInset,
                     new OpConfig
                     {
-                        usesFilter = true,
-                        amountDefault = 0.1f,
-                        amountMin = -3, amountMax = 3, amountSafeMin = -1f, amountSafeMax = 1f
+                        amountDefault = 0.01f,
+                        amountMin = -2, amountMax = 2, amountSafeMin = 0, amountSafeMax = 1
+                    }
+                },
+                {
+                    PolyMesh.Operation.MergeCoplanar,
+                    new OpConfig
+                    {
+                        amountDefault = 0.01f,
+                        amountMin = 0.01f, amountMax = 30f, amountSafeMin = 0.00001f, amountSafeMax = 180f
                     }
                 },
                 {
