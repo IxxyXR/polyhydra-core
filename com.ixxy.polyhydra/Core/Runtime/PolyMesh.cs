@@ -1294,6 +1294,7 @@ namespace Polyhydra.Core
             Ortho3 = 97,
             Zellige = 114,
             Girih = 110,
+            Valletta = 115,
             StraightSkeleton = 105,
             FaceTessellate = 106,
             Tessellate = 107,
@@ -1494,7 +1495,10 @@ namespace Polyhydra.Core
                     polyMesh = polyMesh.Stake(p);
                     break;
                 case Operation.JoinStake:
-                    polyMesh = polyMesh.Stake(p, @join: true);
+                    polyMesh = polyMesh.Stake(p, join: true);
+                    break;
+                case Operation.Valletta:
+                    polyMesh = polyMesh.Valletta(p);
                     break;
                 case Operation.Medial:
                     polyMesh = polyMesh.Medial(p);
