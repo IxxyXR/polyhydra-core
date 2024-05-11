@@ -2130,6 +2130,96 @@ namespace Polyhydra.Core
             return new PolyMesh(vertexPoints, faceIndices, faceRoles, vertexRoles, newFaceTags);
         }
 
+        public PolyMesh Valletta(OpParams o)
+        {
+            var newFaceTags = new List<HashSet<string>>();
+
+            var faceIndices = new List<int[]>();
+            var vertexPoints = new List<Vector3>();
+            var existingVertices = new Dictionary<Vector3, int>();
+            var newInnerVertices = new Dictionary<(Guid, Guid)?, int>();
+
+            var faceRoles = new List<Roles>();
+            var vertexRoles = new List<Roles>();
+
+            for (var i = 0; i < Vertices.Count; i++)
+            {
+                vertexPoints.Add(Vertices[i].Position);
+                vertexRoles.Add(Roles.Existing);
+                existingVertices[vertexPoints[i]] = i;
+            }
+
+            int vertexIndex = vertexPoints.Count;
+
+            for (var faceIndex = 0; faceIndex < Faces.Count; faceIndex++)
+            {
+                float ratio = o.GetValueA(this, faceIndex);
+                var prevFaceTagSet = FaceTags[faceIndex];
+                var face = Faces[faceIndex];
+                var edge = face.Halfedge;
+                var centroid = face.Centroid;
+
+                // Generate the quads and triangles on this face
+                for (int i = 0; i < face.Sides; i++)
+                {
+                    var newVertex = Vector3.LerpUnclamped(
+                        edge.Midpoint,
+                        centroid,
+                        ratio
+                    );
+
+                    vertexPoints.Add(newVertex);
+                    vertexRoles.Add(Roles.NewAlt);
+                    newInnerVertices[edge.Name] = vertexIndex++;
+                    edge = edge.Next;
+                }
+
+                if (face.Sides > 2)
+                {
+                    var innerFace = new int[face.Sides * 2];
+                    edge = face.Halfedge;
+                    for (int i = 0; i < face.Sides; i++)
+                    {
+                        innerFace[i * 2] = newInnerVertices[edge.Name];
+                        innerFace[i * 2 + 1] = existingVertices[edge.Vertex.Position];
+                        edge = edge.Next;
+                    }
+
+                    faceIndices.Add(innerFace);
+                    faceRoles.Add(Roles.Existing);
+                    newFaceTags.Add(prevFaceTagSet);
+                }
+            }
+
+            var edgeFlags = new HashSet<(Guid, Guid)?>();
+            foreach (var edge in Halfedges)
+            {
+                if (edge.Pair == null) continue;
+
+                if (!edgeFlags.Contains(edge.PairedName))
+                {
+                    var quad = new[]
+                    {
+                        existingVertices[edge.Vertex.Position],
+                        newInnerVertices[edge.Name],
+                        existingVertices[edge.Pair.Vertex.Position],
+                        newInnerVertices[edge.Pair.Name],
+                    };
+                    faceIndices.Add(quad);
+                    faceRoles.Add(Roles.New);
+                    edgeFlags.Add(edge.PairedName);
+
+                    var newFaceTagSet = new HashSet<string>();
+                    newFaceTagSet.UnionWith(FaceTags[Faces.IndexOf(edge.Face)]);
+                    newFaceTagSet.UnionWith(FaceTags[Faces.IndexOf(edge.Pair.Face)]);
+                    newFaceTags.Add(newFaceTagSet);
+                }
+            }
+
+            return new PolyMesh(vertexPoints, faceIndices, faceRoles, vertexRoles, newFaceTags);
+        }
+
+
         public PolyMesh JoinKisKis(OpParams o)
         {
             var newFaceTags = new List<HashSet<string>>();
