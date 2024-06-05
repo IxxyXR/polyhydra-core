@@ -29,8 +29,9 @@ namespace Polyhydra.Core
         LastN,
         Random,
 
-        // Boundary
+        // Topology
         Inner,
+        InFaceLoop,
 
         // Angles
         MinimumAngle,
@@ -39,7 +40,6 @@ namespace Polyhydra.Core
         MinimumEdgeAngle,
         AverageEdgeAngle,
         MaximumEdgeAngle,
-
 
         // Distance or position
         PositionX,
@@ -93,6 +93,7 @@ namespace Polyhydra.Core
                 FilterTypes.OnlyNth => OnlyNth(filterParamInt, filterNot),
                 FilterTypes.All => filterNot ? None : All,
                 FilterTypes.Inner => filterNot ? Outer : Inner,
+                FilterTypes.InFaceLoop => InFaceLoop(filterParamFloat, filterNot),
                 FilterTypes.Random => Random(filterNot ? 1f - filterParamFloat : filterParamFloat),
                 FilterTypes.Role => Role((Roles)filterParamInt, filterNot),
                 FilterTypes.FacingVertical => FacingDirection(Vector3.up, filterParamFloat, includeOpposite: true,
@@ -339,6 +340,31 @@ namespace Polyhydra.Core
                     if (index < 0) index = p.poly.Vertices.Count - Mathf.Abs(index);
                     return not ? p.index % index != 0 : p.index % index == 0;
                 });
+        }
+
+        public static Filter InFaceLoop(float loopIndex, bool not = false)
+        {
+            Func<FilterParams, bool> faceFilter = p =>
+            {
+                if (loopIndex < 0) loopIndex = p.poly.Faces.Count - Mathf.Abs(loopIndex);
+                int faceIndex = Mathf.FloorToInt(loopIndex);
+                var face = p.poly.Faces[faceIndex % p.poly.Faces.Count];
+                var edges = face.GetHalfedges();
+                float fractionalPart = loopIndex - Mathf.Floor(faceIndex);
+                int edgeIndex = Mathf.FloorToInt(fractionalPart * edges.Count);
+                var edge = edges[edgeIndex];
+                var loop = edge.CachedFaceLoop;
+                var faceToCheck = p.poly.Faces[p.index];
+                bool found = loop.Contains(faceToCheck);
+                return not ? !found : found;
+            };
+            Func<FilterParams, bool> vertexFilter = p =>
+            {
+                var vertex = p.poly.Vertices[p.index];
+                var faceIndex = p.poly.Faces.IndexOf(vertex.Halfedges.First().Face);
+                return faceFilter(new FilterParams(p.poly, faceIndex));
+            };
+            return new Filter(faceFilter, vertexFilter);
         }
 
         public static Filter Range(int index, bool not = false)

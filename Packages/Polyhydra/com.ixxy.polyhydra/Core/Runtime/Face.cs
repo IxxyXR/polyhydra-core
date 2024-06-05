@@ -249,6 +249,36 @@ namespace Polyhydra.Core
             }
         }
 
+        private List<FaceLoop> m_CachedLoops;
+
+        // Use with caution. This is a cached list of loops.
+        // It is calculated on first access and not updated for the lifetime of the poly.
+        // You can explicitly clear it by calling ClearCachedLoops()
+        public List<FaceLoop> CachedLoops => m_CachedLoops ?? Loops;
+        public void ClearCachedLoops() => m_CachedLoops = null;
+
+        public List<FaceLoop> Loops
+        {
+            get
+            {
+                var checkedEdges = new List<Halfedge>();
+                var uniqueEdges = new List<Halfedge>();
+                foreach (var edge in GetHalfedges())
+                {
+                    var opposite = edge.OppositeByIndex;
+                    if (checkedEdges.Contains(edge) || checkedEdges.Contains(opposite)) continue;
+                    uniqueEdges.Add(edge);
+                    checkedEdges.Add(edge);
+                    checkedEdges.Add(opposite);
+                }
+                m_CachedLoops = uniqueEdges
+                    .Select(e => e.FaceLoop)
+                    .Where(l => l!=null)
+                    .ToList();
+                return m_CachedLoops;
+            }
+        }
+
         public bool AreAllVertsVisibleFromCentroid()
         {
             // Is every vertex reachable from the given point
@@ -296,6 +326,18 @@ namespace Polyhydra.Core
                 } while (edge != Halfedge);
 
                 return halfedges;
+            }
+
+            public Halfedge GetNthHalfedge(int n)
+            {
+                Halfedge edge = Halfedge;
+                for (var i = 0; i < n; i++)
+                {
+                    var nextEdge = edge.Next;
+                    if (nextEdge== Halfedge) break;
+                    edge = nextEdge;
+                }
+                return edge;
             }
 
             public void Split(Vertex v1, Vertex v2, out Face f_new, out Halfedge he_new, out Halfedge he_new_pair) {

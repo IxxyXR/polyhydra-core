@@ -114,39 +114,22 @@ namespace Polyhydra.Core {
             get {
                 var edges = new List<Halfedge>();
                 if (Halfedge == null) return edges;
-                bool boundary = false;
+
                 var edge = Halfedge;
                 do {
                     edges.Add(edge);
-                    if (edge.Pair == null) {
-                        boundary = true; // boundary hit
-                        break;
+                    if (edge.Pair != null) {
+                        edge = edge.Pair.Next;
+                    } else {
+                        // Handle boundary by traversing in reverse direction
+                        var boundaryEdge = Halfedge;
+                        while (boundaryEdge.Prev.Pair != null) {
+                            boundaryEdge = boundaryEdge.Prev.Pair;
+                            edges.Add(boundaryEdge);
+                        }
+                        break; // Exit the loop after completing boundary traversal
                     }
-
-                    edge = edge.Pair.Prev;
                 } while (edge != Halfedge);
-
-                if (boundary) {
-                    var redges = new List<Halfedge>();
-                    edge = Halfedge;
-                    while (edge.Next.Pair != null) {
-                        edge = edge.Next.Pair;
-                        redges.Add(edge);
-                    }
-
-                    // if (edge.Next.Pair == null)
-                    // {
-                    //     redges.Add(edge.Next);
-                    // }
-
-                    if (redges.Count > 1) {
-                        redges.Reverse();
-                    }
-
-
-                    redges.AddRange(edges);
-                    return redges;
-                }
 
                 return edges;
             }

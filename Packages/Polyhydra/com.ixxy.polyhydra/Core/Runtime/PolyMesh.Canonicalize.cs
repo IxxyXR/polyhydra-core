@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -299,7 +300,7 @@ namespace Polyhydra.Core
                         // I got quite interesting results skipping edges
                         // But it was more generally useful to not do so
                         // Might investigate further at some point.
-                        // nb Checking for edge boundaries is probably better than just doing >=3 
+                        // nb Checking for edge boundaries is probably better than just doing >=3
                         // if (edges.Count >= 3)
                         // {
                         var adjoiningFaces = edges.Select(e => e.Face);
@@ -638,23 +639,47 @@ namespace Polyhydra.Core
 
         // Performs Laplacian smoothing on the mesh with the given number of iteration
         // https://en.wikipedia.org/wiki/Laplacian_smoothing
-        private void Relax(int iterations)
+        public void Relax(int iterations)
         {
             for (int i = 0; i < iterations; i++)
             {
                 var newPositions = new Vector3[Vertices.Count];
                 for (var j = 0; j < Vertices.Count; j++)
                 {
-                    var neighbours = Vertices[j].Neighbours;
-                    foreach (var neighbour in neighbours)
+                    var vertex = Vertices[j];
+                    var neighbours = getNeighbours(vertex);
+
+                    List<Vertex> getNeighbours(Vertex v)
                     {
-                        newPositions[j] += neighbour.Position;
+                        var neighbours = new HashSet<Vertex>();
+                        neighbours.UnionWith(v.Halfedges.Select(e => e.Vertex));
+                        neighbours.UnionWith(v.Halfedges.Where(e => e.Pair != null).Select(e => e.Pair.Vertex));
+                        neighbours.Remove(v);
+                        return neighbours.ToList();
                     }
-                    newPositions[j] /= neighbours.Count;
+
+                    // Check if the vertex is a boundary vertex
+                    bool isBoundary = vertex.Halfedge.Pair == null ||
+                        neighbours.Any(n => n.Halfedge.Pair == null);
+                    Debug.Log($"isBoundary: {isBoundary} neighbours: {vertex.Halfedges.Count}");
+                    if (neighbours.Count > 0)
+                    {
+                        foreach (var neighbour in neighbours)
+                        {
+                            newPositions[j] += neighbour.Position;
+                        }
+
+                        newPositions[j] /= neighbours.Count ;
+                    }
+                    else
+                    {
+                        newPositions[j] = vertex.Position;
+                    }
                 }
+
                 for (int k = 0; k < Vertices.Count; k++)
                 {
-                    Vertices[k].Position = newPositions[k];
+                    Vertices[k].Position = Vector3.Lerp(newPositions[k], Vertices[k].Position, 0.15f);
                 }
             }
         }

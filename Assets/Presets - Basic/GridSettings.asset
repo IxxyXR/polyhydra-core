@@ -14,20 +14,21 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Operators:
   - Active: 1
-    OpType: 40
-    Parameter1: 0.9
+    OpType: 104
+    Parameter1: 0.01
     Parameter2: 0
     Iterations: 1
     Parameter1Randomize: 0
     Parameter2Randomize: 0
-    FilterType: 0
-    FilterParam: 0
+    FilterType: 9
+    FilterParam: 2
     FilterFlip: 0
   FastConicalize: 1
   CanonicalizeIterations: 0
   PlanarizeIterations: 0
-  FaceInset: -0.03
-  type: 1
-  shape: 0
-  X: 2
-  Y: 2
+  FaceInset: 0
+  ColorMethod: 1
+  type: 9
+  shape: 1
+  X: 4
+  Y: 4
