@@ -3372,6 +3372,16 @@ namespace Polyhydra.Core
             return poly;
         }
 
+        public PolyMesh CsgSubtract(PolyMesh other)
+        {
+            var poly = Duplicate();
+            CsgContext ctx = new CsgContext(GetBounds());
+            CsgObject csgPoly = new CsgObject(this);
+            CsgObject csgPolyOther = new CsgObject(other);
+            var foo= CsgOperations.CsgSubtract(ctx, csgPoly, csgPolyOther);
+            return poly;
+        }
+
         private PolyMesh SubdivideEdges(OpParams o)
         {
             int subdivisions = (int)o.GetValueA(this, 0);
