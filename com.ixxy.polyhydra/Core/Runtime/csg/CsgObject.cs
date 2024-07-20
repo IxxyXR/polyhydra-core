@@ -15,6 +15,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using com.google.apps.peltzer.client.model.core;
 using UnityEngine;
 
 namespace Polyhydra.Core
@@ -42,7 +43,15 @@ namespace Polyhydra.Core
 
         public CsgObject(PolyMesh polyMesh)
         {
-            throw new NotImplementedException();
+            var verts = polyMesh.ListVerticesByPoints().Select(v => new CsgVertex(v)).ToList();
+            var faceIndices = polyMesh.ListFacesByVertexIndices().Select(f =>
+            {
+                var faceVerts = f.Select(i => verts[i]).ToList();
+                return new CsgPolygon(faceVerts, new FaceProperties());
+            }).ToList();
+            this.vertices = verts;
+            this.polygons = faceIndices;
+            this.bounds = polyMesh.GetBounds();
         }
     }
 }
