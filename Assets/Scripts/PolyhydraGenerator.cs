@@ -58,7 +58,7 @@ public class PolyhydraGenerator : MonoBehaviour
     {
         var mf = gameObject.GetComponent<MeshFilter>();
         mf.mesh = settings.BuildAll(appearanceSettings);
-        // TODO check if this is neccessary
+        // TODO check if this is necessary
         mf.mesh.RecalculateBounds();
     }
 

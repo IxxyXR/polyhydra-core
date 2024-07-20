@@ -3383,7 +3383,9 @@ namespace Polyhydra.Core
 
         public PolyMesh ApplyCsg(PolyMesh other, CsgOp op)
         {
-            CsgContext ctx = new CsgContext(GetBounds());
+            var bounds = GetBounds();
+            bounds.Encapsulate(other.GetBounds());
+            CsgContext ctx = new CsgContext(bounds);
             CsgObject csgPoly = new CsgObject(this);
             CsgObject csgPolyOther = new CsgObject(other);
             List<CsgPolygon> csgResult;
@@ -3414,7 +3416,10 @@ namespace Polyhydra.Core
                 }
                 newFaces.Add(face);
             }
-            return new PolyMesh(newVerts, newFaces);
+            var result = new PolyMesh(newVerts, newFaces);
+            //result.Weld(0.01f);
+            result.MergeCoplanarFaces(0.01f);
+            return result;
         }
 
         private PolyMesh SubdivideEdges(OpParams o)
