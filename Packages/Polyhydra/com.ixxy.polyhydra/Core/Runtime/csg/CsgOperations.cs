@@ -50,7 +50,7 @@ namespace Polyhydra.Core
         /// <summary>
         ///   Perform union on CsgObjects
         /// </summary>
-        private static List<CsgPolygon> CsgUnion(CsgContext ctx, CsgObject leftObj, CsgObject rightObj)
+        public static List<CsgPolygon> CsgUnion(CsgContext ctx, CsgObject leftObj, CsgObject rightObj)
         {
             SplitObject(ctx, leftObj, rightObj);
             SplitObject(ctx, rightObj, leftObj);
@@ -68,7 +68,7 @@ namespace Polyhydra.Core
         /// <summary>
         ///   Perform intersection on CsgObjects
         /// </summary>
-        private static List<CsgPolygon> CsgIntersect(CsgContext ctx, CsgObject leftObj, CsgObject rightObj)
+        public static List<CsgPolygon> CsgIntersect(CsgContext ctx, CsgObject leftObj, CsgObject rightObj)
         {
             SplitObject(ctx, leftObj, rightObj);
             SplitObject(ctx, rightObj, leftObj);
