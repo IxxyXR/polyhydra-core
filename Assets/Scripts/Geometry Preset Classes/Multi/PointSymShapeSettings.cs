@@ -14,11 +14,6 @@ public class PointSymShapeSettings : BaseSettings
 
     public override PolyMesh BuildBaseShape()
     {
-        return null;
-    }
-
-    public override Mesh BuildAll(AppearanceSettings appearanceSettings)
-    {
         PolyMesh finalPoly = new PolyMesh();
         var poly = ShapeSettings.BuildBaseShape();
         poly = ShapeSettings.ApplyModifiers(poly);
@@ -31,6 +26,12 @@ public class PointSymShapeSettings : BaseSettings
         }
         finalPoly = ApplyModifiers(finalPoly);
 
+        return finalPoly;
+    }
+
+    public override Mesh BuildAll(AppearanceSettings appearanceSettings)
+    {
+        var finalPoly = BuildBaseShape();
         var meshData = finalPoly.BuildMeshData(
             colorMethod: GetColorMethod(appearanceSettings),
             colors: CalculateColorList(appearanceSettings)

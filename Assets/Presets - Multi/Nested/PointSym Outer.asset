@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a2e9a3bf926d4def994fb139a6407ded, type: 3}
+  m_Name: PointSym Outer
+  m_EditorClassIdentifier: 
+  Operators: []
+  FastConicalize: 1
+  CanonicalizeIterations: 0
+  PlanarizeIterations: 0
+  FaceInset: 0
+  ColorMethod: 1
+  ShapeSettings: {fileID: 11400000, guid: b5b985155920240f09420dba117a72c2, type: 2}
+  Family: 0
+  Transform:
+    Translation: {x: 0.36, y: 0, z: 0}
+    Rotation: {x: 90, y: 0, z: 0}
+    Scale: 0.6
+    NonUniformScale: {x: 1, y: 1, z: 1}
+  Repeats: 4
+  Radius: 0

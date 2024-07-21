@@ -88,6 +88,45 @@ namespace Polyhydra.Core
             return original;
         }
 
+        public PolyMesh Translate(OpParams o, int axis)
+        {
+            PolyMesh poly;
+
+            if (o.filter == null)
+            {
+                poly = this;
+            }
+            else
+            {
+                poly = FaceRemove(new OpParams(o.filter), true);
+            }
+
+            switch (axis)
+            {
+                case 0:
+                    poly.Transform(new Vector3(o.OriginalParamA, 1, 1));
+                    break;
+                case 1:
+                    poly.Transform(new Vector3(1, o.OriginalParamA, 1));
+                    break;
+                case 2:
+                    poly.Transform(new Vector3(1, 1, o.OriginalParamA));
+                    break;
+            }
+
+            PolyMesh result;
+            if (o.filter == null)
+            {
+                result = poly;
+            }
+            else
+            {
+                result = FaceRemove(new OpParams(o.filter), false);
+                result.Append(poly);
+            }
+            return result;
+        }
+
         public PolyMesh Scale(OpParams o, int axis)
         {
             PolyMesh poly;
@@ -3381,7 +3420,7 @@ namespace Polyhydra.Core
         }
 
 
-        public PolyMesh ApplyCsg(PolyMesh other, CsgOp op)
+        public PolyMesh ApplyCsg(PolyMesh other, CsgOp op, float weldThreshold = 0, float mergeThreshold = 0)
         {
             var bounds = GetBounds();
             bounds.Encapsulate(other.GetBounds());
@@ -3417,8 +3456,8 @@ namespace Polyhydra.Core
                 newFaces.Add(face);
             }
             var result = new PolyMesh(newVerts, newFaces);
-            //result.Weld(0.01f);
-            result.MergeCoplanarFaces(0.01f);
+            if (weldThreshold > 0) result = result.Weld(weldThreshold);
+            if (mergeThreshold > 0) result.MergeCoplanarFaces(mergeThreshold);
             return result;
         }
 

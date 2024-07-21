@@ -11,15 +11,11 @@ public class CsgShapeSettings : BaseSettings
     public BaseSettings Operand1;
     public BaseSettings Operand2;
     public PolyTransform Operand2Transform;
+    public float WeldThreshold = 0;
+    public float MergeThreshold = 0;
 
     public override PolyMesh BuildBaseShape()
-    {
-        return null;
-    }
-
-    public override Mesh BuildAll(AppearanceSettings appearanceSettings)
-    {
-        PolyMesh finalPoly = new PolyMesh();
+    {        PolyMesh finalPoly = new PolyMesh();
         var poly1 = Operand1.BuildBaseShape();
         poly1 = Operand1.ApplyModifiers(poly1);
         var poly2 = Operand2.BuildBaseShape();
@@ -29,9 +25,15 @@ public class CsgShapeSettings : BaseSettings
             Operand2Transform.Rotation,
             Operand2Transform.NonUniformScale * Operand2Transform.Scale
         );
-        finalPoly = poly1.ApplyCsg(poly2, csgOp);
+        finalPoly = poly1.ApplyCsg(poly2, csgOp, WeldThreshold, MergeThreshold);
         finalPoly = ApplyModifiers(finalPoly);
+        
+        return finalPoly;
+    }
 
+    public override Mesh BuildAll(AppearanceSettings appearanceSettings)
+    {
+        var finalPoly = BuildBaseShape();
         var meshData = finalPoly.BuildMeshData(
             colorMethod: GetColorMethod(appearanceSettings),
             colors: CalculateColorList(appearanceSettings)
