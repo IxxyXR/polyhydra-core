@@ -10,11 +10,21 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 63be2e6bb0184595ac92a61275f5a8f6, type: 3}
-  m_Name: WythoffSettings 1
+  m_Name: WythoffSettings 14
   m_EditorClassIdentifier: 
   Operators:
   - Active: 1
-    OpType: 109
+    OpType: 97
+    Parameter1: 0.33333
+    Parameter2: 0.6666
+    Iterations: 1
+    Parameter1Randomize: 0
+    Parameter2Randomize: 0
+    FilterType: 0
+    FilterParam: 0
+    FilterFlip: 0
+  - Active: 1
+    OpType: 8
     Parameter1: 0
     Parameter2: 0
     Iterations: 1
@@ -24,8 +34,18 @@ MonoBehaviour:
     FilterParam: 0
     FilterFlip: 0
   - Active: 1
-    OpType: 15
-    Parameter1: 0.33
+    OpType: 115
+    Parameter1: 0.47
+    Parameter2: 0
+    Iterations: 1
+    Parameter1Randomize: 0
+    Parameter2Randomize: 0
+    FilterType: 0
+    FilterParam: 0
+    FilterFlip: 0
+  - Active: 1
+    OpType: 16
+    Parameter1: 0.05
     Parameter2: 0
     Iterations: 1
     Parameter1Randomize: 0
@@ -36,6 +56,6 @@ MonoBehaviour:
   FastConicalize: 1
   CanonicalizeIterations: 0
   PlanarizeIterations: 0
-  FaceInset: 0.01
+  FaceInset: 0
   ColorMethod: 1
-  WythoffType: 28
+  WythoffType: 11

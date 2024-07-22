@@ -14,39 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Operators:
   - Active: 1
-    OpType: 96
-    Parameter1: 0.3
-    Parameter2: 0
-    Iterations: 1
-    Parameter1Randomize: 0
-    Parameter2Randomize: 0
-    FilterType: 0
-    FilterParam: 0
-    FilterFlip: 0
-  - Active: 1
-    OpType: 109
-    Parameter1: 1
-    Parameter2: 0
-    Iterations: 1
-    Parameter1Randomize: 0
-    Parameter2Randomize: 0
-    FilterType: 0
-    FilterParam: 8
-    FilterFlip: 0
-  - Active: 1
-    OpType: 110
-    Parameter1: -1
-    Parameter2: 0
-    Iterations: 1
-    Parameter1Randomize: 0
-    Parameter2Randomize: 0
-    FilterType: 0
-    FilterParam: 8
-    FilterFlip: 0
-  - Active: 1
-    OpType: 15
-    Parameter1: 0.28
-    Parameter2: -0.005
+    OpType: 1
+    Parameter1: 0
+    Parameter2: 0.6
     Iterations: 1
     Parameter1Randomize: 0
     Parameter2Randomize: 0
@@ -54,9 +24,9 @@ MonoBehaviour:
     FilterParam: 0
     FilterFlip: 0
   - Active: 0
-    OpType: 40
-    Parameter1: 1
-    Parameter2: 0
+    OpType: 2
+    Parameter1: 0.52
+    Parameter2: -0.02
     Iterations: 1
     Parameter1Randomize: 0
     Parameter2Randomize: 0
@@ -64,17 +34,18 @@ MonoBehaviour:
     FilterParam: 0
     FilterFlip: 0
   - Active: 0
-    OpType: 36
-    Parameter1: -0.05
+    OpType: 39
+    Parameter1: 0.005
     Parameter2: 0
     Iterations: 1
     Parameter1Randomize: 0
     Parameter2Randomize: 0
-    FilterType: 0
+    FilterType: 7
     FilterParam: 0
     FilterFlip: 0
   FastConicalize: 1
   CanonicalizeIterations: 0
   PlanarizeIterations: 0
-  FaceInset: 0
+  FaceInset: 0.01
+  ColorMethod: 1
   WythoffType: 11

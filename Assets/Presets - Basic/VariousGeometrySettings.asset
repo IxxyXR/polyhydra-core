@@ -14,18 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Operators:
   - Active: 1
-    OpType: 23
-    Parameter1: 0.53
-    Parameter2: 0
-    Iterations: 2
-    Parameter1Randomize: 0
-    Parameter2Randomize: 0
-    FilterType: 0
-    FilterParam: 0
-    FilterFlip: 0
-  - Active: 1
-    OpType: 114
-    Parameter1: 0
+    OpType: 104
+    Parameter1: 0.02
     Parameter2: 0
     Iterations: 1
     Parameter1Randomize: 0
@@ -34,8 +24,18 @@ MonoBehaviour:
     FilterParam: 0
     FilterFlip: 0
   - Active: 0
-    OpType: 40
-    Parameter1: 0.975
+    OpType: 97
+    Parameter1: 0.5
+    Parameter2: 0.5
+    Iterations: 2
+    Parameter1Randomize: 0
+    Parameter2Randomize: 0
+    FilterType: 0
+    FilterParam: 0
+    FilterFlip: 0
+  - Active: 0
+    OpType: 114
+    Parameter1: 0
     Parameter2: 0
     Iterations: 1
     Parameter1Randomize: 0
@@ -47,7 +47,8 @@ MonoBehaviour:
   CanonicalizeIterations: 0
   PlanarizeIterations: 0
   FaceInset: 0
-  type: 4
-  X: 16
-  Y: 8
-  Z: 64
+  ColorMethod: 1
+  type: 3
+  X: 8
+  Y: 3.2
+  Z: 0.8
