@@ -1,0 +1,40 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d216953ee452c43dd87a229fcb879dd4, type: 3}
+  m_Name: CsgShapeSettings 1
+  m_EditorClassIdentifier: 
+  Operators:
+  - Active: 0
+    OpType: 1
+    Parameter1: 0
+    Parameter2: -0.05
+    Iterations: 1
+    Parameter1Randomize: 0
+    Parameter2Randomize: 0
+    FilterType: 0
+    FilterParam: 0
+    FilterFlip: 0
+  FastConicalize: 1
+  CanonicalizeIterations: 0
+  PlanarizeIterations: 0
+  FaceInset: 0
+  ColorMethod: 1
+  csgOp: 0
+  Operand1: {fileID: 11400000, guid: 4e45dd19641fb4a8083f981bf31c6b62, type: 2}
+  Operand2: {fileID: 11400000, guid: 21a8d0036ed45401ea8ba7bf8c682c96, type: 2}
+  Operand2Transform:
+    Translation: {x: 0, y: 0, z: 0}
+    Rotation: {x: 0, y: 0, z: 0}
+    Scale: 0.71
+    NonUniformScale: {x: 1, y: 1, z: 1}
+  WeldThreshold: 0
+  MergeThreshold: 0

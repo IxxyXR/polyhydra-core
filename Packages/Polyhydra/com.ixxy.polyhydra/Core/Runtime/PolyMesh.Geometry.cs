@@ -88,6 +88,45 @@ namespace Polyhydra.Core
             return original;
         }
 
+        public PolyMesh Translate(OpParams o, int axis)
+        {
+            PolyMesh poly;
+
+            if (o.filter == null)
+            {
+                poly = this;
+            }
+            else
+            {
+                poly = FaceRemove(new OpParams(o.filter), true);
+            }
+
+            switch (axis)
+            {
+                case 0:
+                    poly.Transform(new Vector3(o.OriginalParamA, 1, 1));
+                    break;
+                case 1:
+                    poly.Transform(new Vector3(1, o.OriginalParamA, 1));
+                    break;
+                case 2:
+                    poly.Transform(new Vector3(1, 1, o.OriginalParamA));
+                    break;
+            }
+
+            PolyMesh result;
+            if (o.filter == null)
+            {
+                result = poly;
+            }
+            else
+            {
+                result = FaceRemove(new OpParams(o.filter), false);
+                result.Append(poly);
+            }
+            return result;
+        }
+
         public PolyMesh Scale(OpParams o, int axis)
         {
             PolyMesh poly;
@@ -3370,6 +3409,56 @@ namespace Polyhydra.Core
             poly.SplitEdges(uniqueEdges);
             poly.Halfedges.MatchPairs();
             return poly;
+        }
+
+        [Serializable]
+        public enum CsgOp
+        {
+            Union = 0,
+            Subtract = 1,
+            Intersect = 2,
+        }
+
+
+        public PolyMesh ApplyCsg(PolyMesh other, CsgOp op, float weldThreshold = 0, float mergeThreshold = 0)
+        {
+            var bounds = GetBounds();
+            bounds.Encapsulate(other.GetBounds());
+            CsgContext ctx = new CsgContext(bounds);
+            CsgObject csgPoly = new CsgObject(this);
+            CsgObject csgPolyOther = new CsgObject(other);
+            List<CsgPolygon> csgResult;
+            switch (op)
+            {
+                case CsgOp.Union:
+                    csgResult = CsgOperations.CsgUnion(ctx, csgPoly, csgPolyOther);
+                    break;
+                case CsgOp.Subtract:
+                    csgResult = CsgOperations.CsgSubtract(ctx, csgPoly, csgPolyOther);
+                    break;
+                case CsgOp.Intersect:
+                    csgResult = CsgOperations.CsgIntersect(ctx, csgPoly, csgPolyOther);
+                    break;
+                default:
+                    csgResult = CsgOperations.CsgUnion(ctx, csgPoly, csgPolyOther);
+                    break;
+            }
+            var newVerts = new List<Vector3>();
+            var newFaces = new List<List<int>>();
+            foreach (var polygon in csgResult)
+            {
+                var face = new List<int>();
+                foreach (CsgVertex vertex in polygon.vertices)
+                {
+                    newVerts.Add(vertex.loc);
+                    face.Add(newVerts.Count - 1);
+                }
+                newFaces.Add(face);
+            }
+            var result = new PolyMesh(newVerts, newFaces);
+            if (weldThreshold > 0) result = result.Weld(weldThreshold);
+            if (mergeThreshold > 0) result.MergeCoplanarFaces(mergeThreshold);
+            return result;
         }
 
         private PolyMesh SubdivideEdges(OpParams o)

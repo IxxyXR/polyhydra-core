@@ -1313,6 +1313,9 @@ namespace Polyhydra.Core
 
             // Object Transforms
 
+            TranslateX = 116,
+            TranslateY = 117,
+            TranslateZ = 118,
             ScaleX = 98,
             ScaleY = 99,
             ScaleZ = 100,
@@ -1561,6 +1564,16 @@ namespace Polyhydra.Core
                     break;
 
                 // Object Transforms
+
+                case Operation.TranslateX:
+                    polyMesh = polyMesh.Translate(p, (int)Axis.X);
+                    break;
+                case Operation.TranslateY:
+                    polyMesh = polyMesh.Translate(p, (int)Axis.Y);
+                    break;
+                case Operation.TranslateZ:
+                    polyMesh = polyMesh.Translate(p, (int)Axis.Z);
+                    break;
 
                 case Operation.ScaleX:
                     polyMesh = polyMesh.Scale(p, (int)Axis.X);

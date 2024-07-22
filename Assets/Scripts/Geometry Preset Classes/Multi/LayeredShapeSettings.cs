@@ -36,11 +36,6 @@ public class LayeredShapeSettings : BaseSettings
 
     public override PolyMesh BuildBaseShape()
     {
-        return null;
-    }
-
-    public override Mesh BuildAll(AppearanceSettings appearanceSettings)
-    {
         PolyMesh finalPoly = new PolyMesh();
         for (var i = 0; i < Layers.Count; i++)
         {
@@ -61,6 +56,13 @@ public class LayeredShapeSettings : BaseSettings
         }
         finalPoly = ApplyModifiers(finalPoly);
 
+        return finalPoly;
+
+    }
+
+    public override Mesh BuildAll(AppearanceSettings appearanceSettings)
+    {
+        var finalPoly = BuildBaseShape();
         var meshData = finalPoly.BuildMeshData(
             colorMethod: GetColorMethod(appearanceSettings),
             colors: CalculateColorList(appearanceSettings)
