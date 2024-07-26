@@ -519,7 +519,149 @@ namespace Polyhydra.Core
             CullUnusedVertices();
         }
 
-        public PolyMesh(TextReader reader) : this()
+        public PolyMesh(TextReader reader, string extension) : this()
+        {
+            switch (extension)
+            {
+                case ".off":
+                    ParseOff(reader);
+                    break;
+                case ".obj":
+                    ParseObj(reader.ReadToEnd());
+                    break;
+            }
+        }
+
+        public bool ParseObj(string objFileContents)
+        {
+            // Default current material, in case they don't have an MTL file.
+            bool mtlFileWasSupplied = false; //materials.Count > 0;
+            string currentMaterial = "mat0";
+
+            var verts = new List<Vector3>();
+            var faceIndices = new List<List<int>>();
+
+            string[] parts;
+            char[] sep = { ' ' };
+            char[] sep2 = { ':' };
+            char[] sep3 = { '/' };
+            string[] sep4 = { "//" };
+            using (StringReader reader = new StringReader(objFileContents))
+            {
+                string line = reader.ReadLine();
+                while (line != null)
+                {
+                    if (line.StartsWith("v "))
+                    {
+                        parts = line.Trim().Split(sep, StringSplitOptions.RemoveEmptyEntries);
+                        if (parts.Length < 4)
+                        {
+                            Debug.Log("Not enough vertex values");
+                            Debug.Log(line);
+                            return false;
+                        }
+
+                        try
+                        {
+                            var v = new Vector3(Convert.ToSingle(parts[1]), Convert.ToSingle(parts[2]),
+                                Convert.ToSingle(parts[3]));
+                            verts.Add(v);
+                        }
+                        catch (FormatException)
+                        {
+                            Debug.Log("Unexpected vertex value");
+                            Debug.Log(line);
+                            return false;
+                        }
+                    }
+                    else if (line.StartsWith("vt "))
+                    {
+                        parts = line.Trim().Split(sep, StringSplitOptions.RemoveEmptyEntries);
+                        if (parts.Count() < 3)
+                        {
+                            Debug.Log("Not enough tex vertex values");
+                            Debug.Log(line);
+                            return false;
+                        }
+
+                        // try
+                        // {
+                        //     allTexVertices[currentMaterial]
+                        //         .Add(new Vector2(Convert.ToSingle(parts[1]), Convert.ToSingle(parts[2])));
+                        // }
+                        // catch (FormatException)
+                        // {
+                        //     Debug.Log("Unexpected tex vertex value");
+                        //     Debug.Log(line);
+                        //     return false;
+                        // }
+                    }
+                    else if (line.StartsWith("usemtl ") && mtlFileWasSupplied)
+                    {
+                        parts = line.Trim().Split(sep, StringSplitOptions.RemoveEmptyEntries);
+                        if (parts[1].Contains(sep2[0]))
+                        {
+                            currentMaterial = parts[1].Split(sep2, StringSplitOptions.RemoveEmptyEntries)[1];
+                        }
+                        else
+                        {
+                            currentMaterial = parts[1];
+                        }
+                    }
+                    else if (line.StartsWith("f "))
+                    {
+                        parts = line.Trim().Split(sep, StringSplitOptions.RemoveEmptyEntries);
+                        if (parts.Length < 4)
+                        {
+                            Debug.Log("Not vertex values in a face");
+                            Debug.Log(line);
+                            return false;
+                        }
+
+                        var face = new List<int>();
+                        for (int i = 1; i < parts.Length; i++)
+                        {
+                            if (parts[i].Contains(sep4[0]))
+                            {
+                                // -1 as vertices are 0-indexed when read but 1-indexed when referenced.
+                                face.Add(
+                                    int.Parse(parts[i].Split(sep4, StringSplitOptions.RemoveEmptyEntries)[0]) - 1);
+                            }
+                            else if (parts[i].Contains(sep3[0]))
+                            {
+                                // -1 as vertices are 0-indexed when read but 1-indexed when referenced.
+                                face.Add(
+                                    int.Parse(parts[i].Split(sep3, StringSplitOptions.RemoveEmptyEntries)[0]) - 1);
+                                //face.uvIds.Add(int.Parse(vIds[1]));
+                            }
+                            else
+                            {
+                                // -1 as vertices are 0-indexed when read but 1-indexed when referenced.
+                                string vIndex =
+                                    parts[i].Split(new[] { '/' },
+                                        StringSplitOptions.RemoveEmptyEntries)[0]; // Ignore texture and normal indices.
+                                face.Add(int.Parse(vIndex) - 1);
+                            }
+                        }
+
+                        faceIndices.Add(face);
+                    }
+
+                    line = reader.ReadLine();
+                }
+            }
+            FaceRoles = Enumerable.Repeat(Roles.New, faceIndices.Count).ToList();
+            FaceTags = Enumerable.Repeat(new HashSet<string>(), faceIndices.Count()).ToList();
+            VertexRoles = Enumerable.Repeat(Roles.New, verts.Count()).ToList();
+
+            InitIndexed(verts, faceIndices);
+            CullUnusedVertices();
+            return true;
+        }
+
+
+
+        public void ParseOff(TextReader reader)
         {
             var faceIndices = new List<int[]>();
             var vertexPoints = new List<Vector3>();
@@ -580,6 +722,10 @@ namespace Polyhydra.Core
                     tags.Add($"#{(int)faceColor.r:X2}{(int)faceColor.g:X2}{(int)faceColor.b:X2}");
                     FaceTags.Add(tags);
                 }
+                else
+                {
+                    FaceTags.Add(new HashSet<string>());
+                }
 
                 face = face.ToArray();
                 faceIndices.Add(face);
@@ -593,7 +739,6 @@ namespace Polyhydra.Core
             InitIndexed(vertexPoints, faceIndices);
 
             CullUnusedVertices();
-
         }
 
         /// <summary>
