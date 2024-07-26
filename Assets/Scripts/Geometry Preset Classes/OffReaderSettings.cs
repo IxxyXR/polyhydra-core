@@ -12,7 +12,7 @@ public class OffReaderSettings : BaseSettings
     {
         using (StreamReader reader = new StreamReader($"Assets/{filename}"))
         {
-            var poly = new PolyMesh(reader);
+            var poly = new PolyMesh(reader, Path.GetExtension(filename));
             return poly;
         }
     }

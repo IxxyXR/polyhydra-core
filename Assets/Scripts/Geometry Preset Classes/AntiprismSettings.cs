@@ -60,7 +60,7 @@ public class AntiprismSettings : BaseSettings
 
         using (StringReader reader = new StringReader(output))
         {
-            var poly = new PolyMesh(reader);
+            var poly = new PolyMesh(reader, ".off");
             return poly;
         }
     }
