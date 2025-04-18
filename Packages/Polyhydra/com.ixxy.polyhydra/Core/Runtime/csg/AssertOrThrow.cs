@@ -14,7 +14,7 @@
 
 using System;
 
-namespace com.google.apps.peltzer.client.model.util
+namespace Polyhydra.core.csg.util
 {
     /// <summary>
     ///   Runtime assertions.

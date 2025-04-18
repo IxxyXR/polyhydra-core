@@ -14,7 +14,7 @@
 
 using UnityEngine;
 
-namespace com.google.apps.peltzer.client.model.core
+namespace Polyhydra.core.csg.core
 {
 
     /// <summary>

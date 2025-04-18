@@ -15,10 +15,10 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using com.google.apps.peltzer.client.model.render;
+using Polyhydra.core.csg.render;
 using UnityEngine;
 
-namespace com.google.apps.peltzer.client.model.core
+namespace Polyhydra.core.csg.core
 {
     /// <summary>
     ///   A polygonal face of a MMesh.  Vertices must be specified in clockwise

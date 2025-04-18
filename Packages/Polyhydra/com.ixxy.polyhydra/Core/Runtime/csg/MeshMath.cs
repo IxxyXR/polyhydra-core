@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using com.google.apps.peltzer.client.model.util;
+using Polyhydra.core.csg.util;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using UnityEngine;
 
-namespace com.google.apps.peltzer.client.model.core
+namespace Polyhydra.core.csg.core
 {
     /// <summary>
     ///   Structure for holding a pair of edges and the separation between the edges.
