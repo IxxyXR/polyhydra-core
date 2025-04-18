@@ -12,15 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using com.google.apps.peltzer.client.model.core;
-using com.google.apps.peltzer.client.model.util;
+using Polyhydra.core.csg.core;
+using Polyhydra.core.csg.util;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using UnityEngine;
 
-namespace com.google.apps.peltzer.client.model.render
+namespace Polyhydra.core.csg.render
 {
     public struct Triangle
     {

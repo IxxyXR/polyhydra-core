@@ -13,10 +13,10 @@
 // limitations under the License.
 
 using System.Collections.Generic;
-using com.google.apps.peltzer.client.model.util;
+using Polyhydra.core.csg.util;
 using UnityEngine;
 
-namespace com.google.apps.peltzer.client.model.core
+namespace Polyhydra.core.csg.core
 {
     /// <summary>
     ///   Holder for calculated information about a Face.

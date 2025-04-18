@@ -17,7 +17,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using UnityEngine;
-using com.google.apps.peltzer.client.model.core;
+using Polyhydra.core.csg.core;
 
 namespace Polyhydra.Core
 {

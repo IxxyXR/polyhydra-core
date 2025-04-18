@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-namespace com.google.apps.peltzer.client.model.core
+namespace Polyhydra.core.csg.core
 {
     /// <summary>
     /// A canonical id for a vertex, which includes the id of the mesh it belongs to.

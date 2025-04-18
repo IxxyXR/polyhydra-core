@@ -17,7 +17,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace com.google.apps.peltzer.client.model.util
+namespace Polyhydra.core.csg.util
 {
     /// <summary>
     ///   A pair that represents a line segment.  Makes it easy to lookup segments in a Hashtable.

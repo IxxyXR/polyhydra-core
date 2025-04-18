@@ -18,9 +18,9 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-using com.google.apps.peltzer.client.model.core;
+using Polyhydra.core.csg.core;
 
-namespace com.google.apps.peltzer.client.model.util
+namespace Polyhydra.core.csg.util
 {
     /// <summary>
     ///   Some 3d math utilities.
