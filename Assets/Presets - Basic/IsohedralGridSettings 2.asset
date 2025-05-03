@@ -47,9 +47,10 @@ MonoBehaviour:
   CanonicalizeIterations: 0
   PlanarizeIterations: 0
   FaceInset: 0
+  ColorMethod: 1
   TilingType: 32
   NewVerts:
-  - {x: 0.249, y: 0}
+  - {x: 0.83, y: 0}
   tilingParameters: []
   Weld: 1
   Size: {x: 6, y: 6}

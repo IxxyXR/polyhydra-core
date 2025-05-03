@@ -33,9 +33,19 @@ MonoBehaviour:
     FilterType: 0
     FilterParam: 0
     FilterFlip: 0
+  - Active: 1
+    OpType: 15
+    Parameter1: 0.4
+    Parameter2: 0
+    Iterations: 1
+    Parameter1Randomize: 0
+    Parameter2Randomize: 0
+    FilterType: 0
+    FilterParam: 0
+    FilterFlip: 0
   FastConicalize: 1
   CanonicalizeIterations: 0
   PlanarizeIterations: 0
   FaceInset: 0.01
   ColorMethod: 1
-  WythoffType: 28
+  WythoffType: 11

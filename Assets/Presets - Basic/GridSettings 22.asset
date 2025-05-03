@@ -37,8 +37,8 @@ MonoBehaviour:
   CanonicalizeIterations: 0
   PlanarizeIterations: 0
   FaceInset: 0.0125
+  ColorMethod: 1
   type: 20
   shape: 0
   X: 5
   Y: 5
-  Faces: 

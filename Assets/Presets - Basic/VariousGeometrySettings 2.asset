@@ -33,7 +33,7 @@ MonoBehaviour:
     FilterType: 0
     FilterParam: 0
     FilterFlip: 0
-  - Active: 0
+  - Active: 1
     OpType: 40
     Parameter1: 0.975
     Parameter2: 0
@@ -47,7 +47,8 @@ MonoBehaviour:
   CanonicalizeIterations: 0
   PlanarizeIterations: 0
   FaceInset: 0
+  ColorMethod: 1
   type: 4
   X: 16
-  Y: 8
-  Z: 64
+  Y: 4
+  Z: 42.4

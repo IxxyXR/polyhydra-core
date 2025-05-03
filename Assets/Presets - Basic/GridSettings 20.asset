@@ -53,15 +53,12 @@ MonoBehaviour:
     FilterType: 1
     FilterParam: 4
     FilterFlip: 0
-  SpherizeAmount: 0
   FastConicalize: 1
   CanonicalizeIterations: 0
   PlanarizeIterations: 0
-  FaceScale: 1
-  FaceExtrude: 0
   FaceInset: 0.0075
+  ColorMethod: 1
   type: 22
   shape: 0
-  X: 6
-  Y: 6
-  Faces: 
+  X: 3
+  Y: 3

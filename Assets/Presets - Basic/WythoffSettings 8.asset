@@ -67,5 +67,5 @@ MonoBehaviour:
   CanonicalizeIterations: 0
   PlanarizeIterations: 0
   FaceInset: 0
-  type: 28
+  ColorMethod: 1
   WythoffType: 28
