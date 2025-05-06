@@ -157,6 +157,46 @@ namespace Polyhydra.Core
             );
         }
 
+        private static Face getFace(FilterParams p)
+        {
+            return p.index == -1 ? p.face : getFace(p);
+        }
+
+        private static Vertex getVertex(FilterParams p)
+        {
+            return p.index == -1 ? p.vertex : getVertex(p);
+        }
+
+        private static Roles getFaceRole(FilterParams p)
+        {
+            int index;
+            if (p.index != -1)
+            {
+                index = p.index;
+            }
+            else
+            {
+                // TODO Memoize/cache?
+                index = p.poly.Faces.IndexOf(p.face);
+            }
+            return p.poly.FaceRoles[index];
+        }
+
+        private static Roles getVertexRole(FilterParams p)
+        {
+            int index;
+            if (p.index != -1)
+            {
+                index = p.index;
+            }
+            else
+            {
+                // TODO Memoize/cache?
+                index = p.poly.Vertices.IndexOf(p.vertex);
+            }
+            return p.poly.VertexRoles[index];
+        }
+
         public static Filter RadialDistance(float min = 0f, float max = 1f, bool not = false)
         {
             return new Filter(
