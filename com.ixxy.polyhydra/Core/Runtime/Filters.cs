@@ -59,20 +59,20 @@ namespace Polyhydra.Core
             p => false
         );
         public static Filter Outer = new (
-            p => p.poly.Faces[p.index].HasNakedEdge(),
-            p => p.poly.Vertices[p.index].Halfedges.Any(e=>e.Pair==null)
+            p => getFace(p).HasNakedEdge(),
+            p => getVertex(p).Halfedges.Any(e=>e.Pair==null)
         );
         public static Filter Inner = new (
-            p => !p.poly.Faces[p.index].HasNakedEdge(),
-            p => !p.poly.Vertices[p.index].Halfedges.Any(e=>e.Pair==null)
+            p => !getFace(p).HasNakedEdge(),
+            p => !getVertex(p).Halfedges.Any(e=>e.Pair==null)
         );
         public static Filter EvenSided = new (
-            p => p.poly.Faces[p.index].Sides % 2 != 0,
-            p => p.poly.Vertices[p.index].Halfedges.Count % 2 != 0
+            p => getFace(p).Sides % 2 != 0,
+            p => getVertex(p).Halfedges.Count % 2 != 0
         );
         public static Filter OddSided = new (
-            p => p.poly.Faces[p.index].Sides % 2 == 0,
-            p => p.poly.Vertices[p.index].Halfedges.Count % 2 == 0
+            p => getFace(p).Sides % 2 == 0,
+            p => getVertex(p).Halfedges.Count % 2 == 0
         );
 
         public Func<FilterParams, bool> evalFace;
@@ -125,21 +125,22 @@ namespace Polyhydra.Core
             return new Filter(
                 p =>
                 {
+                    var face = getFace(p);
                     bool result = false;
                     Func<Vector3, float> getComponent = GetVectorComponent(axis);
                     switch (type)
                     {
                         case PositionType.Center:
-                            var position = getComponent(p.poly.Faces[p.index].Centroid);
+                            var position = getComponent(face.Centroid);
                             result = position > min && position < max;
                             break;
                         case PositionType.VertexAll:
-                            result = p.poly.Faces[p.index].GetVertices()
+                            result = face.GetVertices()
                                 .Select(v => getComponent(v.Position))
                                 .All(c => c > min && c < max);
                             break;
                         case PositionType.VertexAny:
-                            result = p.poly.Faces[p.index].GetVertices()
+                            result = face.GetVertices()
                                 .Select(v => getComponent(v.Position))
                                 .Any(c => c > min && c < max);
                             break;
@@ -150,7 +151,7 @@ namespace Polyhydra.Core
                 p =>
                 {
                     Func<Vector3, float> getComponent = GetVectorComponent(axis);
-                    var position = getComponent(p.poly.Vertices[p.index].Position);
+                    var position = getComponent(getVertex(p).Position);
                     bool result = position > min && position < max;
                     return not ? !result : result;
                 }
@@ -202,13 +203,13 @@ namespace Polyhydra.Core
             return new Filter(
                 p =>
                 {
-                    float distance = p.poly.Faces[p.index].Centroid.magnitude;
+                    float distance = getFace(p).Centroid.magnitude;
                     var result = distance > min && distance < max;
                     return not ? !result : result;
                 },
                 p =>
                 {
-                    float distance = p.poly.Vertices[p.index].Position.magnitude;
+                    float distance = getVertex(p).Position.magnitude;
                     var result = distance > min && distance < max;
                     return not ? !result : result;
                 }
@@ -221,7 +222,7 @@ namespace Polyhydra.Core
             return new Filter(
                 p =>
                 {
-                    float angle = Vector3.Angle(direction, p.poly.Faces[p.index].Normal);
+                    float angle = Vector3.Angle(direction, getFace(p).Normal);
                     float oppositeAngle = 180f - angle;
                     bool result;
                     if (includeOpposite)
@@ -237,7 +238,7 @@ namespace Polyhydra.Core
                 },
                 p =>
                 {
-                    float angle = Vector3.Angle(direction, p.poly.Vertices[p.index].Normal);
+                    float angle = Vector3.Angle(direction, getVertex(p).Normal);
                     float oppositeAngle = 180f - angle;
                     bool result;
                     if (includeOpposite)
@@ -274,7 +275,7 @@ namespace Polyhydra.Core
             return new Filter(
                 p =>
                 {
-                    var face = p.poly.Faces[p.index];
+                    var face = getFace(p);
                     var edges = face.GetHalfedges();
                     float angle = minMaxAvg switch
                     {
@@ -288,7 +289,7 @@ namespace Polyhydra.Core
                 },
                 p =>
                 {
-                    var vert = p.poly.Vertices[p.index];
+                    var vert = getVertex(p);
                     var edges = vert.Halfedges;
                     float angle = edges.Select(e => e.DihedralAngle).Sum() / edges.Count;
                     bool result = angle < inputAngle;
@@ -317,7 +318,7 @@ namespace Polyhydra.Core
             return new Filter(
                 p =>
                 {
-                    var face = p.poly.Faces[p.index];
+                    var face = getFace(p);
                     var edges = face.GetHalfedges();
                     float angle = minMaxAvg switch
                     {
@@ -331,7 +332,7 @@ namespace Polyhydra.Core
                 },
                 p =>
                 {
-                    var vert = p.poly.Vertices[p.index];
+                    var vert = getVertex(p);
                     var edges = vert.Halfedges;
                     float angle = minMaxAvg switch
                     {
@@ -414,12 +415,12 @@ namespace Polyhydra.Core
             return new Filter(
                 p =>
                 {
-                    var result = p.poly.Faces[p.index].Sides == sides;
+                    var result = getFace(p).Sides == sides;
                     return not ? !result : result;
                 },
                 p =>
                 {
-                    var result = p.poly.Vertices[p.index].Halfedges.Count == sides;
+                    var result = getVertex(p).Halfedges.Count == sides;
                     return not ? !result : result;
                 }
             );
@@ -451,12 +452,15 @@ namespace Polyhydra.Core
             return new Filter(
                 p =>
                 {
-                    var result = p.poly.FaceRoles[p.index] == role;
+                    var result = getFaceRole(p) == role;
                     return not ? !result : result;
                 },
                 p =>
                 {
-                    int faceIndex = p.poly.Faces.IndexOf(p.poly.Vertices[p.index].Halfedge.Face);
+                    // This is interesting. We filter vertices based on face roles
+                    // NOT on vertex roles. Probably for historical reasons or for intuitive consistency
+                    // but surely we should support both cases?
+                    int faceIndex = p.poly.Faces.IndexOf(getVertex(p).Halfedge.Face);
                     var result = p.poly.FaceRoles[faceIndex] == role;
                     return not ? !result : result;
                 }
