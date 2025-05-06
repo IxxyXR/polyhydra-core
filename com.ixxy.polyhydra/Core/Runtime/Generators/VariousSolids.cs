@@ -10,11 +10,20 @@ namespace Polyhydra.Core
         UvHemisphere,
         Box,
         Stairs,
-        Torus
+        Torus,
+        StarTorus
     }
 
     public static class VariousSolids
     {
+
+        public static PolyMesh StarTorus(int pathSteps, int shapeSides, float radius, float scale)
+        {
+            var shape = Shapes.Build(ShapeTypes.Polygon, shapeSides);
+            shape = shape.FaceScale(new OpParams(scale/100f));
+            var path = Shapes.Build(ShapeTypes.Star, pathSteps, radius);
+            return path.Sweep(path.Faces[0].Get2DVertices(), shape.Faces[0].Get2DVertices(), true);
+        }
 
         public static PolyMesh Torus(int pathSteps, int shapeSides, float scale)
         {
