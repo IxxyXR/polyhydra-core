@@ -160,12 +160,12 @@ namespace Polyhydra.Core
 
         private static Face getFace(FilterParams p)
         {
-            return p.index == -1 ? p.face : getFace(p);
+            return p.index == -1 ? p.face : p.poly.Faces[p.index];
         }
 
         private static Vertex getVertex(FilterParams p)
         {
-            return p.index == -1 ? p.vertex : getVertex(p);
+            return p.index == -1 ? p.vertex : p.poly.Vertices[p.index];
         }
 
         private static Roles getFaceRole(FilterParams p)
