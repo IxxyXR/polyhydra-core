@@ -48,7 +48,7 @@ public static class PolySettingsCopier
 
     public static class AssignToGenerator
     {
-        [MenuItem("Assets/Assign to First Scene Generator")]
+        [MenuItem("Assets/Assign to First Scene Generator #a")]
         public static void AssignToScene()
         {
             var targetSettings = Selection.activeObject;
