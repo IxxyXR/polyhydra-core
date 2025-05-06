@@ -3052,13 +3052,17 @@ namespace Polyhydra.Core
         // }
 
         // Attempt to collapse all edges that are between faces with s1 sides and faces with s2 sides
-        public PolyMesh CollapseEdges(int s1, int s2, bool either = true)
+        public PolyMesh CollapseEdges(int s1, int s2, bool either = true, Filter filter = null)
         {
             var poly = Duplicate();
             var edgesToCollapse = new List<Halfedge>();
             foreach (var edge in poly.Halfedges)
             {
                 if (edge.Face == null || edge.Pair == null || edge.Pair.Face == null) continue;
+                if (filter != null)
+                {
+                    if (!filter.evalFace(new FilterParams(poly, edge.Face))) continue;
+                }
                 if (
                     (edge.Face.Sides == s1 && edge.Pair.Face.Sides == s2) ||
                     (either && (edge.Face.Sides == s2 && edge.Pair.Face.Sides == s1))
