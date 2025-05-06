@@ -3965,18 +3965,12 @@ namespace Polyhydra.Core
             if (!IsClockWise(path)) path.Reverse();
             if (!IsClockWise(shape)) shape.Reverse();
 
-            float angle = 0;
             for (var i = 0; i < path.Count; i++)
             {
-                Vector2 previousPoint = path[ActualMod(i - 1, path.Count)];
                 Vector2 currentPoint = path[i];
-                Vector2 nextPoint = path[ActualMod(i + 1, path.Count)];
-                Vector2 previousEdge = (previousPoint - currentPoint);
-                Vector2 nextEdge = nextPoint - currentPoint;
-                float delta = 180 - Vector2.SignedAngle(nextEdge, previousEdge);
-                angle += delta;
                 var origin = new Vector3(currentPoint.x, 0, currentPoint.y);
                 IEnumerable<Vector3> points;
+                float angle = Mathf.Rad2Deg * Mathf.Atan2(currentPoint.y , currentPoint.x);
                 points = shape.Select(v => rotateY(v, angle) + origin);
                 vertexPoints.AddRange(points.ToList());
             }
