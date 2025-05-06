@@ -8,11 +8,37 @@ namespace Polyhydra.Core
         public FilterParams(PolyMesh p, int i)
         {
             poly = p;
+            face = null;
+            vertex = null;
             index = i;
         }
 
+        public FilterParams(PolyMesh p, Face f)
+        {
+            poly = p;
+            face = f;
+            vertex = null;
+            index = -1;
+        }
+
+        public FilterParams(PolyMesh p, Vertex v)
+        {
+            poly = p;
+            face = null;
+            vertex = v;
+            index = -1;
+        }
+
         public PolyMesh poly;
+
+        // Either supply an index
         public int index;
+
+        // Or directly supply a face or vertex (not both)
+        public Face face;
+        public Vertex vertex;
+
+        // If an index and (face/vertex) are supplied the latter takes priority
 
     }
     
