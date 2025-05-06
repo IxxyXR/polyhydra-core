@@ -34,6 +34,14 @@ public class VariousGeometrySettings : BaseSettings
                     Z
                 );
                 break;
+            case VariousSolidTypes.StarTorus:
+                poly = VariousSolids.StarTorus(
+                    X,
+                    Mathf.Max(Mathf.FloorToInt(Y), 1),
+                    .5f,
+                    Z
+                );
+                break;
             case VariousSolidTypes.Torus:
                 poly = VariousSolids.Torus(
                     X,
