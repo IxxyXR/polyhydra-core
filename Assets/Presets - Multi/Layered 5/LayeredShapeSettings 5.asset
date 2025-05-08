@@ -1,0 +1,56 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9802e798c8d84fc69d0f8d39a71bcdd8, type: 3}
+  m_Name: LayeredShapeSettings 5
+  m_EditorClassIdentifier: 
+  Operators: []
+  FastConicalize: 1
+  CanonicalizeIterations: 0
+  PlanarizeIterations: 0
+  FaceInset: 0
+  ColorMethod: 1
+  Layers:
+  - Active: 1
+    ShapeSettings: {fileID: 11400000, guid: e3ea89a092ec143ac94951949c68c5dd, type: 2}
+    Transforms:
+    - Translation: {x: 0, y: 0, z: 0}
+      Rotation: {x: 0, y: 0, z: 0}
+      Scale: 1
+      NonUniformScale: {x: 1, y: 1, z: 1}
+  - Active: 1
+    ShapeSettings: {fileID: 11400000, guid: 330ec45af58df4f1db7b89c242520a05, type: 2}
+    Transforms:
+    - Translation: {x: 0, y: -0.005, z: 0}
+      Rotation: {x: 0, y: 0, z: 0}
+      Scale: 1
+      NonUniformScale: {x: 1, y: 1, z: 1}
+  - Active: 1
+    ShapeSettings: {fileID: 11400000, guid: 79091ddb362d041e0a1ac0806037eaba, type: 2}
+    Transforms:
+    - Translation: {x: 0, y: -0.01, z: 0}
+      Rotation: {x: 0, y: 0, z: 0}
+      Scale: 1
+      NonUniformScale: {x: 1, y: 1, z: 1}
+  - Active: 1
+    ShapeSettings: {fileID: 11400000, guid: d0b69b01ebc0c493e93794c820dbc251, type: 2}
+    Transforms:
+    - Translation: {x: 0, y: -0.015, z: 0}
+      Rotation: {x: 0, y: 0, z: 0}
+      Scale: 1
+      NonUniformScale: {x: 1, y: 1, z: 1}
+  - Active: 1
+    ShapeSettings: {fileID: 11400000, guid: 75d3fe62324c845fd944396d5a61591e, type: 2}
+    Transforms:
+    - Translation: {x: 0, y: -0.02, z: 0}
+      Rotation: {x: 0, y: 0, z: 0}
+      Scale: 1
+      NonUniformScale: {x: 1, y: 1, z: 1}

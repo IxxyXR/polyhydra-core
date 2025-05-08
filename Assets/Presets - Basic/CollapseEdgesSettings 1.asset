@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b58f3fe015a0f7847b905a73a381e5c9, type: 3}
-  m_Name: CollapseEdgesSettings
+  m_Name: CollapseEdgesSettings 1
   m_EditorClassIdentifier: 
   Operators: []
   FastConicalize: 1
@@ -18,13 +18,24 @@ MonoBehaviour:
   PlanarizeIterations: 0
   FaceInset: 0.006
   ColorMethod: 1
-  type: 19
+  type: 12
   shape: 0
   X: 4
   Y: 4
   CollapseEdgeParameterList:
   - enabled: 1
-    Face1Sides: 3
-    Face1Role: 0
-    Face2Sides: 3
+    Face1: 3
+    Face2: 4
+    Either: 0
+  - enabled: 1
+    Face1: 3
+    Face2: 3
+    Either: 0
+  - enabled: 1
+    Face1: 3
+    Face2: 4
+    Either: 0
+  - enabled: 1
+    Face1: 3
+    Face2: 4
     Either: 0
