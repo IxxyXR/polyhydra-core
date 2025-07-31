@@ -23,13 +23,11 @@ MonoBehaviour:
     FilterType: 0
     FilterParam: 0
     FilterFlip: 0
-  SpherizeAmount: 0
   FastConicalize: 1
   CanonicalizeIterations: 0
   PlanarizeIterations: 0
-  FaceScale: 1
-  FaceExtrude: 0
   FaceInset: 0
+  ColorMethod: 1
   Layers:
   - Active: 1
     ShapeSettings: {fileID: 11400000, guid: 3c5738b89c6fb554d9908754d903b4f5, type: 2}
