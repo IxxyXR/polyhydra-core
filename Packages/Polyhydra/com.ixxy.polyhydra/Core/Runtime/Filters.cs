@@ -50,33 +50,41 @@ namespace Polyhydra.Core
 
     public class Filter
     {
+        public FilterTypes filterType;
         public static Filter All = new (
+            p => true,
             p => true,
             p => true
         );
         public static Filter None = new (
             p => false,
+            p => false,
             p => false
         );
         public static Filter Outer = new (
             p => getFace(p).HasNakedEdge(),
-            p => getVertex(p).Halfedges.Any(e=>e.Pair==null)
+            p => getVertex(p).Halfedges.Any(e=>e.Pair==null),
+            p => getHalfedge(p).Pair==null
         );
         public static Filter Inner = new (
             p => !getFace(p).HasNakedEdge(),
-            p => !getVertex(p).Halfedges.Any(e=>e.Pair==null)
+            p => !getVertex(p).Halfedges.Any(e=>e.Pair==null),
+            p => getHalfedge(p).Pair!=null
         );
         public static Filter EvenSided = new (
             p => getFace(p).Sides % 2 != 0,
-            p => getVertex(p).Halfedges.Count % 2 != 0
+            p => getVertex(p).Halfedges.Count % 2 != 0,
+            p => getHalfedge(p).Face.Sides % 2 != 0
         );
         public static Filter OddSided = new (
             p => getFace(p).Sides % 2 == 0,
-            p => getVertex(p).Halfedges.Count % 2 == 0
+            p => getVertex(p).Halfedges.Count % 2 == 0,
+            p => getHalfedge(p).Face.Sides % 2 == 0
         );
 
         public Func<FilterParams, bool> evalFace;
         public Func<FilterParams, bool> evalVertex;
+        public Func<FilterParams, bool> evalHalfedge;
 
         public enum PositionType
         {
@@ -88,7 +96,7 @@ namespace Polyhydra.Core
         public static Filter GetFilter(FilterTypes filterType, float filterParamFloat, int filterParamInt,
             bool filterNot)
         {
-            return filterType switch
+            var filter =  filterType switch
             {
                 FilterTypes.OnlyNth => OnlyNth(filterParamInt, filterNot),
                 FilterTypes.All => filterNot ? None : All,
@@ -117,6 +125,8 @@ namespace Polyhydra.Core
                 FilterTypes.DistanceFromCenter => RadialDistance(0, filterParamFloat, not: filterNot),
                 _ => throw new ArgumentOutOfRangeException(nameof(filterType), filterType, null)
             };
+            filter.filterType = filterType;
+            return filter;
         }
 
         public static Filter Position(PositionType type, Axis axis, float min = -1f, float max = 1f,
@@ -154,6 +164,13 @@ namespace Polyhydra.Core
                     var position = getComponent(getVertex(p).Position);
                     bool result = position > min && position < max;
                     return not ? !result : result;
+                },
+                p =>
+                {
+                    Func<Vector3, float> getComponent = GetVectorComponent(axis);
+                    var position = getComponent(getHalfedge(p).Midpoint);
+                    bool result = position > min && position < max;
+                    return not ? !result : result;
                 }
             );
         }
@@ -166,6 +183,11 @@ namespace Polyhydra.Core
         private static Vertex getVertex(FilterParams p)
         {
             return p.index == -1 ? p.vertex : p.poly.Vertices[p.index];
+        }
+
+        private static Halfedge getHalfedge(FilterParams p)
+        {
+            return p.index == -1 ? p.halfedge : p.poly.Halfedges[p.index];
         }
 
         private static Roles getFaceRole(FilterParams p)
@@ -198,6 +220,23 @@ namespace Polyhydra.Core
             return p.poly.VertexRoles[index];
         }
 
+        private static Roles getHalfedgeRole(FilterParams p)
+        {
+            int index;
+            // TODO Memoize/cache?
+            if (p.index != -1)
+            {
+                Vertex vertex = p.poly.Halfedges[p.index].Vertex;
+                index = p.poly.Vertices.IndexOf(vertex);
+            }
+            else
+            {
+                Vertex vertex = p.halfedge.Vertex;
+                index = p.poly.Vertices.IndexOf(vertex);
+            }
+            return p.poly.VertexRoles[index];
+        }
+
         public static Filter RadialDistance(float min = 0f, float max = 1f, bool not = false)
         {
             return new Filter(
@@ -210,6 +249,12 @@ namespace Polyhydra.Core
                 p =>
                 {
                     float distance = getVertex(p).Position.magnitude;
+                    var result = distance > min && distance < max;
+                    return not ? !result : result;
+                },
+                p =>
+                {
+                    float distance = getHalfedge(p).Midpoint.magnitude;
                     var result = distance > min && distance < max;
                     return not ? !result : result;
                 }
@@ -238,7 +283,23 @@ namespace Polyhydra.Core
                 },
                 p =>
                 {
-                    float angle = Vector3.Angle(direction, getVertex(p).Normal);
+                    float angle = Vector3.Angle(direction, getHalfedge(p).Vector);
+                    float oppositeAngle = 180f - angle;
+                    bool result;
+                    if (includeOpposite)
+                    {
+                        result = angle < range || oppositeAngle < range;
+                    }
+                    else
+                    {
+                        result = angle < range;
+                    }
+
+                    return not ? !result : result;
+                },
+                p =>
+                {
+                    float angle = Vector3.Angle(direction, getHalfedge(p).Face.Normal);
                     float oppositeAngle = 180f - angle;
                     bool result;
                     if (includeOpposite)
@@ -294,6 +355,13 @@ namespace Polyhydra.Core
                     float angle = edges.Select(e => e.DihedralAngle).Sum() / edges.Count;
                     bool result = angle < inputAngle;
                     return not ? !result : result;
+                },
+                p =>
+                {
+                    var halfedge = getHalfedge(p);
+                    float angle = halfedge.Angle;
+                    bool result = angle < inputAngle;
+                    return not ? !result : result;
                 }
             );
         }
@@ -343,6 +411,13 @@ namespace Polyhydra.Core
                     };
                     bool result = Math.Round(angle, 3) >= inputAngle;
                     return not ? !result : result;
+                },
+                p =>
+                {
+                    var halfedge = getHalfedge(p);
+                    float angle = halfedge.DihedralAngle;
+                    bool result = Math.Round(angle, 3) >= inputAngle;
+                    return not ? !result : result;
                 }
             );
         }
@@ -353,12 +428,21 @@ namespace Polyhydra.Core
                 p =>
                 {
                     if (index < 0) index = p.poly.Faces.Count - Mathf.Abs(index);
+                    if (p.index == -1) p.index = p.poly.Faces.IndexOf(p.face);
                     var result = not ? p.index != index : p.index == index;
                     return not ? !result : result;
                 },
                 p =>
                 {
                     if (index < 0) index = p.poly.Vertices.Count - Mathf.Abs(index);
+                    if (p.index == -1) p.index = p.poly.Vertices.IndexOf(p.vertex);
+                    var result = not ? p.index != index : p.index == index;
+                    return not ? !result : result;
+                },
+                p =>
+                {
+                    if (index < 0) index = p.poly.Halfedges.Count - Mathf.Abs(index);
+                    if (p.index == -1) p.index = p.poly.Halfedges.IndexOf(p.halfedge);
                     var result = not ? p.index != index : p.index == index;
                     return not ? !result : result;
                 }
@@ -372,14 +456,24 @@ namespace Polyhydra.Core
                 {
                     if (index == 0) return not;
                     if (index < 0) index = p.poly.Faces.Count - Mathf.Abs(index);
+                    if (p.index == -1) p.index = p.poly.Faces.IndexOf(p.face);
                     return not ? p.index % index != 0 : p.index % index == 0;
                 },
                 p =>
                 {
                     if (index == 0) return not;
                     if (index < 0) index = p.poly.Vertices.Count - Mathf.Abs(index);
+                    if (p.index == -1) p.index = p.poly.Vertices.IndexOf(p.vertex);
                     return not ? p.index % index != 0 : p.index % index == 0;
-                });
+                },
+                p =>
+                {
+                    if (index == 0) return not;
+                    if (index < 0) index = p.poly.Halfedges.Count - Mathf.Abs(index);
+                    if (p.index == -1) p.index = p.poly.Halfedges.IndexOf(p.halfedge);
+                    return not ? p.index % index != 0 : p.index % index == 0;
+                }
+            );
         }
 
         public static Filter Range(int index, bool not = false)
@@ -393,6 +487,7 @@ namespace Polyhydra.Core
                         not = !not;
                     }
 
+                    if (p.index == -1) p.index = p.poly.Faces.IndexOf(p.face);
                     bool result = index > p.index;
                     return not ? !result : result;
                 },
@@ -403,10 +498,22 @@ namespace Polyhydra.Core
                         index = p.poly.Vertices.Count - Mathf.Abs(index);
                         not = !not;
                     }
-
+                    if (p.index == -1) p.index = p.poly.Vertices.IndexOf(p.vertex);
+                    bool result = index > p.index;
+                    return not ? !result : result;
+                },
+                p =>
+                {
+                    if (index < 0) // Python-style - negative indexes count from the end
+                    {
+                        index = p.poly.Halfedges.Count - Mathf.Abs(index);
+                        not = !not;
+                    }
+                    if (p.index == -1) p.index = p.poly.Halfedges.IndexOf(p.halfedge);
                     bool result = index > p.index;
                     return not ? !result : result;
                 }
+
             );
         }
 
@@ -422,6 +529,11 @@ namespace Polyhydra.Core
                 {
                     var result = getVertex(p).Halfedges.Count == sides;
                     return not ? !result : result;
+                },
+                p =>
+                {
+                    var result = getHalfedge(p).Face.Sides == sides;
+                    return not ? !result : result;
                 }
             );
         }
@@ -432,6 +544,12 @@ namespace Polyhydra.Core
             // nb - Can't use Unity random off the main thread. Use system random instead.
             // Use p.index as a seed as we don't want the result to change every time we make a new poly
             return new Filter(
+                p =>
+                {
+                    Random _random = new Random(p.index);
+                    var result = _random.NextDouble() < cutoff;
+                    return not ? !result : result;
+                },
                 p =>
                 {
                     Random _random = new Random(p.index);
@@ -463,6 +581,11 @@ namespace Polyhydra.Core
                     int faceIndex = p.poly.Faces.IndexOf(getVertex(p).Halfedge.Face);
                     var result = p.poly.FaceRoles[faceIndex] == role;
                     return not ? !result : result;
+                },
+                p =>
+                {
+                    var result = getHalfedgeRole(p) == role;
+                    return not ? !result : result;
                 }
             );
         }
@@ -474,10 +597,11 @@ namespace Polyhydra.Core
             return vec => vec[(int)axis];
         }
 
-        public Filter(Func<FilterParams, bool> funcFace, Func<FilterParams, bool> funcVertex)
+        public Filter(Func<FilterParams, bool> funcFace, Func<FilterParams, bool> funcVertex, Func<FilterParams, bool> funcHalfedge)
         {
             evalFace = funcFace;
             evalVertex = funcVertex;
+            evalHalfedge = funcHalfedge;
         }
     }
 }
