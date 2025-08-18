@@ -94,6 +94,15 @@ namespace Polyhydra.Wythoff
             Calculate();
         }
 
+        // Q is always 2 for Wythoff prisms, so we can use a single parameter
+        public WythoffPoly(int typeIndex, int sides)
+        {
+            string symbol = Uniform.Uniforms[typeIndex].Wythoff;
+            symbol = symbol.Replace("p", sides.ToString()).Replace("q", "2");
+            UnpackSym(symbol);
+            Calculate();
+        }
+
         public WythoffPoly(string symbolOrName)
         {
             if (symbolOrName.StartsWith("#") || symbolOrName.Contains("|"))
