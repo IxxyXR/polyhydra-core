@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net;
 using GK;
 using ProceduralToolkit;
 using ProceduralToolkit.ClipperLib;
@@ -18,9 +17,29 @@ namespace Polyhydra.Core
             return filter == null || filter.evalFace(new FilterParams(this, faceIndex));
         }
 
+        public bool IncludeFace(Face face, Filter filter = null)
+        {
+            return filter == null || filter.evalFace(new FilterParams(this, face));
+        }
+
         public bool IncludeVertex(int vertexIndex, Filter filter = null)
         {
             return filter == null || filter.evalVertex(new FilterParams(this, vertexIndex));
+        }
+
+        public bool IncludeVertex(Vertex vertex, Filter filter = null)
+        {
+            return filter == null || filter.evalVertex(new FilterParams(this, vertex));
+        }
+
+        public bool IncludeHalfedge(int edgeIndex, Filter filter = null)
+        {
+            return filter == null || filter.evalHalfedge(new FilterParams(this, edgeIndex));
+        }
+
+        public bool IncludeHalfedge(Halfedge halfedge, Filter filter = null)
+        {
+            return filter == null || filter.evalHalfedge(new FilterParams(this, halfedge));
         }
 
         public PolyMesh Mirror(OpParams o, Vector3 axis)
@@ -979,6 +998,7 @@ namespace Polyhydra.Core
         public PolyMesh FaceRemove(bool invertLogic, List<int> indices)
         {
             var filter = new Filter(
+                x => indices.Contains(x.index),
                 x => indices.Contains(x.index),
                 x => indices.Contains(x.index)
             );

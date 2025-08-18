@@ -10,6 +10,7 @@ namespace Polyhydra.Core
             poly = p;
             face = null;
             vertex = null;
+            halfedge = null;
             index = i;
         }
 
@@ -18,6 +19,7 @@ namespace Polyhydra.Core
             poly = p;
             face = f;
             vertex = null;
+            halfedge = null;
             index = -1;
         }
 
@@ -26,6 +28,16 @@ namespace Polyhydra.Core
             poly = p;
             face = null;
             vertex = v;
+            halfedge = null;
+            index = -1;
+        }
+
+        public FilterParams(PolyMesh p, Halfedge e)
+        {
+            poly = p;
+            face = null;
+            vertex = null;
+            halfedge = e;
             index = -1;
         }
 
@@ -37,6 +49,7 @@ namespace Polyhydra.Core
         // Or directly supply a face or vertex (not both)
         public Face face;
         public Vertex vertex;
+        public Halfedge halfedge;
 
         // If an index and (face/vertex) are supplied the latter takes priority
 
