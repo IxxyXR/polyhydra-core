@@ -3861,6 +3861,24 @@ namespace Polyhydra.Core
                 v.Position += axis * offset * strength;
             }
         }
+
+        public void Twist(OpParams o)
+        {
+            var centroid = GetCentroid();
+            for (var vertexIndex = 0; vertexIndex < Vertices.Count; vertexIndex++)
+            {
+                float amount = o.GetValueA(this, vertexIndex);
+                if (IncludeVertex(vertexIndex, o.filter))
+                {
+                    var vertex = Vertices[vertexIndex];
+                    var unitVectorFromCenter = (vertex.Position - centroid).normalized;
+                    var angle = amount * Mathf.PI * 2f;
+                    Vertices[vertexIndex].Position = Quaternion.AngleAxis(angle, Vector3.up) * unitVectorFromCenter + centroid;
+                }
+            }
+        }
+
+
         public void Spherize(OpParams o)
         {
             var centroid = GetCentroid();
