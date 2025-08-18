@@ -1027,6 +1027,183 @@ namespace Polyhydra.Core
 
         public PolyMesh Chamfer(OpParams o)
         {
+            // Currently the results are a bit different even when not filtering faces/edges
+            // So fall back to old Chamfer if no filter is applied
+            if (o.filter.filterType == FilterTypes.All)
+            {
+                return OldChamfer(o);
+            }
+
+            var faceIndices = new List<int[]>();
+            var vertexPoints = new List<Vector3>();
+            var existingVertices = new Dictionary<(Guid, Guid)?, int>();
+            var newVertices = new Dictionary<(Guid, Guid)?, int>();
+            var edgeFaceFlags = new Dictionary<(Guid, Guid)?, bool>();
+
+            var faceRoles = new List<Roles>();
+            var vertexRoles = new List<Roles>();
+            var newFaceTags = new List<HashSet<string>>();
+
+            bool isFiltered = false;
+
+            // Add existing vertices to an edge > vertex mapping
+            var visitedVertices = new Dictionary<Guid, int>();
+            for (var i = 0; i < Halfedges.Count; i++)
+            {
+                var edge = Halfedges[i];
+                Guid vertexName = edge.Vertex.Name;
+                if (!visitedVertices.ContainsKey(vertexName))
+                {
+                    vertexPoints.Add(edge.Vertex.Position);
+                    vertexRoles.Add(Roles.Existing);
+                    visitedVertices[vertexName] = vertexPoints.Count - 1;
+                }
+                existingVertices[edge.Name] = visitedVertices[vertexName];
+            }
+
+            int vertexIndex = Vertices.Count;
+
+            for (var faceIndex = 0; faceIndex < Faces.Count; faceIndex++)
+            {
+                float ratio = o.GetValueA(this, faceIndex);
+                var prevFaceTagSet = FaceTags[faceIndex];
+                var face = Faces[faceIndex];
+                var centroid = face.Centroid;
+                var newInsetFace = new int[face.Sides];
+
+                bool isAffected = true;
+                isAffected = IncludeFace(face, o.filter);
+
+                // Create new vertices
+                for (int i = 0; i < face.Sides; i++)
+                {
+                    var edge = face.GetHalfEdge(i);
+                    if (isAffected)
+                    {
+                        var vertex = edge.Vertex.Position;
+                        var newVertex = Vector3.LerpUnclamped(vertex, centroid, ratio);
+                        vertexPoints.Add(newVertex);
+                        vertexRoles.Add(Roles.New);
+                        newInsetFace[i] = vertexIndex;
+                        newVertices[edge.Name] = vertexIndex++;
+                    }
+                    else
+                    {
+                        isFiltered = true;
+                        newInsetFace[i] = existingVertices[edge.Name];
+                    }
+                }
+
+                faceIndices.Add(newInsetFace);
+                faceRoles.Add(Roles.Existing);
+                newFaceTags.Add(new HashSet<string>(prevFaceTagSet));
+            }
+
+            var adjustedPositions = new Dictionary<int, Vector3>();
+
+            foreach (var edge in Halfedges)
+            {
+                var newFaceTagSet = new HashSet<string>();
+                if (edgeFaceFlags.TryAdd(edge.PairedName, true))
+                {
+                    if (edge.Pair != null)
+                    {
+                        var edgeFace = new List<int>();
+
+                        if (existingVertices.TryGetValue(edge.Name, out var existingVertex0))
+                            edgeFace.Add(existingVertex0);
+                        if (newVertices.TryGetValue(edge.Name, out var newVertex0))
+                            edgeFace.Add(newVertex0);
+                        if (newVertices.TryGetValue(edge.Prev.Name, out var newVertex1))
+                            edgeFace.Add(newVertex1);
+                        if (existingVertices.TryGetValue(edge.Pair.Name, out var existingVertex1))
+                            edgeFace.Add(existingVertex1);
+                        if (newVertices.TryGetValue(edge.Pair.Name, out var newVertex2))
+                            edgeFace.Add(newVertex2);
+                        if (newVertices.TryGetValue(edge.Pair.Prev.Name, out var newVertex3))
+                            edgeFace.Add(newVertex3);
+
+                        if (edgeFace.Count > 2)
+                        {
+                            if (isFiltered)
+                            {
+                                // New planarization algorithm
+                                var plane = new Plane();
+                                var normal = (edge.Face.Normal + edge.Pair.Face.Normal) / 2f;
+                                normal = normal.normalized;
+                                plane.SetNormalAndPosition(normal, edge.Midpoint);
+
+                                for (var i = 0; i < edgeFace.Count; i++)
+                                {
+                                    int v = edgeFace[i];
+                                    var newPos = vertexPoints[v];
+                                    Vector3 ab = edge.Pair.Vertex.Position - edge.Vertex.Position;
+                                    Vector3 ac = newPos - edge.Vertex.Position;
+                                    Vector3 newNormal = Vector3.Normalize(Vector3.Cross(ab, ac));
+                                    var ray = new Ray(newPos, newNormal);
+                                    plane.Raycast(ray, out float distance);
+                                    adjustedPositions[v] = ray.GetPoint(distance);
+                                }
+                            }
+
+                            faceIndices.Add(edgeFace.ToArray());
+                            faceRoles.Add(Roles.New);
+                            newFaceTagSet.UnionWith(FaceTags[Faces.IndexOf(edge.Face)]);
+                            newFaceTagSet.UnionWith(FaceTags[Faces.IndexOf(edge.Pair.Face)]);
+                            newFaceTags.Add(newFaceTagSet);
+                        }
+                    }
+                }
+            }
+
+            if (isFiltered)
+            {
+                // Use the new planarization algorithm
+                // It handles a mix of affected and unaffected edges or faces better
+                foreach (var pos in adjustedPositions)
+                {
+                    vertexPoints[pos.Key] = pos.Value;
+                }
+            }
+            else
+            {
+                // Old planarize for compatibility with unfiltered "chamfer"
+                // TODO not perfect - we need an iterative algorithm
+                edgeFaceFlags = new Dictionary<(Guid, Guid)?, bool>();
+                foreach (var edge in Halfedges)
+                {
+                    if (edge.Pair == null) continue;
+
+                    if (!edgeFaceFlags.ContainsKey(edge.PairedName))
+                    {
+                        edgeFaceFlags[edge.PairedName] = true;
+
+                        float distance;
+
+                        var plane = new Plane();
+                        plane.Set3Points(
+                            vertexPoints[newVertices[edge.Name]],
+                            vertexPoints[newVertices[edge.Prev.Name]],
+                            vertexPoints[newVertices[edge.Pair.Name]]
+                        );
+
+                        var ray1 = new Ray(edge.Vertex.Position, edge.Vertex.Normal);
+                        plane.Raycast(ray1, out distance);
+                        vertexPoints[existingVertices[edge.Name]] = ray1.GetPoint(distance);
+
+                        var ray2 = new Ray(edge.Pair.Vertex.Position, edge.Pair.Vertex.Normal);
+                        plane.Raycast(ray2, out distance);
+                        vertexPoints[existingVertices[edge.Pair.Name]] = ray2.GetPoint(distance);
+                    }
+                }
+            }
+
+            var poly = new PolyMesh(vertexPoints, faceIndices, faceRoles, vertexRoles, newFaceTags);
+            return poly;
+        }
+
+        public PolyMesh OldChamfer(OpParams o)
+        {
             var newFaceTags = new List<HashSet<string>>();
 
             var faceIndices = new List<int[]>();
