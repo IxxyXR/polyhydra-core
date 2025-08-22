@@ -83,8 +83,12 @@ public abstract class BaseSettings : ScriptableObject
             var op = Operators[opIndex];
             if (!op.Active) continue;
 
-            var opFilter = Filter.GetFilter(op.FilterType, op.FilterParam, Mathf.FloorToInt(op.FilterParam),
-                op.FilterFlip);
+            var opFilter = Filter.GetFilter(
+                op.FilterType,
+                op.FilterParam,
+                Mathf.FloorToInt(op.FilterParam),
+                op.FilterFlip
+            );
 
             var opRandomValue1 = new OpFunc(_ => Mathf.Lerp(0, op.Parameter1, (float)_random.NextDouble()));
             var opRandomValue2 = new OpFunc(_ => Mathf.Lerp(0, op.Parameter2, (float)_random.NextDouble()));
