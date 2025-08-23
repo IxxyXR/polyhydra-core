@@ -127,7 +127,11 @@ public abstract class BaseSettings : ScriptableObject
 
         if (FastConicalize)
         {
-            if (CanonicalizeIterations > 0)
+            if (PlanarizeIterations > 0 && CanonicalizeIterations <= 0)
+            {
+                PolyMesh.PlanarizeLeastSquares(poly, 0.001, PlanarizeIterations);
+            }
+            else if (CanonicalizeIterations > 0)
             {
                 poly = poly.Kanonicalize(CanonicalizeIterations);
             }

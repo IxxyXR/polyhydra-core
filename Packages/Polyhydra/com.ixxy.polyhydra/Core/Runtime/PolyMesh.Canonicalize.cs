@@ -246,6 +246,81 @@ namespace Polyhydra.Core
             return _Canonicalize(poly, threshold, true);
         }
 
+        /// <summary>
+        /// Planarizes the mesh using an iterative least-squares projection.
+        /// Each iteration fits a plane to every face, projects incident
+        /// vertices onto the average of those planes and relaxes the result
+        /// towards the projection. Iteration stops when vertex movement falls
+        /// below <paramref name="threshold"/> or <paramref name="maxIterations"/>
+        /// are executed.
+        /// </summary>
+        /// <param name="poly">The polyhedron to planarize.</param>
+        /// <param name="threshold">Minimum displacement before early exit.</param>
+        /// <param name="maxIterations">Maximum number of iterations.</param>
+        /// <param name="relaxation">
+        /// Amount of damping applied when moving vertices towards their
+        /// projected positions. 0 keeps vertices fixed, 1 snaps directly to the
+        /// projection.
+        /// </param>
+        /// <returns>The number of iterations that were executed.</returns>
+        public static int PlanarizeLeastSquares(PolyMesh poly, double threshold, int maxIterations = 10,
+            float relaxation = 0.5f)
+        {
+            int iterations = 0;
+            var current = poly.Vertices.Select(v => v.Position).ToArray();
+
+            while (iterations < maxIterations)
+            {
+                var planes = new Dictionary<Face, Plane>();
+                foreach (var face in poly.Faces)
+                {
+                    planes[face] = new Plane(face.Normal, face.Centroid);
+                }
+
+                var newPositions = new Vector3[poly.Vertices.Count];
+                double maxChange = 0.0;
+
+                for (int i = 0; i < poly.Vertices.Count; i++)
+                {
+                    var vert = poly.Vertices[i];
+                    var faces = vert.GetVertexFaces();
+                    if (faces.Count == 0)
+                    {
+                        newPositions[i] = vert.Position;
+                        continue;
+                    }
+
+                    Vector3 sum = Vector3.zero;
+                    foreach (var face in faces)
+                    {
+                        var plane = planes[face];
+                        float dist = plane.GetDistanceToPoint(vert.Position);
+                        sum += vert.Position - plane.normal * dist;
+                    }
+
+                    var avg = sum / faces.Count;
+                    var projected = Vector3.Lerp(vert.Position, avg, relaxation);
+                    newPositions[i] = projected;
+                    maxChange = Math.Max(maxChange, (projected - vert.Position).magnitude);
+                }
+
+                for (int i = 0; i < poly.Vertices.Count; i++)
+                {
+                    poly.Vertices[i].Position = newPositions[i];
+                }
+
+                iterations++;
+                if (maxChange < threshold)
+                {
+                    break;
+                }
+
+                current = poly.Vertices.Select(v => v.Position).ToArray();
+            }
+
+            return iterations;
+        }
+
         /**
 		 * A port of the "reciprocalC" function written by George Hart. Reflects
 		 * the centers of faces across the unit sphere.
