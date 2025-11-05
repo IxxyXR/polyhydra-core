@@ -532,6 +532,16 @@ namespace Polyhydra.Core
             }
         }
 
+        public PolyMesh(byte[] fileData, string extension, bool cullInternalFaces = true) : this()
+        {
+            switch (extension)
+            {
+                case ".vox":
+                    ParseVox(fileData, cullInternalFaces);
+                    break;
+            }
+        }
+
         public bool ParseObj(string objFileContents)
         {
             // Default current material, in case they don't have an MTL file.
@@ -739,6 +749,38 @@ namespace Polyhydra.Core
             InitIndexed(vertexPoints, faceIndices);
 
             CullUnusedVertices();
+        }
+
+        public bool ParseVox(byte[] fileData, bool cullInternalFaces = true)
+        {
+            var parser = new VoxParser { CullInternalFaces = cullInternalFaces };
+
+            if (!parser.Parse(fileData, out var verts, out var faceIndices, out var vertexColors))
+            {
+                return false;
+            }
+
+            // Store vertex colors as face tags (hex color format)
+            FaceTags = new List<HashSet<string>>();
+            for (int i = 0; i < faceIndices.Count; i++)
+            {
+                var tags = new HashSet<string>();
+                // Get color from first vertex of the face
+                var faceList = faceIndices.ElementAt(i).ToList();
+                if (faceList.Count > 0 && faceList[0] < vertexColors.Count)
+                {
+                    var color = vertexColors[faceList[0]];
+                    tags.Add($"#{(int)(color.r * 255):X2}{(int)(color.g * 255):X2}{(int)(color.b * 255):X2}");
+                }
+                FaceTags.Add(tags);
+            }
+
+            FaceRoles = Enumerable.Repeat(Roles.New, faceIndices.Count).ToList();
+            VertexRoles = Enumerable.Repeat(Roles.New, verts.Count).ToList();
+
+            InitIndexed(verts, faceIndices);
+            CullUnusedVertices();
+            return true;
         }
 
         /// <summary>
