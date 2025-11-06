@@ -1514,6 +1514,7 @@ namespace Polyhydra.Core
             MergeCoplanar = 111,
             Weld = 63,
             ConvexHull = 68,
+            AlphaShapes = 119,
 
             // Non-Affine Vertex Transforms
 
@@ -1854,6 +1855,9 @@ namespace Polyhydra.Core
                     break;
                 case Operation.ConvexHull:
                     polyMesh = polyMesh.ConvexHull();
+                    break;
+                case Operation.AlphaShapes:
+                    polyMesh = polyMesh.AlphaShapes(p);
                     break;
 
                 // Non-Affine Vertex Transforms
