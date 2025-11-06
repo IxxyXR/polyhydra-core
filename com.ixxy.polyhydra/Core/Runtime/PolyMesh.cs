@@ -743,26 +743,27 @@ namespace Polyhydra.Core
 
         /// <summary>
         /// Removes all vertices that are currently not used by the Halfedge list.
+        /// Optimized: In-place removal instead of copy-clear-add pattern
         /// </summary>
         /// <returns>The number of unused vertices that were removed.</returns>
         public int CullUnusedVertices()
         {
-            var orig = new List<Vertex>(Vertices);
-            var origVertexRoles = new List<Roles>(VertexRoles);
-            Vertices.Clear();
-            VertexRoles.Clear();
-            // re-add vertices which reference a halfedge
-            for (var vertIndex = 0; vertIndex < orig.Count; vertIndex++)
+            int removed = 0;
+            // Iterate backwards for safe removal during iteration
+            for (int i = Vertices.Count - 1; i >= 0; i--)
             {
-                var vertex = orig[vertIndex];
-                if (vertex.Halfedge != null)
+                if (Vertices[i].Halfedge == null)
                 {
-                    Vertices.Add(vertex);
-                    VertexRoles.Add(vertIndex < origVertexRoles.Count ? origVertexRoles[vertIndex]: Roles.Ignored);
+                    Vertices.RemoveAt(i);
+                    // Keep VertexRoles in sync
+                    if (i < VertexRoles.Count)
+                    {
+                        VertexRoles.RemoveAt(i);
+                    }
+                    removed++;
                 }
             }
-
-            return orig.Count - Vertices.Count;
+            return removed;
         }
 
 
