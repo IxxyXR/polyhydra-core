@@ -960,15 +960,21 @@ namespace Polyhydra.Core
 
             if (colors == null) colors = DefaultFaceColors;
 
-            var meshTriangles = new List<int>();
-            var meshVertices = new List<Vector3>();
-            var meshNormals = new List<Vector3>();
-            var meshColors = new List<Color32>();
-            var meshUVs = new List<Vector2>();
-            var edgeUVs = new List<Vector2>();
-            var barycentricUVs = new List<Vector3>();
-            var miscUVs1 = new List<Vector4>();
-            var miscUVs2 = new List<Vector4>();
+            // Pre-allocate lists with estimated capacity to reduce reallocations
+            // Conservative estimate: average 5 sides per face, 3 vertices per triangle after tessellation
+            int faceCount = Faces.Count;
+            int estimatedTriangles = faceCount * 3; // Most faces become 2-4 triangles
+            int estimatedVertices = estimatedTriangles * 3; // 3 vertices per triangle
+
+            var meshTriangles = new List<int>(estimatedTriangles * 3);
+            var meshVertices = new List<Vector3>(estimatedVertices);
+            var meshNormals = new List<Vector3>(estimatedVertices);
+            var meshColors = new List<Color32>(estimatedVertices);
+            var meshUVs = new List<Vector2>(estimatedVertices);
+            var edgeUVs = new List<Vector2>(estimatedVertices);
+            var barycentricUVs = new List<Vector3>(estimatedVertices);
+            var miscUVs1 = new List<Vector4>(estimatedVertices);
+            var miscUVs2 = new List<Vector4>(estimatedVertices);
 
             List<Roles> uniqueRoles = null;
             List<string> uniqueTags = null;
@@ -988,11 +994,22 @@ namespace Polyhydra.Core
                 {
                     var flattenedTags = FaceTags.SelectMany(d => d);
                     uniqueTags = new HashSet<string>(flattenedTags).ToList();
-                    for (int i = 0; i < uniqueTags.Count + 1; i++) submeshTriangles.Add(new List<int>());
+                    int submeshCount = uniqueTags.Count + 1;
+                    // Pre-allocate each submesh with estimated capacity
+                    int estimatedTrisPerSubmesh = (estimatedTriangles * 3) / Math.Max(1, submeshCount);
+                    for (int i = 0; i < submeshCount; i++)
+                    {
+                        submeshTriangles.Add(new List<int>(estimatedTrisPerSubmesh));
+                    }
                 }
                 else
                 {
-                    for (int i = 0; i < colors.Length; i++) submeshTriangles.Add(new List<int>());
+                    // Pre-allocate each submesh with estimated capacity
+                    int estimatedTrisPerSubmesh = (estimatedTriangles * 3) / Math.Max(1, colors.Length);
+                    for (int i = 0; i < colors.Length; i++)
+                    {
+                        submeshTriangles.Add(new List<int>(estimatedTrisPerSubmesh));
+                    }
                 }
             }
 
