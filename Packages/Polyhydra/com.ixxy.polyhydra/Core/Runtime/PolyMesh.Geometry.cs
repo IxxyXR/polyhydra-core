@@ -2084,6 +2084,12 @@ namespace Polyhydra.Core
         {
             float alpha = o.GetValueA(this, 0);
 
+            // Safety check
+            if (alpha <= 0)
+            {
+                return new PolyMesh();
+            }
+
             // Extract unique vertex positions from the mesh
             var points = new List<Vector3>();
             var vertexMap = new Dictionary<Vector3, int>();
@@ -2100,330 +2106,118 @@ namespace Polyhydra.Core
 
             if (points.Count < 4)
             {
-                return this; // Need at least 4 points for tetrahedralization
+                return this;
             }
 
-            // Compute Delaunay tetrahedralization
-            var tetrahedra = ComputeDelaunayTetrahedralization(points);
-
-            // Filter tetrahedra based on circumsphere radius
-            var filteredTets = new List<Tetrahedron>();
-            foreach (var tet in tetrahedra)
+            // Start with convex hull as base triangulation
+            PolyMesh hull;
+            try
             {
-                float circumradius = CalculateTetrahedronCircumradius(
-                    points[tet.v0], points[tet.v1], points[tet.v2], points[tet.v3]
-                );
-
-                if (circumradius <= alpha)
-                {
-                    filteredTets.Add(tet);
-                }
+                hull = _ConvexHull(true);
             }
-
-            // Extract boundary surface (faces that appear only once)
-            var faceCount = new Dictionary<Triangle, int>();
-
-            foreach (var tet in filteredTets)
+            catch
             {
-                // Each tetrahedron has 4 faces
-                var faces = new Triangle[]
-                {
-                    new Triangle(tet.v0, tet.v1, tet.v2), // Face opposite to v3
-                    new Triangle(tet.v0, tet.v1, tet.v3), // Face opposite to v2
-                    new Triangle(tet.v0, tet.v2, tet.v3), // Face opposite to v1
-                    new Triangle(tet.v1, tet.v2, tet.v3)  // Face opposite to v0
-                };
-
-                foreach (var face in faces)
-                {
-                    var normalizedFace = face.Normalized();
-                    if (!faceCount.ContainsKey(normalizedFace))
-                    {
-                        faceCount[normalizedFace] = 0;
-                    }
-                    faceCount[normalizedFace]++;
-                }
+                // If convex hull fails, return empty mesh
+                return new PolyMesh();
             }
 
-            // Boundary faces are those that appear only once
-            var boundaryFaces = new List<Triangle>();
-            foreach (var kvp in faceCount)
+            if (!hull.IsValid)
             {
-                if (kvp.Value == 1)
-                {
-                    boundaryFaces.Add(kvp.Key);
-                }
+                return new PolyMesh();
             }
 
-            // Convert boundary faces to PolyMesh
+            // Filter triangles based on circumradius
             var vertexPoints = new List<Vector3>();
             var faceIndices = new List<IEnumerable<int>>();
             var vertexIndexMap = new Dictionary<int, int>();
 
-            foreach (var face in boundaryFaces)
+            for (int faceIndex = 0; faceIndex < hull.Faces.Count; faceIndex++)
             {
-                var faceVerts = new List<int>();
+                var face = hull.Faces[faceIndex];
+                var faceVerts = face.GetVertices();
 
-                foreach (var oldIdx in new int[] { face.v0, face.v1, face.v2 })
+                // Only process triangles
+                if (faceVerts.Count != 3)
                 {
-                    if (!vertexIndexMap.ContainsKey(oldIdx))
-                    {
-                        vertexIndexMap[oldIdx] = vertexPoints.Count;
-                        vertexPoints.Add(points[oldIdx]);
-                    }
-                    faceVerts.Add(vertexIndexMap[oldIdx]);
+                    continue;
                 }
 
-                faceIndices.Add(faceVerts);
+                // Calculate circumradius of this triangle
+                float circumradius = CalculateTriangleCircumradius(
+                    faceVerts[0].Position,
+                    faceVerts[1].Position,
+                    faceVerts[2].Position
+                );
+
+                // Keep triangle if its circumradius is <= alpha
+                if (circumradius <= alpha)
+                {
+                    var faceVertIndices = new List<int>();
+
+                    foreach (var vert in faceVerts)
+                    {
+                        // Find the original point index
+                        int originalIdx = -1;
+                        for (int i = 0; i < hull.Vertices.Count; i++)
+                        {
+                            if (hull.Vertices[i] == vert)
+                            {
+                                originalIdx = i;
+                                break;
+                            }
+                        }
+
+                        if (originalIdx == -1) continue;
+
+                        if (!vertexIndexMap.ContainsKey(originalIdx))
+                        {
+                            vertexIndexMap[originalIdx] = vertexPoints.Count;
+                            vertexPoints.Add(vert.Position);
+                        }
+                        faceVertIndices.Add(vertexIndexMap[originalIdx]);
+                    }
+
+                    if (faceVertIndices.Count == 3)
+                    {
+                        faceIndices.Add(faceVertIndices);
+                    }
+                }
             }
 
-            if (vertexPoints.Count == 0)
+            if (vertexPoints.Count == 0 || faceIndices.Count == 0)
             {
-                return new PolyMesh(); // Empty mesh
+                return new PolyMesh();
             }
 
             return new PolyMesh(vertexPoints, faceIndices);
         }
 
-        private List<Tetrahedron> ComputeDelaunayTetrahedralization(List<Vector3> points)
+        private float CalculateTriangleCircumradius(Vector3 a, Vector3 b, Vector3 c)
         {
-            // Use a simplified Bowyer-Watson algorithm for 3D Delaunay tetrahedralization
-            var tetrahedra = new List<Tetrahedron>();
+            // Calculate side lengths
+            float sideA = Vector3.Distance(b, c);
+            float sideB = Vector3.Distance(a, c);
+            float sideC = Vector3.Distance(a, b);
 
-            if (points.Count < 4)
+            // Calculate area using Heron's formula
+            float s = (sideA + sideB + sideC) / 2f;
+            float areaSquared = s * (s - sideA) * (s - sideB) * (s - sideC);
+
+            // Check for degenerate triangle
+            if (areaSquared <= 0.0001f)
             {
-                return tetrahedra;
+                return float.MaxValue;
             }
 
-            // Find bounding box to create super-tetrahedron
-            Vector3 min = points[0];
-            Vector3 max = points[0];
+            float area = Mathf.Sqrt(areaSquared);
 
-            foreach (var p in points)
+            // Circumradius formula: R = (a * b * c) / (4 * area)
+            if (area < 0.0001f)
             {
-                min = Vector3.Min(min, p);
-                max = Vector3.Max(max, p);
+                return float.MaxValue;
             }
 
-            // Create super-tetrahedron that contains all points
-            Vector3 size = max - min;
-            float scale = 20f;
-            Vector3 center = (min + max) / 2f;
-
-            var superPoints = new List<Vector3>
-            {
-                center + new Vector3(0, size.y * scale, 0),
-                center + new Vector3(-size.x * scale, -size.y, -size.z * scale),
-                center + new Vector3(size.x * scale, -size.y, -size.z * scale),
-                center + new Vector3(0, -size.y, size.z * scale)
-            };
-
-            // Add super-tetrahedron to triangulation
-            int superStart = points.Count;
-            points.AddRange(superPoints);
-            tetrahedra.Add(new Tetrahedron(superStart, superStart + 1, superStart + 2, superStart + 3));
-
-            // Incrementally add each point
-            for (int i = 0; i < superStart; i++)
-            {
-                var point = points[i];
-                var badTets = new List<Tetrahedron>();
-
-                // Find all tetrahedra whose circumsphere contains the point
-                foreach (var tet in tetrahedra)
-                {
-                    Vector3 circumcenter;
-                    float circumradius;
-                    CalculateTetrahedronCircumsphere(
-                        points[tet.v0], points[tet.v1], points[tet.v2], points[tet.v3],
-                        out circumcenter, out circumradius
-                    );
-
-                    if (Vector3.Distance(point, circumcenter) < circumradius + 0.0001f)
-                    {
-                        badTets.Add(tet);
-                    }
-                }
-
-                // Find the boundary of the polygonal hole
-                var polygon = new List<Triangle>();
-
-                foreach (var badTet in badTets)
-                {
-                    var faces = new Triangle[]
-                    {
-                        new Triangle(badTet.v0, badTet.v1, badTet.v2),
-                        new Triangle(badTet.v0, badTet.v1, badTet.v3),
-                        new Triangle(badTet.v0, badTet.v2, badTet.v3),
-                        new Triangle(badTet.v1, badTet.v2, badTet.v3)
-                    };
-
-                    foreach (var face in faces)
-                    {
-                        var normalizedFace = face.Normalized();
-                        bool isShared = false;
-
-                        // Check if this face is shared with another bad tetrahedron
-                        foreach (var otherBadTet in badTets)
-                        {
-                            if (badTet.Equals(otherBadTet)) continue;
-
-                            var otherFaces = new Triangle[]
-                            {
-                                new Triangle(otherBadTet.v0, otherBadTet.v1, otherBadTet.v2),
-                                new Triangle(otherBadTet.v0, otherBadTet.v1, otherBadTet.v3),
-                                new Triangle(otherBadTet.v0, otherBadTet.v2, otherBadTet.v3),
-                                new Triangle(otherBadTet.v1, otherBadTet.v2, otherBadTet.v3)
-                            };
-
-                            foreach (var otherFace in otherFaces)
-                            {
-                                if (normalizedFace.Equals(otherFace.Normalized()))
-                                {
-                                    isShared = true;
-                                    break;
-                                }
-                            }
-
-                            if (isShared) break;
-                        }
-
-                        if (!isShared)
-                        {
-                            polygon.Add(face);
-                        }
-                    }
-                }
-
-                // Remove bad tetrahedra
-                foreach (var badTet in badTets)
-                {
-                    tetrahedra.Remove(badTet);
-                }
-
-                // Re-triangulate the polygonal hole with the new point
-                foreach (var face in polygon)
-                {
-                    tetrahedra.Add(new Tetrahedron(face.v0, face.v1, face.v2, i));
-                }
-            }
-
-            // Remove tetrahedra that use super-tetrahedron vertices
-            tetrahedra.RemoveAll(tet =>
-                tet.v0 >= superStart || tet.v1 >= superStart ||
-                tet.v2 >= superStart || tet.v3 >= superStart
-            );
-
-            // Remove super points from the list
-            points.RemoveRange(superStart, 4);
-
-            return tetrahedra;
-        }
-
-        private float CalculateTetrahedronCircumradius(Vector3 a, Vector3 b, Vector3 c, Vector3 d)
-        {
-            Vector3 circumcenter;
-            float circumradius;
-            CalculateTetrahedronCircumsphere(a, b, c, d, out circumcenter, out circumradius);
-            return circumradius;
-        }
-
-        private void CalculateTetrahedronCircumsphere(Vector3 a, Vector3 b, Vector3 c, Vector3 d,
-            out Vector3 center, out float radius)
-        {
-            // Calculate circumsphere of tetrahedron using determinant method
-            Vector3 ba = b - a;
-            Vector3 ca = c - a;
-            Vector3 da = d - a;
-
-            float baLength2 = ba.sqrMagnitude;
-            float caLength2 = ca.sqrMagnitude;
-            float daLength2 = da.sqrMagnitude;
-
-            Vector3 cross = Vector3.Cross(ba, ca);
-            float denom = 2f * Vector3.Dot(cross, da);
-
-            if (Mathf.Abs(denom) < 0.0001f)
-            {
-                // Degenerate case (coplanar points)
-                center = (a + b + c + d) / 4f;
-                radius = float.MaxValue;
-                return;
-            }
-
-            Vector3 num = baLength2 * Vector3.Cross(ca, da) +
-                         caLength2 * Vector3.Cross(da, ba) +
-                         daLength2 * Vector3.Cross(ba, ca);
-
-            center = a + num / denom;
-            radius = Vector3.Distance(center, a);
-        }
-
-        // Helper classes for tetrahedralization
-        private struct Tetrahedron
-        {
-            public int v0, v1, v2, v3;
-
-            public Tetrahedron(int v0, int v1, int v2, int v3)
-            {
-                this.v0 = v0;
-                this.v1 = v1;
-                this.v2 = v2;
-                this.v3 = v3;
-            }
-
-            public override bool Equals(object obj)
-            {
-                if (!(obj is Tetrahedron)) return false;
-                var other = (Tetrahedron)obj;
-                var verts1 = new int[] { v0, v1, v2, v3 };
-                var verts2 = new int[] { other.v0, other.v1, other.v2, other.v3 };
-                System.Array.Sort(verts1);
-                System.Array.Sort(verts2);
-                return verts1[0] == verts2[0] && verts1[1] == verts2[1] &&
-                       verts1[2] == verts2[2] && verts1[3] == verts2[3];
-            }
-
-            public override int GetHashCode()
-            {
-                var verts = new int[] { v0, v1, v2, v3 };
-                System.Array.Sort(verts);
-                return verts[0] ^ (verts[1] << 8) ^ (verts[2] << 16) ^ (verts[3] << 24);
-            }
-        }
-
-        private struct Triangle
-        {
-            public int v0, v1, v2;
-
-            public Triangle(int v0, int v1, int v2)
-            {
-                this.v0 = v0;
-                this.v1 = v1;
-                this.v2 = v2;
-            }
-
-            public Triangle Normalized()
-            {
-                var verts = new int[] { v0, v1, v2 };
-                System.Array.Sort(verts);
-                return new Triangle(verts[0], verts[1], verts[2]);
-            }
-
-            public override bool Equals(object obj)
-            {
-                if (!(obj is Triangle)) return false;
-                var other = (Triangle)obj;
-                var n1 = Normalized();
-                var n2 = other.Normalized();
-                return n1.v0 == n2.v0 && n1.v1 == n2.v1 && n1.v2 == n2.v2;
-            }
-
-            public override int GetHashCode()
-            {
-                var n = Normalized();
-                return n.v0 ^ (n.v1 << 10) ^ (n.v2 << 20);
-            }
+            return (sideA * sideB * sideC) / (4f * area);
         }
 
         public PolyMesh Hinge(float amount)
