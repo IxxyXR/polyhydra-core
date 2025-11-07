@@ -230,6 +230,9 @@ namespace Polyhydra.Core
                 voxelColors[(voxel.X, voxel.Y, voxel.Z)] = voxel.ColorIndex;
             }
 
+            // Vertex deduplication - map positions to indices for manifold topology
+            Dictionary<Vector3, int> vertexLookup = new Dictionary<Vector3, int>();
+
             // Define cube face normals (6 faces per cube)
             Vector3Int[] faceDirections = new Vector3Int[]
             {
@@ -277,21 +280,31 @@ namespace Polyhydra.Core
 
                     if (shouldGenerateFace)
                     {
-                        // Add face vertices
-                        int startIndex = vertices.Count;
                         List<int> face = new List<int>();
 
-                        // Add vertices in order but reverse the face indices for correct winding
+                        // Add face vertices with deduplication for manifold topology
+                        int[] faceVertexIndices = new int[4];
                         for (int i = 0; i < 4; i++)
                         {
-                            vertices.Add(voxelPos + faceVertices[faceIdx][i]);
-                            vertexColors.Add(color);
+                            Vector3 vertexPos = voxelPos + faceVertices[faceIdx][i];
+
+                            // Check if vertex already exists
+                            if (!vertexLookup.TryGetValue(vertexPos, out int vertexIndex))
+                            {
+                                // New vertex - add it
+                                vertexIndex = vertices.Count;
+                                vertices.Add(vertexPos);
+                                vertexColors.Add(color);
+                                vertexLookup[vertexPos] = vertexIndex;
+                            }
+
+                            faceVertexIndices[i] = vertexIndex;
                         }
 
                         // Reverse winding order (like ParseOff does)
                         for (int i = 3; i >= 0; i--)
                         {
-                            face.Add(startIndex + i);
+                            face.Add(faceVertexIndices[i]);
                         }
 
                         faceIndices.Add(face);
