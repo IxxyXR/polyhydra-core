@@ -283,8 +283,8 @@ namespace Polyhydra.Core
                         List<int> face = new List<int>();
 
                         // Add face vertices with deduplication for manifold topology
-                        int[] faceVertexIndices = new int[4];
-                        for (int i = 0; i < 4; i++)
+                        // Reverse winding order by iterating vertices backwards
+                        for (int i = 3; i >= 0; i--)
                         {
                             Vector3 vertexPos = voxelPos + faceVertices[faceIdx][i];
 
@@ -298,13 +298,7 @@ namespace Polyhydra.Core
                                 vertexLookup[vertexPos] = vertexIndex;
                             }
 
-                            faceVertexIndices[i] = vertexIndex;
-                        }
-
-                        // Reverse winding order (like ParseOff does)
-                        for (int i = 3; i >= 0; i--)
-                        {
-                            face.Add(faceVertexIndices[i]);
+                            face.Add(vertexIndex);
                         }
 
                         faceIndices.Add(face);
