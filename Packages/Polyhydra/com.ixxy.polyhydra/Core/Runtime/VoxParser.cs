@@ -245,20 +245,21 @@ namespace Polyhydra.Core
             };
 
             // Face vertices relative to cube origin (0,0,0 to 1,1,1)
+            // Vertices ordered counter-clockwise when viewed from outside the cube
             Vector3[][] faceVertices = new Vector3[][]
             {
-                // Right (+X)
-                new Vector3[] { new Vector3(1, 0, 0), new Vector3(1, 1, 0), new Vector3(1, 1, 1), new Vector3(1, 0, 1) },
-                // Left (-X)
-                new Vector3[] { new Vector3(0, 0, 1), new Vector3(0, 1, 1), new Vector3(0, 1, 0), new Vector3(0, 0, 0) },
-                // Top (+Y)
+                // Right (+X): Looking from +X toward origin
+                new Vector3[] { new Vector3(1, 0, 0), new Vector3(1, 0, 1), new Vector3(1, 1, 1), new Vector3(1, 1, 0) },
+                // Left (-X): Looking from -X toward origin
+                new Vector3[] { new Vector3(0, 0, 1), new Vector3(0, 0, 0), new Vector3(0, 1, 0), new Vector3(0, 1, 1) },
+                // Top (+Y): Looking from +Y toward origin
                 new Vector3[] { new Vector3(0, 1, 0), new Vector3(1, 1, 0), new Vector3(1, 1, 1), new Vector3(0, 1, 1) },
-                // Bottom (-Y)
+                // Bottom (-Y): Looking from -Y toward origin
                 new Vector3[] { new Vector3(0, 0, 1), new Vector3(1, 0, 1), new Vector3(1, 0, 0), new Vector3(0, 0, 0) },
-                // Front (+Z)
-                new Vector3[] { new Vector3(0, 0, 1), new Vector3(0, 1, 1), new Vector3(1, 1, 1), new Vector3(1, 0, 1) },
-                // Back (-Z)
-                new Vector3[] { new Vector3(1, 0, 0), new Vector3(1, 1, 0), new Vector3(0, 1, 0), new Vector3(0, 0, 0) }
+                // Front (+Z): Looking from +Z toward origin
+                new Vector3[] { new Vector3(1, 0, 1), new Vector3(0, 0, 1), new Vector3(0, 1, 1), new Vector3(1, 1, 1) },
+                // Back (-Z): Looking from -Z toward origin
+                new Vector3[] { new Vector3(0, 0, 0), new Vector3(1, 0, 0), new Vector3(1, 1, 0), new Vector3(0, 1, 0) }
             };
 
             // Generate faces for each voxel
