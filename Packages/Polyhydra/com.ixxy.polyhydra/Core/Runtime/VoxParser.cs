@@ -281,10 +281,16 @@ namespace Polyhydra.Core
                         int startIndex = vertices.Count;
                         List<int> face = new List<int>();
 
+                        // Add vertices in order but reverse the face indices for correct winding
                         for (int i = 0; i < 4; i++)
                         {
                             vertices.Add(voxelPos + faceVertices[faceIdx][i]);
                             vertexColors.Add(color);
+                        }
+
+                        // Reverse winding order (like ParseOff does)
+                        for (int i = 3; i >= 0; i--)
+                        {
                             face.Add(startIndex + i);
                         }
 
