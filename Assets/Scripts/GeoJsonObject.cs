@@ -29,7 +29,7 @@ public struct Features
 {
     public string type;
     public Properties properties;
-    public Geometry geometry;
+    public GeoJsonGeometry geometry;
 }
 
 [Serializable]
@@ -44,7 +44,7 @@ public struct Properties
 }
 
 [Serializable]
-public struct Geometry
+public struct GeoJsonGeometry
 {
     public string type;
     public List<List<List<List<float>>>> coordinates;
