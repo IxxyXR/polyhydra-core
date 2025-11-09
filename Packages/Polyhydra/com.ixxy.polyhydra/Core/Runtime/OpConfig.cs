@@ -1002,6 +1002,16 @@ namespace Polyhydra.Core
                         amountMin = 2, amountMax = 32, amountSafeMin = 3f, amountSafeMax = 12f
                     }
                 },
+                {
+                    PolyMesh.Operation.BevelEdges,
+                    new OpConfig
+                    {
+                        usesFilter = true,
+                        amountDefault = 0.5f,
+                        amountMin = -4, amountMax = 4, amountSafeMin = 0.001f, amountSafeMax = 0.999f,
+                        matrix = new[,] { { 1, 2, 0 }, { 0, 4, 0 }, { 0, 1, 1 } }
+                    }
+                },
             };
     }
 }

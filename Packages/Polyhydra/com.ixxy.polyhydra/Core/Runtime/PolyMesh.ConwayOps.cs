@@ -105,18 +105,29 @@ namespace Polyhydra.Core
                     }
                 }
 
-                if (naked.ContainsKey(vertex.Name) && naked[vertex.Name])
+                if (naked.TryGetValue(vertex.Name, out var isBoundary) && isBoundary)
                 {
                     // Handle boundary vertices...
-                    var h = vertex.Halfedges;
-                    if (h.Count > 0)
+                    var halfedges = vertex.Halfedges;
+                    if (halfedges.Count > 0)
                     {
-                        // Add points on naked edges and the naked vertex
-                        fIndex.Add(hlookup[h.Last().Name]);
-                        fIndex.Add(vertexPoints.Count);
-                        fIndex.Add(hlookup[h.First().Next.Name]);
-                        vertexPoints.Add(vertex.Position);
-                        vertexRoles.Add(Roles.New);
+                        var boundaryEdges = halfedges.Where(e => e.Pair == null).ToList();
+                        if (boundaryEdges.Count >= 2)
+                        {
+                            var startEdge = boundaryEdges.Last();
+                            var endEdge = boundaryEdges.First();
+
+                            if (hlookup.TryGetValue(startEdge.Name, out var startIndex) &&
+                                hlookup.TryGetValue(endEdge.Name, out var endIndex))
+                            {
+                                // Add points on naked edges and the naked vertex
+                                fIndex.Add(startIndex);
+                                fIndex.Add(vertexPoints.Count);
+                                fIndex.Add(endIndex);
+                                vertexPoints.Add(vertex.Position);
+                                vertexRoles.Add(Roles.New);
+                            }
+                        }
                     }
                 }
 
@@ -311,7 +322,7 @@ namespace Polyhydra.Core
             return new PolyMesh(vertexPoints, faceIndices, faceRoles, vertexRoles, newFaceTags);
         }
 
-                public PolyMesh Ambo()
+        public PolyMesh Ambo()
         {
             var newFaceTags = new List<HashSet<string>>();
 
@@ -937,7 +948,16 @@ namespace Polyhydra.Core
             var faceRoles = new List<Roles>();
             var vertexRoles = new List<Roles>();
 
-            int vertexIndex = 0;
+            var existingVertices = new Dictionary<(Guid, Guid)?, int>();
+            for (var i = 0; i < Halfedges.Count; i++)
+            {
+                var edge = Halfedges[i];
+                vertexPoints.Add(edge.Vertex.Position);
+                vertexRoles.Add(Roles.Existing);
+                existingVertices[edge.Name] = i;
+            }
+
+            int vertexIndex = existingVertices.Count;
 
             for (var faceIndex = 0; faceIndex < Faces.Count; faceIndex++)
             {
@@ -945,21 +965,29 @@ namespace Polyhydra.Core
                 var prevFaceTagSet = FaceTags[faceIndex];
                 var face = Faces[faceIndex];
 
-                var edge = face.Halfedge;
                 var centroid = face.Centroid;
+
+                bool isAffected = IncludeFace(face, o.filter);
 
                 // Create a new face for each existing face
                 var newInsetFace = new int[face.Sides];
 
                 for (int i = 0; i < face.Sides; i++)
                 {
-                    var vertex = edge.Vertex.Position;
-                    var newVertex = Vector3.LerpUnclamped(vertex, centroid, ratio);
-                    vertexPoints.Add(newVertex);
-                    vertexRoles.Add(Roles.Existing);
-                    newInsetFace[i] = vertexIndex;
-                    newVertices[edge.Name] = vertexIndex++;
-                    edge = edge.Next;
+                    var edge = face.GetHalfEdge(i);
+                    if (isAffected)
+                    {
+                        var vertex = edge.Vertex.Position;
+                        var newVertex = Vector3.LerpUnclamped(vertex, centroid, ratio);
+                        vertexPoints.Add(newVertex);
+                        vertexRoles.Add(Roles.Existing);
+                        newInsetFace[i] = vertexIndex;
+                        newVertices[edge.Name] = vertexIndex++;
+                    }
+                    else
+                    {
+                        newInsetFace[i] = existingVertices[edge.Name];
+                    }
                 }
 
                 faceIndices.Add(newInsetFace);
@@ -970,24 +998,73 @@ namespace Polyhydra.Core
             // Add edge faces
             foreach (var edge in Halfedges)
             {
-                if (!edgeFaceFlags.ContainsKey(edge.PairedName))
+                var newFaceTagSet = new HashSet<string>();
+                if (edgeFaceFlags.TryAdd(edge.PairedName, true))
                 {
                     if (edge.Pair != null)
                     {
-                        var edgeFace = new[]
-                        {
-                            newVertices[edge.Name],
-                            newVertices[edge.Prev.Name],
-                            newVertices[edge.Pair.Name],
-                            newVertices[edge.Pair.Prev.Name],
-                        };
-                        faceIndices.Add(edgeFace);
-                        faceRoles.Add(Roles.New);
+                        var edgeFace = new List<int>();
+                        
+                        // Check if both faces are affected by the filter
+                        bool thisFaceAffected = IncludeFace(edge.Face, o.filter);
+                        bool pairFaceAffected = IncludeFace(edge.Pair.Face, o.filter);
 
-                        var newFaceTagSet = new HashSet<string>();
-                        newFaceTagSet.UnionWith(FaceTags[Faces.IndexOf(edge.Face)]);
-                        newFaceTagSet.UnionWith(FaceTags[Faces.IndexOf(edge.Pair.Face)]);
-                        newFaceTags.Add(newFaceTagSet);
+                        // Build edge face based on which faces are affected
+                        // if (thisFaceAffected && pairFaceAffected)
+                        // {
+                        //     // Both faces affected - standard quad
+                        //     if (newVertices.TryGetValue(edge.Name, out var newVertex0))
+                        //         edgeFace.Add(newVertex0);
+                        //     if (newVertices.TryGetValue(edge.Prev.Name, out var newVertex1))
+                        //         edgeFace.Add(newVertex1);
+                        //     if (newVertices.TryGetValue(edge.Pair.Prev.Name, out var newVertex3))
+                        //         edgeFace.Add(newVertex3);
+                        //     if (newVertices.TryGetValue(edge.Pair.Name, out var newVertex2))
+                        //         edgeFace.Add(newVertex2);
+                        // }
+                        // else if (thisFaceAffected && !pairFaceAffected)
+                        // {
+                        //     // Only this face affected - mixed edge
+                        // if (newVertices.TryGetValue(edge.Name, out var newVertex0))
+                        //     edgeFace.Add(newVertex0);
+                        // if (newVertices.TryGetValue(edge.Prev.Name, out var newVertex1))
+                        //     edgeFace.Add(newVertex1);
+                        // if (existingVertices.TryGetValue(edge.Pair.Prev.Name, out var existingVertex3))
+                        //     edgeFace.Add(existingVertex3);
+                        // if (existingVertices.TryGetValue(edge.Pair.Name, out var existingVertex2))
+                        //     edgeFace.Add(existingVertex2);
+                        // }
+                        // else if (!thisFaceAffected && pairFaceAffected)
+                        // {
+                        //     // Only pair face affected - mixed edge
+                        //     if (existingVertices.TryGetValue(edge.Name, out var existingVertex0))
+                        //         edgeFace.Add(existingVertex0);
+                        //     if (existingVertices.TryGetValue(edge.Prev.Name, out var existingVertex1))
+                        //         edgeFace.Add(existingVertex1);
+                        //     if (newVertices.TryGetValue(edge.Pair.Prev.Name, out var newVertex3))
+                        //         edgeFace.Add(newVertex3);
+                        //     if (newVertices.TryGetValue(edge.Pair.Name, out var newVertex2))
+                        //         edgeFace.Add(newVertex2);
+                        // }
+                        // If neither face is affected, no edge face is needed
+
+                        if (newVertices.TryGetValue(edge.Name, out var newVertex0))
+                            edgeFace.Add(newVertex0);
+                        if (newVertices.TryGetValue(edge.Prev.Name, out var newVertex1))
+                            edgeFace.Add(newVertex1);
+                        if (newVertices.TryGetValue(edge.Pair.Name, out var newVertex2))
+                            edgeFace.Add(newVertex2);
+                        if (newVertices.TryGetValue(edge.Pair.Prev.Name, out var newVertex3))
+                            edgeFace.Add(newVertex3);
+
+                        if (edgeFace.Count > 2)
+                        {
+                            faceIndices.Add(edgeFace.ToArray());
+                            faceRoles.Add(Roles.New);
+                            newFaceTagSet.UnionWith(FaceTags[Faces.IndexOf(edge.Face)]);
+                            newFaceTagSet.UnionWith(FaceTags[Faces.IndexOf(edge.Pair.Face)]);
+                            newFaceTags.Add(newFaceTagSet);
+                        }
                     }
 
                     edgeFaceFlags[edge.PairedName] = true;
@@ -998,10 +1075,12 @@ namespace Polyhydra.Core
             {
                 var vertex = Vertices[idx];
                 var vertexFace = new List<int>();
-                for (var j = 0; j < vertex.Halfedges.Count; j++)
+                foreach (var edge in vertex.Halfedges)
                 {
-                    var edge = vertex.Halfedges[j];
-                    vertexFace.Add(newVertices[edge.Name]);
+                    if (newVertices.ContainsKey(edge.Name))
+                    {
+                        vertexFace.Add(newVertices[edge.Name]);
+                    }
                 }
 
                 if (vertexFace.Count >= 3)

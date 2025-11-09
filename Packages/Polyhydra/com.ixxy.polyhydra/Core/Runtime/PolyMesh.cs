@@ -1443,6 +1443,7 @@ namespace Polyhydra.Core
             StraightSkeleton = 105,
             FaceTessellate = 106,
             Tessellate = 107,
+            BevelEdges = 119,
 
             // Alternating Operators
 
