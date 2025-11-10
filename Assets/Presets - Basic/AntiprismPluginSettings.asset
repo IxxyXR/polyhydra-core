@@ -13,11 +13,11 @@ MonoBehaviour:
   m_Name: AntiprismPluginSettings
   m_EditorClassIdentifier: 
   Operators:
-  - Active: 1
-    OpType: 11
-    Parameter1: 0.27
-    Parameter2: 0
-    Iterations: 1
+  - Active: 0
+    OpType: 115
+    Parameter1: 0.333
+    Parameter2: 0.333
+    Iterations: 2
     Parameter1Randomize: 0
     Parameter2Randomize: 0
     FilterType: 0
@@ -26,33 +26,34 @@ MonoBehaviour:
   FastConicalize: 1
   CanonicalizeIterations: 0
   PlanarizeIterations: 0
-  FaceInset: 0
+  FaceInset: 0.0025
   ColorMethod: 3
-  polyhedronType: 8
-  sides: 5
-  geodesicFrequency: 2
-  geodesicMethod: 0
-  tilingPattern: 1
-  tilingSurface: 1
+  polyhedronType: 5
+  InputPreset: {fileID: 11400000, guid: 17b4f64c00f405948ac3765baf1858a4, type: 2}
+  sides: 7
+  geodesicFrequency: 3
+  geodesicMethod: 2
+  tilingPattern: 4
+  tilingSurface: 0
   tilingWidth: 20
   tilingHeight: 0
   tilingMinorRadius: 1
   tilingMajorRadius: 3
-  isoKiteModel: 5
+  isoKiteModel: 17
   isoKiteHeightA: 0
   isoKiteHeightB: 0
   isoKiteHeightC: 0
-  trapezohedronN: 7
-  trapezohedronD: 3
-  trapezohedronHeightA: 0.33
-  trapezohedronHeightB: 0.59
+  trapezohedronN: 11
+  trapezohedronD: 4
+  trapezohedronHeightA: 0
+  trapezohedronHeightB: 0
   symmetroSym: 79
-  symmetroMult0: 1
-  symmetroMult1: 1
+  symmetroMult0: 4
+  symmetroMult1: 4
   symmetroMult2: 0
-  johnsonNumber: 15
-  uniformNumber: 4
-  wenningerNumber: 49
+  johnsonNumber: 64
+  uniformNumber: 42
+  wenningerNumber: 65
   modifier: 0
   truncateRatio: 0.3333
   truncateOrder: 0
@@ -61,12 +62,6 @@ MonoBehaviour:
   dualRadius: 1
   conwayN: 2
   conwayM: 0
-  createZonohedronFromVertices: 0
-  flatShading: 1
-  canonicalize: 0
-  canonicalizeIterations: 0
-  scale: 1
-  autoRotate: 1
-  rotationSpeed: {x: 0, y: 30, z: 0}
-  debugShowNormals: 0
-  normalLength: 0.3
+  createZonohedronFromVertices: 1
+  canonicalize: 1
+  canonicalizeIterations: 1520
