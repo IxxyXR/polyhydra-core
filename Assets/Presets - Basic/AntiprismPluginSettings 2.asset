@@ -1,0 +1,66 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e657a0bbc80b3b4eba818c3bf4aa988, type: 3}
+  m_Name: AntiprismPluginSettings 2
+  m_EditorClassIdentifier: 
+  Operators:
+  - Active: 1
+    OpType: 115
+    Parameter1: 0.333
+    Parameter2: 0.333
+    Iterations: 2
+    Parameter1Randomize: 0
+    Parameter2Randomize: 0
+    FilterType: 0
+    FilterParam: 0
+    FilterFlip: 0
+  FastConicalize: 1
+  CanonicalizeIterations: 0
+  PlanarizeIterations: 0
+  FaceInset: 0.0025
+  ColorMethod: 0
+  polyhedronType: 7
+  sides: 6
+  geodesicFrequency: 7
+  geodesicMethod: 1
+  tilingPattern: 4
+  tilingSurface: 0
+  tilingWidth: 20
+  tilingHeight: 0
+  tilingMinorRadius: 1
+  tilingMajorRadius: 3
+  isoKiteModel: 17
+  isoKiteHeightA: 0
+  isoKiteHeightB: 0
+  isoKiteHeightC: 0
+  trapezohedronN: 7
+  trapezohedronD: 3
+  trapezohedronHeightA: 0.33
+  trapezohedronHeightB: 0.59
+  symmetroSym: 79
+  symmetroMult0: 4
+  symmetroMult1: 4
+  symmetroMult2: 0
+  johnsonNumber: 64
+  uniformNumber: 42
+  wenningerNumber: 65
+  modifier: 0
+  truncateRatio: 0.3333
+  truncateOrder: 0
+  kisFaceSides: 0
+  needleHeight: 2
+  dualRadius: 1
+  conwayN: 2
+  conwayM: 0
+  createZonohedronFromVertices: 1
+  canonicalize: 1
+  canonicalizeIterations: 601
