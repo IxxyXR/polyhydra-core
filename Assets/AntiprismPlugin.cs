@@ -235,6 +235,182 @@ namespace Antiprism
             }
         }
 
+        /// <summary>
+        /// Create the base polyhedron based on type and parameters
+        /// </summary>
+        /// <param name="polyhedronType">Type of polyhedron to create</param>
+        /// <param name="sides">Number of sides for Prism/Antiprism/Pyramid/Dipyramid/Cupola</param>
+        /// <param name="geodesicFrequency">Subdivision frequency for Geodesic</param>
+        /// <param name="geodesicMethod">Base polyhedron for Geodesic</param>
+        /// <param name="tilingPattern">Tiling pattern for Unitile2D</param>
+        /// <param name="tilingSurface">Surface type for Unitile2D</param>
+        /// <param name="tilingWidth">Width of tiling</param>
+        /// <param name="tilingHeight">Height of tiling</param>
+        /// <param name="tilingMinorRadius">Minor radius for torus/klein/mobius</param>
+        /// <param name="tilingMajorRadius">Major radius for torus/klein/mobius</param>
+        /// <param name="isoKiteModel">Schwarz triangle model for IsoKite</param>
+        /// <param name="isoKiteHeightA">Height of kite apex on OA</param>
+        /// <param name="isoKiteHeightB">Height of kite apex on OB</param>
+        /// <param name="isoKiteHeightC">Height of kite side vertex on OC</param>
+        /// <param name="trapezohedronN">Numerator of fraction for Trapezohedron</param>
+        /// <param name="trapezohedronD">Denominator of fraction for Trapezohedron</param>
+        /// <param name="trapezohedronHeightA">Height of kite apex on OA for Trapezohedron</param>
+        /// <param name="trapezohedronHeightB">Height of kite apex on OB for Trapezohedron</param>
+        /// <param name="symmetroSym">Symmetry type for Symmetrohedra</param>
+        /// <param name="symmetroMult0">Multiplier for primary axis for Symmetrohedra</param>
+        /// <param name="symmetroMult1">Multiplier for secondary axis for Symmetrohedra</param>
+        /// <param name="symmetroMult2">Multiplier for tertiary axis for Symmetrohedra</param>
+        /// <param name="johnsonNumber">Johnson solid number (1-92)</param>
+        /// <param name="uniformNumber">Uniform polyhedron number (1-80)</param>
+        /// <param name="wenningerNumber">Wenninger stellation number (1-119)</param>
+        /// <returns>New Geometry containing the polyhedron</returns>
+        public static Geometry CreateBasePolyhedron(
+            PolyhedronType polyhedronType,
+            int sides = 5,
+            int geodesicFrequency = 2,
+            GeodesicMethod geodesicMethod = GeodesicMethod.Icosahedron,
+            TilingPattern tilingPattern = TilingPattern.Squares_4444,
+            TilingSurface tilingSurface = TilingSurface.Torus,
+            float tilingWidth = 20,
+            float tilingHeight = 0,
+            float tilingMinorRadius = 1.0f,
+            float tilingMajorRadius = 3.0f,
+            SchwarzTriangle isoKiteModel = SchwarzTriangle.I1,
+            float isoKiteHeightA = 0,
+            float isoKiteHeightB = 0,
+            float isoKiteHeightC = 0,
+            int trapezohedronN = 5,
+            int trapezohedronD = 2,
+            float trapezohedronHeightA = 0,
+            float trapezohedronHeightB = 0,
+            char symmetroSym = 'O',
+            int symmetroMult0 = 1,
+            int symmetroMult1 = 1,
+            int symmetroMult2 = 0,
+            int johnsonNumber = 6,
+            int uniformNumber = 4,
+            int wenningerNumber = 1)
+        {
+            // Check if it's a parameterized type
+            switch (polyhedronType)
+            {
+                case PolyhedronType.Prism:
+                    return Geometry.CreatePrism(sides);
+
+                case PolyhedronType.Antiprism:
+                    return Geometry.CreateAntiprism(sides);
+
+                case PolyhedronType.Pyramid:
+                    return Geometry.CreatePyramid(sides);
+
+                case PolyhedronType.Dipyramid:
+                    return Geometry.CreateDipyramid(sides);
+
+                case PolyhedronType.Cupola:
+                    return Geometry.CreateCupola(sides);
+
+                case PolyhedronType.Geodesic:
+                    return Geometry.CreateGeodesic(geodesicFrequency, geodesicMethod);
+
+                case PolyhedronType.Unitile2D:
+                    return Geometry.CreateUnitile2D(tilingPattern, tilingSurface,
+                        tilingWidth, tilingHeight, tilingMinorRadius, tilingMajorRadius);
+
+                case PolyhedronType.IsoKite:
+                    return Geometry.CreateIsoKite(isoKiteModel,
+                        isoKiteHeightA, isoKiteHeightB, isoKiteHeightC);
+
+                case PolyhedronType.Trapezohedron:
+                    // Validate fraction before creating
+                    if (trapezohedronD >= trapezohedronN)
+                    {
+                        UnityEngine.Debug.LogError($"Invalid trapezohedron fraction {trapezohedronN}/{trapezohedronD}: d must be < n");
+                        trapezohedronD = trapezohedronN - 1;
+                    }
+                    return Geometry.CreateTrapezohedron(trapezohedronN, trapezohedronD,
+                        trapezohedronHeightA, trapezohedronHeightB);
+
+                case PolyhedronType.Symmetrohedra:
+                    // Validate symmetry type
+                    char validSym = char.ToUpper(symmetroSym);
+                    if (validSym != 'T' && validSym != 'O' && validSym != 'I')
+                    {
+                        UnityEngine.Debug.LogError($"Invalid symmetry type '{symmetroSym}' - must be T, O, or I. Using O.");
+                        validSym = 'O';
+                    }
+
+                    // Validate multipliers
+                    int m0 = System.Math.Max(0, symmetroMult0);
+                    int m1 = System.Math.Max(0, symmetroMult1);
+                    int m2 = System.Math.Max(0, symmetroMult2);
+                    int numMult = (m0 > 0 ? 1 : 0) + (m1 > 0 ? 1 : 0) + (m2 > 0 ? 1 : 0);
+
+                    if (numMult == 0)
+                    {
+                        UnityEngine.Debug.LogError("All symmetro multipliers are zero - using default (1,1,0)");
+                        m0 = 1; m1 = 1; m2 = 0;
+                    }
+                    else if (numMult == 3)
+                    {
+                        UnityEngine.Debug.LogError("All three symmetro multipliers are non-zero (invalid) - setting mult2=0");
+                        m2 = 0;
+                    }
+
+                    return Geometry.CreateSymmetroKaplanHart(validSym, m0, m1, m2);
+
+                case PolyhedronType.JohnsonSolid:
+                    {
+                        var geom = new Geometry();
+                        string resourceName = $"J{johnsonNumber}";
+                        Status status = geom.LoadResource(resourceName);
+                        if (status != Status.OK)
+                        {
+                            geom.Dispose();
+                            throw new Exception($"Failed to load Johnson solid '{resourceName}': {status}");
+                        }
+                        return geom;
+                    }
+
+                case PolyhedronType.UniformPolyhedron:
+                    {
+                        var geom = new Geometry();
+                        string resourceName = $"U{uniformNumber}";
+                        Status status = geom.LoadResource(resourceName);
+                        if (status != Status.OK)
+                        {
+                            geom.Dispose();
+                            throw new Exception($"Failed to load Uniform polyhedron '{resourceName}': {status}");
+                        }
+                        return geom;
+                    }
+
+                case PolyhedronType.Wenninger:
+                    {
+                        var geom = new Geometry();
+                        string resourceName = $"W{wenningerNumber}";
+                        Status status = geom.LoadResource(resourceName);
+                        if (status != Status.OK)
+                        {
+                            geom.Dispose();
+                            throw new Exception($"Failed to load Wenninger stellation '{resourceName}': {status}");
+                        }
+                        return geom;
+                    }
+
+                default:
+                    // Non-parameterized type - load from resource
+                    var defaultGeom = new Geometry();
+                    string defaultResourceName = GetResourceName(polyhedronType);
+                    Status defaultStatus = defaultGeom.LoadResource(defaultResourceName);
+                    if (defaultStatus != Status.OK)
+                    {
+                        defaultGeom.Dispose();
+                        throw new Exception($"Failed to load polyhedron '{defaultResourceName}': {defaultStatus}");
+                    }
+                    return defaultGeom;
+            }
+        }
+
         [DllImport(LIBRARY_NAME)]
         private static extern IntPtr anti_get_version();
     }
@@ -705,10 +881,9 @@ namespace Antiprism
         /// </summary>
         /// <param name="vertices">Output array of vertex positions</param>
         /// <param name="faceIndices">Output array of face index arrays</param>
-        public void GetPolyhedronData(out Vector3[] vertices, out int[][] faceIndices)
+        public void GetPolyhedronData(out Vector3[] vertices, out int[][] faceIndices, Color[] colors)
         {
-            Color[] dummyColors;
-            GetPolyhedronData(out vertices, out faceIndices, out dummyColors);
+            GetPolyhedronData(out vertices, out faceIndices, out colors);
         }
 
         /// <summary>

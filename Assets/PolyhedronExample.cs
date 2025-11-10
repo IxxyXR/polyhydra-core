@@ -388,124 +388,32 @@ public class PolyhedronExample : MonoBehaviour
     /// </summary>
     Geometry CreateBasePolyhedron()
     {
-        // Check if it's a parameterized type
-        switch (polyhedronType)
-        {
-            case PolyhedronType.Prism:
-                return Geometry.CreatePrism(sides);
-
-            case PolyhedronType.Antiprism:
-                return Geometry.CreateAntiprism(sides);
-
-            case PolyhedronType.Pyramid:
-                return Geometry.CreatePyramid(sides);
-
-            case PolyhedronType.Dipyramid:
-                return Geometry.CreateDipyramid(sides);
-
-            case PolyhedronType.Cupola:
-                return Geometry.CreateCupola(sides);
-
-            case PolyhedronType.Geodesic:
-                return Geometry.CreateGeodesic(geodesicFrequency, geodesicMethod);
-
-            case PolyhedronType.Unitile2D:
-                return Geometry.CreateUnitile2D(tilingPattern, tilingSurface,
-                    tilingWidth, tilingHeight, tilingMinorRadius, tilingMajorRadius);
-
-            case PolyhedronType.IsoKite:
-                return Geometry.CreateIsoKite(isoKiteModel,
-                    isoKiteHeightA, isoKiteHeightB, isoKiteHeightC);
-
-            case PolyhedronType.Trapezohedron:
-                // Validate fraction before creating
-                if (trapezohedronD >= trapezohedronN)
-                {
-                    Debug.LogError($"Invalid trapezohedron fraction {trapezohedronN}/{trapezohedronD}: d must be < n");
-                    trapezohedronD = trapezohedronN - 1;
-                }
-                return Geometry.CreateTrapezohedron(trapezohedronN, trapezohedronD,
-                    trapezohedronHeightA, trapezohedronHeightB);
-
-            case PolyhedronType.Symmetrohedra:
-                // Validate symmetry type
-                char validSym = char.ToUpper(symmetroSym);
-                if (validSym != 'T' && validSym != 'O' && validSym != 'I')
-                {
-                    Debug.LogError($"Invalid symmetry type '{symmetroSym}' - must be T, O, or I. Using O.");
-                    validSym = 'O';
-                }
-
-                // Validate multipliers
-                int m0 = Mathf.Max(0, symmetroMult0);
-                int m1 = Mathf.Max(0, symmetroMult1);
-                int m2 = Mathf.Max(0, symmetroMult2);
-                int numMult = (m0 > 0 ? 1 : 0) + (m1 > 0 ? 1 : 0) + (m2 > 0 ? 1 : 0);
-
-                if (numMult == 0)
-                {
-                    Debug.LogError("All symmetro multipliers are zero - using default (1,1,0)");
-                    m0 = 1; m1 = 1; m2 = 0;
-                }
-                else if (numMult == 3)
-                {
-                    Debug.LogError("All three symmetro multipliers are non-zero (invalid) - setting mult2=0");
-                    m2 = 0;
-                }
-
-                return Geometry.CreateSymmetroKaplanHart(validSym, m0, m1, m2);
-
-            case PolyhedronType.JohnsonSolid:
-                {
-                    var geom = new Geometry();
-                    string resourceName = $"J{johnsonNumber}";
-                    Status status = geom.LoadResource(resourceName);
-                    if (status != Status.OK)
-                    {
-                        geom.Dispose();
-                        throw new System.Exception($"Failed to load Johnson solid '{resourceName}': {status}");
-                    }
-                    return geom;
-                }
-
-            case PolyhedronType.UniformPolyhedron:
-                {
-                    var geom = new Geometry();
-                    string resourceName = $"U{uniformNumber}";
-                    Status status = geom.LoadResource(resourceName);
-                    if (status != Status.OK)
-                    {
-                        geom.Dispose();
-                        throw new System.Exception($"Failed to load Uniform polyhedron '{resourceName}': {status}");
-                    }
-                    return geom;
-                }
-
-            case PolyhedronType.Wenninger:
-                {
-                    var geom = new Geometry();
-                    string resourceName = $"W{wenningerNumber}";
-                    Status status = geom.LoadResource(resourceName);
-                    if (status != Status.OK)
-                    {
-                        geom.Dispose();
-                        throw new System.Exception($"Failed to load Wenninger stellation '{resourceName}': {status}");
-                    }
-                    return geom;
-                }
-
-            default:
-                // Non-parameterized type - load from resource
-                var defaultGeom = new Geometry();
-                string defaultResourceName = AntiprismPlugin.GetResourceName(polyhedronType);
-                Status defaultStatus = defaultGeom.LoadResource(defaultResourceName);
-                if (defaultStatus != Status.OK)
-                {
-                    defaultGeom.Dispose();
-                    throw new System.Exception($"Failed to load polyhedron '{defaultResourceName}': {defaultStatus}");
-                }
-                return defaultGeom;
-        }
+        return AntiprismPlugin.CreateBasePolyhedron(
+            polyhedronType,
+            sides,
+            geodesicFrequency,
+            geodesicMethod,
+            tilingPattern,
+            tilingSurface,
+            tilingWidth,
+            tilingHeight,
+            tilingMinorRadius,
+            tilingMajorRadius,
+            isoKiteModel,
+            isoKiteHeightA,
+            isoKiteHeightB,
+            isoKiteHeightC,
+            trapezohedronN,
+            trapezohedronD,
+            trapezohedronHeightA,
+            trapezohedronHeightB,
+            symmetroSym,
+            symmetroMult0,
+            symmetroMult1,
+            symmetroMult2,
+            johnsonNumber,
+            uniformNumber,
+            wenningerNumber);
     }
 
     /// <summary>

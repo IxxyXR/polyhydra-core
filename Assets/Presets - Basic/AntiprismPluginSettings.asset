@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Operators:
   - Active: 1
-    OpType: 38
+    OpType: 11
     Parameter1: 0.27
     Parameter2: 0
     Iterations: 1
@@ -27,5 +27,46 @@ MonoBehaviour:
   CanonicalizeIterations: 0
   PlanarizeIterations: 0
   FaceInset: 0
-  ColorMethod: 1
-  polyhedronType: 52
+  ColorMethod: 3
+  polyhedronType: 8
+  sides: 5
+  geodesicFrequency: 2
+  geodesicMethod: 0
+  tilingPattern: 1
+  tilingSurface: 1
+  tilingWidth: 20
+  tilingHeight: 0
+  tilingMinorRadius: 1
+  tilingMajorRadius: 3
+  isoKiteModel: 5
+  isoKiteHeightA: 0
+  isoKiteHeightB: 0
+  isoKiteHeightC: 0
+  trapezohedronN: 7
+  trapezohedronD: 3
+  trapezohedronHeightA: 0.33
+  trapezohedronHeightB: 0.59
+  symmetroSym: 79
+  symmetroMult0: 1
+  symmetroMult1: 1
+  symmetroMult2: 0
+  johnsonNumber: 15
+  uniformNumber: 4
+  wenningerNumber: 49
+  modifier: 0
+  truncateRatio: 0.3333
+  truncateOrder: 0
+  kisFaceSides: 0
+  needleHeight: 2
+  dualRadius: 1
+  conwayN: 2
+  conwayM: 0
+  createZonohedronFromVertices: 0
+  flatShading: 1
+  canonicalize: 0
+  canonicalizeIterations: 0
+  scale: 1
+  autoRotate: 1
+  rotationSpeed: {x: 0, y: 30, z: 0}
+  debugShowNormals: 0
+  normalLength: 0.3
