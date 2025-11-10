@@ -9,6 +9,8 @@
 */
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.InteropServices;
 using UnityEngine;
 
@@ -803,6 +805,58 @@ namespace Antiprism
         }
 
         /// <summary>
+        /// Create geometry from custom vertices and face indices
+        /// This allows you to build Antiprism geometry from any mesh data, then apply
+        /// Conway operators and other transformations.
+        /// </summary>
+        /// <param name="vertices">Collection of vertex positions (List, array, etc.)</param>
+        /// <param name="faceIndices">Collection of face index collections (each face is a collection of vertex indices)</param>
+        /// <returns>New Geometry object, or null on error</returns>
+        public static Geometry CreateFromMesh(IEnumerable<Vector3> vertices, IEnumerable<IEnumerable<int>> faceIndices)
+        {
+            if (vertices == null)
+                throw new ArgumentNullException("vertices");
+            if (faceIndices == null)
+                throw new ArgumentNullException("faceIndices");
+
+            Geometry geom = new Geometry();
+            if (!geom.SetPolyhedronData(vertices, faceIndices))
+            {
+                geom.Dispose();
+                return null;
+            }
+
+            return geom;
+        }
+
+        /// <summary>
+        /// Create geometry from a Unity Mesh
+        /// Converts the mesh triangles to polygonal faces (merging coplanar triangles is NOT automatic)
+        /// </summary>
+        /// <param name="mesh">Unity mesh to convert</param>
+        /// <returns>New Geometry object, or null on error</returns>
+        public static Geometry CreateFromUnityMesh(Mesh mesh)
+        {
+            if (mesh == null)
+                throw new ArgumentNullException("mesh");
+
+            Vector3[] vertices = mesh.vertices;
+            int[] triangles = mesh.triangles;
+
+            // Convert triangles to face format
+            int[][] faceIndices = new int[triangles.Length / 3][];
+            for (int i = 0; i < faceIndices.Length; i++)
+            {
+                faceIndices[i] = new int[3];
+                faceIndices[i][0] = triangles[i * 3];
+                faceIndices[i][1] = triangles[i * 3 + 1];
+                faceIndices[i][2] = triangles[i * 3 + 2];
+            }
+
+            return CreateFromMesh(vertices, faceIndices);
+        }
+
+        /// <summary>
         /// Load a built-in polyhedron (e.g., "cube", "tet", "ico", "dodec")
         /// </summary>
         public Status LoadResource(string name)
@@ -881,9 +935,10 @@ namespace Antiprism
         /// </summary>
         /// <param name="vertices">Output array of vertex positions</param>
         /// <param name="faceIndices">Output array of face index arrays</param>
-        public void GetPolyhedronData(out Vector3[] vertices, out int[][] faceIndices, Color[] colors)
+        public void GetPolyhedronData(out Vector3[] vertices, out int[][] faceIndices)
         {
-            GetPolyhedronData(out vertices, out faceIndices, out colors);
+            Color[] dummyColors;
+            GetPolyhedronData(out vertices, out faceIndices, out dummyColors);
         }
 
         /// <summary>
@@ -957,6 +1012,56 @@ namespace Antiprism
                     faceColors[i] = new Color(1, 1, 1, 0);
                 }
             }
+        }
+
+        /// <summary>
+        /// Set polyhedron data from vertices and face indices (reverse of GetPolyhedronData)
+        /// This allows you to create custom Antiprism geometry that can then be processed
+        /// with Conway operators and other transformations.
+        /// </summary>
+        /// <param name="vertices">Collection of vertex positions</param>
+        /// <param name="faceIndices">Collection of face index collections (each face is a collection of vertex indices)</param>
+        /// <returns>True if successful, false on error</returns>
+        public bool SetPolyhedronData(IEnumerable<Vector3> vertices, IEnumerable<IEnumerable<int>> faceIndices)
+        {
+            CheckDisposed();
+
+            if (vertices == null)
+                throw new ArgumentNullException("vertices");
+            if (faceIndices == null)
+                throw new ArgumentNullException("faceIndices");
+
+            // Add all vertices
+            foreach (var vertex in vertices)
+            {
+                int vertIdx = anti_geometry_add_vert(handle, vertex.x, vertex.y, vertex.z);
+                if (vertIdx < 0)
+                {
+                    return false; // Error adding vertex
+                }
+            }
+
+            // Add all faces
+            foreach (var face in faceIndices)
+            {
+                if (face == null)
+                    continue;
+
+                // Convert to array for P/Invoke call
+                int[] faceArray = face.ToArray();
+                if (faceArray.Length < 3)
+                {
+                    continue; // Skip invalid faces (need at least 3 vertices)
+                }
+
+                int faceIdx = anti_geometry_add_face(handle, faceArray, faceArray.Length);
+                if (faceIdx < 0)
+                {
+                    return false; // Error adding face
+                }
+            }
+
+            return true;
         }
 
         /// <summary>
@@ -1248,6 +1353,12 @@ namespace Antiprism
         [DllImport(AntiprismPlugin.LIBRARY_NAME)]
         private static extern Status anti_geometry_get_face_color(IntPtr geom, int faceIdx,
             out int r, out int g, out int b, out int a);
+
+        [DllImport(AntiprismPlugin.LIBRARY_NAME)]
+        private static extern int anti_geometry_add_vert(IntPtr geom, double x, double y, double z);
+
+        [DllImport(AntiprismPlugin.LIBRARY_NAME)]
+        private static extern int anti_geometry_add_face(IntPtr geom, int[] indices, int numIndices);
 
         [DllImport(AntiprismPlugin.LIBRARY_NAME)]
         private static extern Status anti_geometry_unitize(IntPtr geom);

@@ -11,6 +11,8 @@ public class AntiprismPluginSettings : BaseSettings
     [Tooltip("Type of polyhedron to display")]
     public PolyhedronType polyhedronType = PolyhedronType.UniformPolyhedron;
 
+    public BaseSettings InputPreset;
+
     [Header("Parameterized Type Settings")]
     [Tooltip("Number of sides for Prism/Antiprism/Pyramid/Dipyramid (n >= 3) or Cupola (n >= 2)")]
     [Range(2, 20)]
@@ -179,31 +181,43 @@ public class AntiprismPluginSettings : BaseSettings
 
     public override PolyMesh BuildBaseShape()
     {
-        var geom = AntiprismPlugin.CreateBasePolyhedron(polyhedronType, sides,
-            geodesicFrequency,
-            geodesicMethod,
-            tilingPattern,
-            tilingSurface,
-            tilingWidth,
-            tilingHeight,
-            tilingMinorRadius,
-            tilingMajorRadius,
-            isoKiteModel,
-            isoKiteHeightA,
-            isoKiteHeightB,
-            isoKiteHeightC,
-            trapezohedronN,
-            trapezohedronD,
-            trapezohedronHeightA,
-            trapezohedronHeightB,
-            symmetroSym,
-            symmetroMult0,
-            symmetroMult1,
-            symmetroMult2,
-            johnsonNumber,
-            uniformNumber,
-            wenningerNumber
-        );
+        Geometry geom;
+        if (InputPreset!= null)
+        {
+            var inputPoly = InputPreset.BuildBaseShape();
+            inputPoly = InputPreset.ApplyModifiers(inputPoly);
+            var vertices = inputPoly.ListVerticesByPoints();
+            var faces = inputPoly.ListFacesByVertexIndices();
+            geom = Geometry.CreateFromMesh(vertices, faces);
+        }
+        else
+        {
+            geom = AntiprismPlugin.CreateBasePolyhedron(polyhedronType, sides,
+                geodesicFrequency,
+                geodesicMethod,
+                tilingPattern,
+                tilingSurface,
+                tilingWidth,
+                tilingHeight,
+                tilingMinorRadius,
+                tilingMajorRadius,
+                isoKiteModel,
+                isoKiteHeightA,
+                isoKiteHeightB,
+                isoKiteHeightC,
+                trapezohedronN,
+                trapezohedronD,
+                trapezohedronHeightA,
+                trapezohedronHeightB,
+                symmetroSym,
+                symmetroMult0,
+                symmetroMult1,
+                symmetroMult2,
+                johnsonNumber,
+                uniformNumber,
+                wenningerNumber
+            );
+        }
 
         switch (modifier)
         {
