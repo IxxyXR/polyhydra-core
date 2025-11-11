@@ -77,23 +77,47 @@ namespace Polyhydra.Core {
 
         /// <summary>
         /// Searches through the mesh and pairs opposing halfedges
+        /// Optimized: O(n) using dictionary lookup instead of O(n log n)
         /// </summary>
         public void MatchPairs()
         {
+            // Build a lookup dictionary first - O(n)
+            // This is faster than doing Contains() + this[key] lookups in the loop
+            var edgeLookup = new Dictionary<(Guid, Guid)?, Halfedge>(this.Count);
+            for (var i = 0; i < this.Count; i++)
+            {
+                if (this[i].Name.HasValue)
+                {
+                    edgeLookup[this[i].Name] = this[i];
+                }
+            }
+
+            // Match pairs using the lookup - O(n) with O(1) lookups
             for (var i = 0; i < this.Count; i++)
             {
                 Halfedge edge = this[i];
                 var rname = (edge.Prev.Vertex.Name, edge.Vertex.Name);
-                edge.Pair = Contains(rname) ? this[rname] : null;
+                edge.Pair = edgeLookup.TryGetValue(rname, out var pair) ? pair : null;
             }
         }
         
+        /// <summary>
+        /// Match pairs for a specific face's halfedges
+        /// Optimized: Uses TryGetValue to avoid double dictionary lookup
+        /// </summary>
         public void MatchPairs(Face face)
         {
             foreach (var edge in face.GetHalfedges())
             {
                 var rname = (edge.Prev.Vertex.Name, edge.Vertex.Name);
-                edge.Pair = Contains(rname) ? this[rname] : null;
+                if (Dictionary.TryGetValue(rname, out var pair))
+                {
+                    edge.Pair = pair;
+                }
+                else
+                {
+                    edge.Pair = null;
+                }
             }
         }
 
