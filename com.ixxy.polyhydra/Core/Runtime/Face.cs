@@ -15,12 +15,12 @@ namespace Polyhydra.Core
         public Face(Halfedge edge)
         {
             Halfedge = edge;
-            Name = Guid.NewGuid().ToString("N").Substring(0, 8);
+            Name = Guid.NewGuid().ToString("N");
         }
 
         public Face()
         {
-            Name = Guid.NewGuid().ToString("N").Substring(0, 8);
+            Name = Guid.NewGuid().ToString("N");
         }
 
         #endregion
