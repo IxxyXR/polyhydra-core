@@ -8,6 +8,18 @@ namespace Polyhydra.Core
 {
     public partial class PolyMesh
     {
+        // Helper methods to create unique string keys from Guid tuples
+        // This avoids hash collisions that occur with complex meshes
+        private static string MakeKey(Guid guid)
+        {
+            return guid.ToString();
+        }
+
+        private static string MakeKey((Guid, Guid)? guidTuple)
+        {
+            if (!guidTuple.HasValue) return string.Empty;
+            return $"{guidTuple.Value.Item1}_{guidTuple.Value.Item2}";
+        }
 
         public PolyMesh Dual()
         {
@@ -817,7 +829,7 @@ namespace Polyhydra.Core
                     var edges = oldFace.GetHalfedges();
 
                     var seedVertex = edges[j].Vertex;
-                    keyName = seedVertex.Name.ToString();
+                    keyName = MakeKey(seedVertex.Name);
                     if (existingVerts.ContainsKey(keyName))
                     {
                         seedVertexIndex = existingVerts[keyName];
@@ -875,7 +887,7 @@ namespace Polyhydra.Core
                         edgePos = edges[j].Midpoint;
                     }
 
-                    keyName = edges[j].PairedName.ToString();
+                    keyName = MakeKey(edges[j].PairedName);
                     if (newEdgeVertsLookup.ContainsKey(keyName))
                     {
                         edgeIndex = newEdgeVertsLookup[keyName];
@@ -898,7 +910,7 @@ namespace Polyhydra.Core
                     {
                         prevMidpointVertex = edges[j].Next.Midpoint;
                     }
-                    keyName = edges[j].Next.PairedName.ToString();
+                    keyName = MakeKey(edges[j].Next.PairedName);
 
                     if (newEdgeVertsLookup.ContainsKey(keyName))
                     {
@@ -1638,7 +1650,7 @@ namespace Polyhydra.Core
                     var edges = oldFace.GetHalfedges();
 
                     var seedVertex = edges[j].Vertex;
-                    keyName = seedVertex.Name.ToString();
+                    keyName = MakeKey(seedVertex.Name);
                     if (existingVerts.ContainsKey(keyName))
                     {
                         seedVertexIndex = existingVerts[keyName];
@@ -1652,7 +1664,7 @@ namespace Polyhydra.Core
                     }
 
                     var OneThirdVertex = edges[j].PointAlongEdge(ratio);
-                    keyName = edges[j].Name.ToString();
+                    keyName = MakeKey(edges[j].Name);
                     if (newVerts.ContainsKey(keyName))
                     {
                         OneThirdIndex = newVerts[keyName];
@@ -1669,12 +1681,12 @@ namespace Polyhydra.Core
                     if (edges[j].Next.Pair != null)
                     {
                         PrevThirdVertex = edges[j].Next.Pair.PointAlongEdge(ratio);
-                        keyName = edges[j].Next.Pair.Name.ToString();
+                        keyName = MakeKey(edges[j].Next.Pair.Name);
                     }
                     else
                     {
                         PrevThirdVertex = edges[j].Next.PointAlongEdge(1 - ratio);
-                        keyName = edges[j].Next.Name + "-Pair";
+                        keyName = edges[j].Next.Name.ToString() + "-Pair";
                     }
 
                     if (newVerts.ContainsKey(keyName))
@@ -1693,12 +1705,12 @@ namespace Polyhydra.Core
                     if (edges[j].Pair != null)
                     {
                         PairOneThird = edges[j].Pair.PointAlongEdge(ratio);
-                        keyName = edges[j].Pair.Name.ToString();
+                        keyName = MakeKey(edges[j].Pair.Name);
                     }
                     else
                     {
                         PairOneThird = edges[j].PointAlongEdge(1 - ratio);
-                        keyName = edges[j].Name + "-Pair";
+                        keyName = edges[j].Name.ToString() + "-Pair";
                     }
 
                     if (newVerts.ContainsKey(keyName))
@@ -2821,18 +2833,18 @@ namespace Polyhydra.Core
                 var edge = Halfedges[i];
                 float ratio = 1 - o.GetValueA(this, Faces.IndexOf(edge.Face));
                 vertexPoints.Add(edge.PointAlongEdge(ratio));
-                newEdgeVertices[edge.Name.ToString()] = vertexIndex++;
+                newEdgeVertices[MakeKey(edge.Name)] = vertexIndex++;
                 vertexRoles.Add(Roles.New);
 
                 if (edge.Pair != null)
                 {
                     vertexPoints.Add(edge.Pair.PointAlongEdge(ratio));
-                    newEdgeVertices[edge.Pair.Name.ToString()] = vertexIndex++;
+                    newEdgeVertices[MakeKey(edge.Pair.Name)] = vertexIndex++;
                 }
                 else
                 {
                     vertexPoints.Add(edge.PointAlongEdge(1 - ratio));
-                    newEdgeVertices[edge.Name.ToString() + "-Pair"] = vertexIndex++;
+                    newEdgeVertices[MakeKey(edge.Name) + "-Pair"] = vertexIndex++;
                 }
 
                 vertexRoles.Add(Roles.New);
@@ -2852,26 +2864,26 @@ namespace Polyhydra.Core
                     string edgePairName;
                     if (edge.Pair != null)
                     {
-                        edgePairName = edge.Pair.Name.ToString();
+                        edgePairName = MakeKey(edge.Pair.Name);
                     }
                     else
                     {
-                        edgePairName = edge.Name + "-Pair";
+                        edgePairName = edge.Name.ToString() + "-Pair";
                     }
 
                     string edgeNextPairName;
                     if (edge.Next.Pair != null)
                     {
-                        edgeNextPairName = edge.Next.Pair.Name.ToString();
+                        edgeNextPairName = MakeKey(edge.Next.Pair.Name);
                     }
                     else
                     {
-                        edgeNextPairName = edge.Next.Name.ToString() + "-Pair";
+                        edgeNextPairName = MakeKey(edge.Next.Name) + "-Pair";
                     }
 
                     var quad = new[]
                     {
-                        newEdgeVertices[edge.Next.Name.ToString()],
+                        newEdgeVertices[MakeKey(edge.Next.Name)],
                         newEdgeVertices[edgeNextPairName],
                         newEdgeVertices[edgePairName],
                         existingVertices[edge.Vertex.Position],
@@ -2930,16 +2942,16 @@ namespace Polyhydra.Core
                 float ratio = o.GetValueA(this, Faces.IndexOf(edge.Face));
                 vertexPoints.Add(edge.PointAlongEdge(ratio));
                 vertexRoles.Add(Roles.New);
-                newEdgeVertices[edge.Name.ToString()] = vertexIndex++;
+                newEdgeVertices[MakeKey(edge.Name)] = vertexIndex++;
                 if (edge.Pair != null)
                 {
                     vertexPoints.Add(edge.Pair.PointAlongEdge(ratio));
-                    newEdgeVertices[edge.Pair.Name.ToString()] = vertexIndex++;
+                    newEdgeVertices[MakeKey(edge.Pair.Name)] = vertexIndex++;
                 }
                 else
                 {
                     vertexPoints.Add(edge.PointAlongEdge(1 - ratio));
-                    newEdgeVertices[edge.Name.ToString() + "-Pair"] = vertexIndex++;
+                    newEdgeVertices[MakeKey(edge.Name) + "-Pair"] = vertexIndex++;
                 }
 
                 vertexRoles.Add(Roles.New);
@@ -2952,11 +2964,11 @@ namespace Polyhydra.Core
                 {
                     var edge = edges[i];
                     var direction = (face.Centroid - edge.Midpoint) * 2;
-                    var pointOnEdge = vertexPoints[newEdgeVertices[edge.Name.ToString()]];
+                    var pointOnEdge = vertexPoints[newEdgeVertices[MakeKey(edge.Name)]];
                     float ratio = o.GetValueA(this, Faces.IndexOf(edge.Face));
                     vertexPoints.Add(Vector3.LerpUnclamped(pointOnEdge, pointOnEdge + direction, ratio));
                     vertexRoles.Add(Roles.NewAlt);
-                    newInnerVertices[edge.Name.ToString()] = vertexIndex++;
+                    newInnerVertices[MakeKey(edge.Name)] = vertexIndex++;
                 }
             }
 
@@ -2973,21 +2985,21 @@ namespace Polyhydra.Core
                     string edgeNextPairName;
                     if (edge.Next.Pair != null)
                     {
-                        edgeNextPairName = edge.Next.Pair.Name.ToString();
+                        edgeNextPairName = MakeKey(edge.Next.Pair.Name);
                     }
                     else
                     {
-                        edgeNextPairName = edge.Next.Name + "-Pair";
+                        edgeNextPairName = edge.Next.Name.ToString() + "-Pair";
                     }
 
                     var hexagon = new[]
                     {
                         existingVertices[edge.Vertex.Position],
                         newEdgeVertices[edgeNextPairName],
-                        newEdgeVertices[edge.Next.Name.ToString()],
-                        newInnerVertices[edge.Next.Name.ToString()],
-                        newInnerVertices[edge.Name.ToString()],
-                        newEdgeVertices[edge.Name.ToString()],
+                        newEdgeVertices[MakeKey(edge.Next.Name)],
+                        newInnerVertices[MakeKey(edge.Next.Name)],
+                        newInnerVertices[MakeKey(edge.Name)],
+                        newEdgeVertices[MakeKey(edge.Name)],
                     };
                     faceIndices.Add(hexagon);
 
@@ -3003,7 +3015,7 @@ namespace Polyhydra.Core
 
                     newFaceTags.Add(new HashSet<string>(prevFaceTagSet));
 
-                    centralFace[i] = newInnerVertices[edge.Name.ToString()];
+                    centralFace[i] = newInnerVertices[MakeKey(edge.Name)];
                     edge = edge.Next;
                 }
 
