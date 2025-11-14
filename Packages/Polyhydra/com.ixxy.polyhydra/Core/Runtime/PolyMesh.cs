@@ -1162,7 +1162,7 @@ namespace Polyhydra.Core
                 faceScale /= face.Sides;
 
                 var miscUV1 = new Vector4(faceScale, face.Sides, faceCentroid.magnitude,
-                    ((float)i) / faceIndices.Length);
+                    ((float)i) / Faces.Count);
                 var miscUV2 = new Vector4(faceCentroid.x, faceCentroid.y, faceCentroid.z, i);
 
                 var faceTris = new List<int>();
@@ -1235,11 +1235,11 @@ namespace Polyhydra.Core
                     else
                     {
                         // Replaced LINQ Select().ToList() with for loop
-                        var faceVerts = face.GetVertices();
-                        var positions = new List<Vector3>(faceVerts.Count);
-                        for (int v = 0; v < faceVerts.Count; v++)
+                        var tessellatorVerts = face.GetVertices();
+                        var positions = new List<Vector3>(tessellatorVerts.Count);
+                        for (int v = 0; v < tessellatorVerts.Count; v++)
                         {
-                            positions.Add(faceVerts[v].Position);
+                            positions.Add(tessellatorVerts[v].Position);
                         }
 
                         var tessellator = new Tessellator();

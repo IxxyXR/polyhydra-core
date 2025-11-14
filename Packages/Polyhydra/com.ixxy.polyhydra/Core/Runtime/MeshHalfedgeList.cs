@@ -39,6 +39,19 @@ namespace Polyhydra.Core {
         //     return edge.Name.To;
         // }
 
+        /// <summary>
+        /// Try to get a halfedge by its key. Exposes protected Dictionary for incremental pairing.
+        /// </summary>
+        public bool TryGetHalfedge((Guid, Guid)? key, out Halfedge halfedge)
+        {
+            if (Dictionary != null && key.HasValue && Dictionary.TryGetValue(key, out halfedge))
+            {
+                return true;
+            }
+            halfedge = null;
+            return false;
+        }
+
         #region add methods
 
         public void Add(Vertex vertex) {

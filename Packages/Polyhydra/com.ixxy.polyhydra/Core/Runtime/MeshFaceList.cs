@@ -80,7 +80,7 @@ namespace Polyhydra.Core {
 
                 // Incremental pairing: immediately pair with existing opposite halfedge if it exists
                 var rname = (newEdges[j].Prev.Vertex.Name, newEdges[j].Vertex.Name);
-                if (_mPolyMesh.Halfedges.Dictionary.TryGetValue(rname, out var pair))
+                if (_mPolyMesh.Halfedges.TryGetHalfedge(rname, out var pair))
                 {
                     newEdges[j].Pair = pair;
                     pair.Pair = newEdges[j];
