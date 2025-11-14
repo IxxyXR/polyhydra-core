@@ -1018,8 +1018,8 @@ namespace Polyhydra.Core
                 }
             }
 
-            // Find and link halfedge pairs
-            Halfedges.MatchPairs();
+            // Halfedge pairing now happens incrementally during face addition
+            // (see MeshFaceList._AddOrInsert for incremental pairing implementation)
             FaceRoles = newRoles;
             FaceTags = newTags;
         }
