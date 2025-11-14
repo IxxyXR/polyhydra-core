@@ -843,6 +843,21 @@ namespace Polyhydra.Core
             return removed;
         }
 
+        /// <summary>
+        /// Invalidates all cached properties in Faces and Vertices.
+        /// Call this after in-place modifications to vertex positions or connectivity.
+        /// </summary>
+        public void InvalidateAllCaches()
+        {
+            for (int i = 0; i < Faces.Count; i++)
+            {
+                Faces[i].InvalidateCache();
+            }
+            for (int i = 0; i < Vertices.Count; i++)
+            {
+                Vertices[i].InvalidateCache();
+            }
+        }
 
         /// <summary>
         /// A string representation of the mesh.
