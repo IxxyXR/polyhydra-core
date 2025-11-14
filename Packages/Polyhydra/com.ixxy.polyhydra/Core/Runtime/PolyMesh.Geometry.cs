@@ -67,6 +67,8 @@ namespace Polyhydra.Core
                 var v = Vertices[i];
                 v.Position = Vector3.Reflect(v.Position, axis);
             }
+
+            InvalidateAllCaches();
         }
 
         public PolyMesh AddCopy(OpParams o, Vector3 axis)
@@ -199,6 +201,7 @@ namespace Polyhydra.Core
                         vert.z * scale.z
                     );
                 }
+                InvalidateAllCaches();
             }
         }
 
@@ -224,6 +227,7 @@ namespace Polyhydra.Core
                         vertexPos.z * (axis!=2 ? scale + 1 : 1)
                     );
                 }
+                poly.InvalidateAllCaches();
             }
 
             PolyMesh result;
@@ -290,6 +294,7 @@ namespace Polyhydra.Core
             {
                 Vertices[i].Position -= newCenter;
             }
+            InvalidateAllCaches();
         }
 
         public void Morph(PolyMesh target, float amount, bool reverseVertexOrder)
@@ -300,6 +305,7 @@ namespace Polyhydra.Core
                 var targetPos = target.Vertices[reverseVertexOrder ? minVertCount - i - 1 : i].Position;
                 Vertices[i].Position = Vector3.LerpUnclamped(Vertices[i].Position, targetPos, amount);
             }
+            InvalidateAllCaches();
         }
 
         public PolyMesh SitLevel(float faceFactor = 0)
@@ -1375,6 +1381,7 @@ namespace Polyhydra.Core
                 {
                     Vertices[i].Position *= unitScale * scale;
                 }
+                InvalidateAllCaches();
             }
         }
 

@@ -81,12 +81,19 @@ namespace Polyhydra.Core
 
         public void SetFaceRoles(Roles role)
         {
-            FaceRoles = Enumerable.Repeat(role, Faces.Count).ToList();
+            // Replaced LINQ Enumerable.Repeat with for loop
+            int count = Faces.Count;
+            FaceRoles = new List<Roles>(count);
+            for (int i = 0; i < count; i++)
+            {
+                FaceRoles.Add(role);
+            }
         }
 
         public void SetFaceRoles(OpParams o)
         {
-            foreach (var faceIndex in Enumerable.Range(0, Faces.Count))
+            // Replaced Enumerable.Range with for loop
+            for (int faceIndex = 0; faceIndex < Faces.Count; faceIndex++)
             {
                 if (faceIndex >= FaceRoles.Count) FaceRoles.Add(Roles.New);
                 if (IncludeFace(faceIndex, o.filter))
@@ -98,12 +105,19 @@ namespace Polyhydra.Core
 
         public void SetVertexRoles(Roles role)
         {
-            VertexRoles = Enumerable.Repeat(role, Vertices.Count).ToList();
+            // Replaced LINQ Enumerable.Repeat with for loop
+            int count = Vertices.Count;
+            VertexRoles = new List<Roles>(count);
+            for (int i = 0; i < count; i++)
+            {
+                VertexRoles.Add(role);
+            }
         }
 
         public void SetVertexRoles(OpParams o)
         {
-            foreach (var vertexIndex in Enumerable.Range(0, Vertices.Count))
+            // Replaced Enumerable.Range with for loop
+            for (int vertexIndex = 0; vertexIndex < Vertices.Count; vertexIndex++)
             {
                 if (vertexIndex >= VertexRoles.Count) VertexRoles.Add(Roles.New);
                 if (IncludeVertex(vertexIndex, o.filter))
@@ -170,7 +184,15 @@ namespace Polyhydra.Core
         {
             get
             {
-                var nakedEdges = Halfedges.Count(x => x.Pair == null);
+                // Replaced LINQ Count() with for loop
+                int nakedEdges = 0;
+                for (int i = 0; i < Halfedges.Count; i++)
+                {
+                    if (Halfedges[i].Pair == null)
+                    {
+                        nakedEdges++;
+                    }
+                }
                 var fullEdges = (Halfedges.Count - nakedEdges) / 2;
                 return nakedEdges + fullEdges;
             }
@@ -190,10 +212,27 @@ namespace Polyhydra.Core
 
         public PolyMesh(IEnumerable<Vector3> verts) : this()
         {
-            var faceIndices = new List<IEnumerable<int>>{Enumerable.Range(0, verts.Count())};
-            FaceRoles = Enumerable.Repeat(Roles.New, faceIndices.Count).ToList();
-            FaceTags = Enumerable.Repeat(new HashSet<string>(), faceIndices.Count()).ToList();
-            VertexRoles = Enumerable.Repeat(Roles.New, verts.Count()).ToList();
+            int vertCount = verts.Count();
+            var indices = new int[vertCount];
+            for (int i = 0; i < vertCount; i++)
+            {
+                indices[i] = i;
+            }
+            var faceIndices = new List<IEnumerable<int>> { indices };
+
+            // Replaced LINQ Enumerable.Repeat with for loops
+            FaceRoles = new List<Roles>(1);
+            FaceRoles.Add(Roles.New);
+
+            FaceTags = new List<HashSet<string>>(1);
+            FaceTags.Add(new HashSet<string>());
+
+            VertexRoles = new List<Roles>(vertCount);
+            for (int i = 0; i < vertCount; i++)
+            {
+                VertexRoles.Add(Roles.New);
+            }
+
             InitIndexed(verts, faceIndices);
             CullUnusedVertices();
         }
@@ -206,9 +245,28 @@ namespace Polyhydra.Core
             IEnumerable<IEnumerable<int>> faceIndices
         ) : this()
         {
-            FaceRoles = Enumerable.Repeat(Roles.New, faceIndices.Count()).ToList();
-            FaceTags = Enumerable.Repeat(new HashSet<string>(), faceIndices.Count()).ToList();
-            VertexRoles = Enumerable.Repeat(Roles.New, verts.Count()).ToList();
+            int faceCount = faceIndices.Count();
+            int vertCount = verts.Count();
+
+            // Replaced LINQ Enumerable.Repeat with for loops
+            FaceRoles = new List<Roles>(faceCount);
+            for (int i = 0; i < faceCount; i++)
+            {
+                FaceRoles.Add(Roles.New);
+            }
+
+            FaceTags = new List<HashSet<string>>(faceCount);
+            for (int i = 0; i < faceCount; i++)
+            {
+                FaceTags.Add(new HashSet<string>());
+            }
+
+            VertexRoles = new List<Roles>(vertCount);
+            for (int i = 0; i < vertCount; i++)
+            {
+                VertexRoles.Add(Roles.New);
+            }
+
             InitIndexed(verts, faceIndices);
             CullUnusedVertices();
         }
@@ -650,9 +708,28 @@ namespace Polyhydra.Core
                     line = reader.ReadLine();
                 }
             }
-            FaceRoles = Enumerable.Repeat(Roles.New, faceIndices.Count).ToList();
-            FaceTags = Enumerable.Repeat(new HashSet<string>(), faceIndices.Count()).ToList();
-            VertexRoles = Enumerable.Repeat(Roles.New, verts.Count()).ToList();
+
+            // Replaced LINQ Enumerable.Repeat with for loops
+            int faceCount = faceIndices.Count;
+            int vertCount = verts.Count;
+
+            FaceRoles = new List<Roles>(faceCount);
+            for (int i = 0; i < faceCount; i++)
+            {
+                FaceRoles.Add(Roles.New);
+            }
+
+            FaceTags = new List<HashSet<string>>(faceCount);
+            for (int i = 0; i < faceCount; i++)
+            {
+                FaceTags.Add(new HashSet<string>());
+            }
+
+            VertexRoles = new List<Roles>(vertCount);
+            for (int i = 0; i < vertCount; i++)
+            {
+                VertexRoles.Add(Roles.New);
+            }
 
             InitIndexed(verts, faceIndices);
             CullUnusedVertices();
@@ -743,28 +820,44 @@ namespace Polyhydra.Core
 
         /// <summary>
         /// Removes all vertices that are currently not used by the Halfedge list.
+        /// Optimized: In-place removal instead of copy-clear-add pattern
         /// </summary>
         /// <returns>The number of unused vertices that were removed.</returns>
         public int CullUnusedVertices()
         {
-            var orig = new List<Vertex>(Vertices);
-            var origVertexRoles = new List<Roles>(VertexRoles);
-            Vertices.Clear();
-            VertexRoles.Clear();
-            // re-add vertices which reference a halfedge
-            for (var vertIndex = 0; vertIndex < orig.Count; vertIndex++)
+            int removed = 0;
+            // Iterate backwards for safe removal during iteration
+            for (int i = Vertices.Count - 1; i >= 0; i--)
             {
-                var vertex = orig[vertIndex];
-                if (vertex.Halfedge != null)
+                if (Vertices[i].Halfedge == null)
                 {
-                    Vertices.Add(vertex);
-                    VertexRoles.Add(vertIndex < origVertexRoles.Count ? origVertexRoles[vertIndex]: Roles.Ignored);
+                    Vertices.RemoveAt(i);
+                    // Keep VertexRoles in sync
+                    if (i < VertexRoles.Count)
+                    {
+                        VertexRoles.RemoveAt(i);
+                    }
+                    removed++;
                 }
             }
-
-            return orig.Count - Vertices.Count;
+            return removed;
         }
 
+        /// <summary>
+        /// Invalidates all cached properties in Faces and Vertices.
+        /// Call this after in-place modifications to vertex positions or connectivity.
+        /// </summary>
+        public void InvalidateAllCaches()
+        {
+            for (int i = 0; i < Faces.Count; i++)
+            {
+                Faces[i].InvalidateCache();
+            }
+            for (int i = 0; i < Vertices.Count; i++)
+            {
+                Vertices[i].InvalidateCache();
+            }
+        }
 
         /// <summary>
         /// A string representation of the mesh.
@@ -925,8 +1018,8 @@ namespace Polyhydra.Core
                 }
             }
 
-            // Find and link halfedge pairs
-            Halfedges.MatchPairs();
+            // Halfedge pairing now happens incrementally during face addition
+            // (see MeshFaceList._AddOrInsert for incremental pairing implementation)
             FaceRoles = newRoles;
             FaceTags = newTags;
         }
@@ -960,24 +1053,29 @@ namespace Polyhydra.Core
 
             if (colors == null) colors = DefaultFaceColors;
 
-            var meshTriangles = new List<int>();
-            var meshVertices = new List<Vector3>();
-            var meshNormals = new List<Vector3>();
-            var meshColors = new List<Color32>();
-            var meshUVs = new List<Vector2>();
-            var edgeUVs = new List<Vector2>();
-            var barycentricUVs = new List<Vector3>();
-            var miscUVs1 = new List<Vector4>();
-            var miscUVs2 = new List<Vector4>();
+            // Pre-allocate lists with estimated capacity to reduce reallocations
+            // Conservative estimate: average 5 sides per face, 3 vertices per triangle after tessellation
+            int faceCount = Faces.Count;
+            int estimatedTriangles = faceCount * 3; // Most faces become 2-4 triangles
+            int estimatedVertices = estimatedTriangles * 3; // 3 vertices per triangle
+
+            var meshTriangles = new List<int>(estimatedTriangles * 3);
+            var meshVertices = new List<Vector3>(estimatedVertices);
+            var meshNormals = new List<Vector3>(estimatedVertices);
+            var meshColors = new List<Color32>(estimatedVertices);
+            var meshUVs = new List<Vector2>(estimatedVertices);
+            var edgeUVs = new List<Vector2>(estimatedVertices);
+            var barycentricUVs = new List<Vector3>(estimatedVertices);
+            var miscUVs1 = new List<Vector4>(estimatedVertices);
+            var miscUVs2 = new List<Vector4>(estimatedVertices);
 
             List<Roles> uniqueRoles = null;
             List<string> uniqueTags = null;
 
             var submeshTriangles = new List<List<int>>();
 
-            // Strip down to Face-Vertex structure
-            var points = ListVerticesByPoints();
-            var faceIndices = ListFacesByVertexIndices();
+            // No longer need to copy vertex positions or build face indices
+            // Work directly with cached face.GetVertices() instead
 
             // Add faces
             int index = 0;
@@ -988,18 +1086,29 @@ namespace Polyhydra.Core
                 {
                     var flattenedTags = FaceTags.SelectMany(d => d);
                     uniqueTags = new HashSet<string>(flattenedTags).ToList();
-                    for (int i = 0; i < uniqueTags.Count + 1; i++) submeshTriangles.Add(new List<int>());
+                    int submeshCount = uniqueTags.Count + 1;
+                    // Pre-allocate each submesh with estimated capacity
+                    int estimatedTrisPerSubmesh = (estimatedTriangles * 3) / Math.Max(1, submeshCount);
+                    for (int i = 0; i < submeshCount; i++)
+                    {
+                        submeshTriangles.Add(new List<int>(estimatedTrisPerSubmesh));
+                    }
                 }
                 else
                 {
-                    for (int i = 0; i < colors.Length; i++) submeshTriangles.Add(new List<int>());
+                    // Pre-allocate each submesh with estimated capacity
+                    int estimatedTrisPerSubmesh = (estimatedTriangles * 3) / Math.Max(1, colors.Length);
+                    for (int i = 0; i < colors.Length; i++)
+                    {
+                        submeshTriangles.Add(new List<int>(estimatedTrisPerSubmesh));
+                    }
                 }
             }
 
-            for (var i = 0; i < faceIndices.Length; i++)
+            for (var i = 0; i < Faces.Count; i++)
             {
-                var faceIndex = faceIndices[i];
                 var face = Faces[i];
+                var faceVerts = face.GetVertices(); // Cached - no allocation!
                 var faceNormal = face.Normal;
                 var faceCentroid = face.Centroid;
 
@@ -1053,7 +1162,7 @@ namespace Polyhydra.Core
                 faceScale /= face.Sides;
 
                 var miscUV1 = new Vector4(faceScale, face.Sides, faceCentroid.magnitude,
-                    ((float)i) / faceIndices.Length);
+                    ((float)i) / Faces.Count);
                 var miscUV2 = new Vector4(faceCentroid.x, faceCentroid.y, faceCentroid.z, i);
 
                 var faceTris = new List<int>();
@@ -1080,7 +1189,7 @@ namespace Polyhydra.Core
                             miscUVs2.Add(miscUV2);
                         }
 
-                        for (var edgeIndex = 0; edgeIndex < faceIndex.Count; edgeIndex++)
+                        for (var edgeIndex = 0; edgeIndex < faceVerts.Count; edgeIndex++)
                         {
                             if (!FACETED_FACES)
                             {
@@ -1100,7 +1209,7 @@ namespace Polyhydra.Core
                                 miscUVs2.Add(miscUV2);
                             }
 
-                            meshVertices.Add(points[faceIndex[edgeIndex]]);
+                            meshVertices.Add(faceVerts[edgeIndex].Position);
                             meshUVs.Add(calcUV(meshVertices[index], xAxis, yAxis));
                             faceTris.Add(index++);
                             edgeUVs.Add(new Vector2(1, 1));
@@ -1111,7 +1220,7 @@ namespace Polyhydra.Core
                             miscUVs1.Add(miscUV1);
                             miscUVs2.Add(miscUV2);
 
-                            meshVertices.Add(points[faceIndex[(edgeIndex + 1) % face.Sides]]);
+                            meshVertices.Add(faceVerts[(edgeIndex + 1) % face.Sides].Position);
                             meshUVs.Add(calcUV(meshVertices[index], xAxis, yAxis));
                             faceTris.Add(index++);
                             edgeUVs.Add(new Vector2(1, 1));
@@ -1125,8 +1234,16 @@ namespace Polyhydra.Core
                     }
                     else
                     {
+                        // Replaced LINQ Select().ToList() with for loop
+                        var tessellatorVerts = face.GetVertices();
+                        var positions = new List<Vector3>(tessellatorVerts.Count);
+                        for (int v = 0; v < tessellatorVerts.Count; v++)
+                        {
+                            positions.Add(tessellatorVerts[v].Position);
+                        }
+
                         var tessellator = new Tessellator();
-                        tessellator.AddContour(face.GetVertices().Select(v => v.Position).ToList());
+                        tessellator.AddContour(positions);
                         tessellator.Tessellate(normal: Vector3.back);
 
                         Vector3 getVec(int vi)
@@ -1155,10 +1272,19 @@ namespace Polyhydra.Core
                             edgeUVs.Add(new Vector2(1, 1));
                             barycentricUVs.Add(new Vector3(1, 0, 0));
 
-                            meshNormals.AddRange(Enumerable.Repeat(faceNormal, 3));
-                            meshColors.AddRange(Enumerable.Repeat(color, 3));
-                            miscUVs1.AddRange(Enumerable.Repeat(miscUV1, 3));
-                            miscUVs2.AddRange(Enumerable.Repeat(miscUV2, 3));
+                            // Replaced LINQ Enumerable.Repeat with explicit adds
+                            meshNormals.Add(faceNormal);
+                            meshNormals.Add(faceNormal);
+                            meshNormals.Add(faceNormal);
+                            meshColors.Add(color);
+                            meshColors.Add(color);
+                            meshColors.Add(color);
+                            miscUVs1.Add(miscUV1);
+                            miscUVs1.Add(miscUV1);
+                            miscUVs1.Add(miscUV1);
+                            miscUVs2.Add(miscUV2);
+                            miscUVs2.Add(miscUV2);
+                            miscUVs2.Add(miscUV2);
                         }
 
                         faceTris.Reverse();
@@ -1166,26 +1292,38 @@ namespace Polyhydra.Core
                 }
                 else
                 {
-                    meshVertices.Add(points[faceIndex[0]]);
+                    meshVertices.Add(faceVerts[0].Position);
                     meshUVs.Add(calcUV(meshVertices[index], xAxis, yAxis));
                     faceTris.Add(index++);
                     barycentricUVs.Add(new Vector3(0, 0, 1));
 
-                    meshVertices.Add(points[faceIndex[1]]);
+                    meshVertices.Add(faceVerts[1].Position);
                     meshUVs.Add(calcUV(meshVertices[index], xAxis, yAxis));
                     faceTris.Add(index++);
                     barycentricUVs.Add(new Vector3(0, 1, 0));
 
-                    meshVertices.Add(points[faceIndex[2]]);
+                    meshVertices.Add(faceVerts[2].Position);
                     meshUVs.Add(calcUV(meshVertices[index], xAxis, yAxis));
                     faceTris.Add(index++);
                     barycentricUVs.Add(new Vector3(1, 0, 0));
 
-                    edgeUVs.AddRange(Enumerable.Repeat(new Vector2(1, 1), 3));
-                    meshNormals.AddRange(Enumerable.Repeat(faceNormal, 3));
-                    meshColors.AddRange(Enumerable.Repeat(color, 3));
-                    miscUVs1.AddRange(Enumerable.Repeat(miscUV1, 3));
-                    miscUVs2.AddRange(Enumerable.Repeat(miscUV2, 3));
+                    // Replaced LINQ Enumerable.Repeat with explicit adds
+                    var edgeUV = new Vector2(1, 1);
+                    edgeUVs.Add(edgeUV);
+                    edgeUVs.Add(edgeUV);
+                    edgeUVs.Add(edgeUV);
+                    meshNormals.Add(faceNormal);
+                    meshNormals.Add(faceNormal);
+                    meshNormals.Add(faceNormal);
+                    meshColors.Add(color);
+                    meshColors.Add(color);
+                    meshColors.Add(color);
+                    miscUVs1.Add(miscUV1);
+                    miscUVs1.Add(miscUV1);
+                    miscUVs1.Add(miscUV1);
+                    miscUVs2.Add(miscUV2);
+                    miscUVs2.Add(miscUV2);
+                    miscUVs2.Add(miscUV2);
                 }
 
                 if (generateSubmeshes)
