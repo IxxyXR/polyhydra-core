@@ -1074,9 +1074,8 @@ namespace Polyhydra.Core
 
             var submeshTriangles = new List<List<int>>();
 
-            // Strip down to Face-Vertex structure
-            var points = ListVerticesByPoints();
-            var faceIndices = ListFacesByVertexIndices();
+            // No longer need to copy vertex positions or build face indices
+            // Work directly with cached face.GetVertices() instead
 
             // Add faces
             int index = 0;
@@ -1106,10 +1105,10 @@ namespace Polyhydra.Core
                 }
             }
 
-            for (var i = 0; i < faceIndices.Length; i++)
+            for (var i = 0; i < Faces.Count; i++)
             {
-                var faceIndex = faceIndices[i];
                 var face = Faces[i];
+                var faceVerts = face.GetVertices(); // Cached - no allocation!
                 var faceNormal = face.Normal;
                 var faceCentroid = face.Centroid;
 
@@ -1190,7 +1189,7 @@ namespace Polyhydra.Core
                             miscUVs2.Add(miscUV2);
                         }
 
-                        for (var edgeIndex = 0; edgeIndex < faceIndex.Count; edgeIndex++)
+                        for (var edgeIndex = 0; edgeIndex < faceVerts.Count; edgeIndex++)
                         {
                             if (!FACETED_FACES)
                             {
@@ -1210,7 +1209,7 @@ namespace Polyhydra.Core
                                 miscUVs2.Add(miscUV2);
                             }
 
-                            meshVertices.Add(points[faceIndex[edgeIndex]]);
+                            meshVertices.Add(faceVerts[edgeIndex].Position);
                             meshUVs.Add(calcUV(meshVertices[index], xAxis, yAxis));
                             faceTris.Add(index++);
                             edgeUVs.Add(new Vector2(1, 1));
@@ -1221,7 +1220,7 @@ namespace Polyhydra.Core
                             miscUVs1.Add(miscUV1);
                             miscUVs2.Add(miscUV2);
 
-                            meshVertices.Add(points[faceIndex[(edgeIndex + 1) % face.Sides]]);
+                            meshVertices.Add(faceVerts[(edgeIndex + 1) % face.Sides].Position);
                             meshUVs.Add(calcUV(meshVertices[index], xAxis, yAxis));
                             faceTris.Add(index++);
                             edgeUVs.Add(new Vector2(1, 1));
@@ -1293,17 +1292,17 @@ namespace Polyhydra.Core
                 }
                 else
                 {
-                    meshVertices.Add(points[faceIndex[0]]);
+                    meshVertices.Add(faceVerts[0].Position);
                     meshUVs.Add(calcUV(meshVertices[index], xAxis, yAxis));
                     faceTris.Add(index++);
                     barycentricUVs.Add(new Vector3(0, 0, 1));
 
-                    meshVertices.Add(points[faceIndex[1]]);
+                    meshVertices.Add(faceVerts[1].Position);
                     meshUVs.Add(calcUV(meshVertices[index], xAxis, yAxis));
                     faceTris.Add(index++);
                     barycentricUVs.Add(new Vector3(0, 1, 0));
 
-                    meshVertices.Add(points[faceIndex[2]]);
+                    meshVertices.Add(faceVerts[2].Position);
                     meshUVs.Add(calcUV(meshVertices[index], xAxis, yAxis));
                     faceTris.Add(index++);
                     barycentricUVs.Add(new Vector3(1, 0, 0));
