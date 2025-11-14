@@ -116,6 +116,7 @@ namespace Polyhydra.Core
             {
                 Vertices[i].Position = newPositions[i];
             }
+            InvalidateAllCaches();
         }
 
         private static double MAX_VERTEX_CHANGE = 1.0;
@@ -318,6 +319,7 @@ namespace Polyhydra.Core
                 current = poly.Vertices.Select(v => v.Position).ToArray();
             }
 
+            poly.InvalidateAllCaches();
             return iterations;
         }
 

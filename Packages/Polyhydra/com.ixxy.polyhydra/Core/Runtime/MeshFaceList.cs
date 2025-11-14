@@ -77,10 +77,14 @@ namespace Polyhydra.Core {
                     Debug.LogWarning(e.Message);
                     return false;
                 }
-                // TODO Can we do something like the following
-                // to remove the need to run MatchPairs after adding faces?
-                // var rname = (newEdges[j].Prev.Vertex.Name, newEdges[j].Vertex.Name);
-                // newEdges[j].Pair = _mPolyMesh.Halfedges.Contains(rname) ? _mPolyMesh.Halfedges[rname] : null;
+
+                // Incremental pairing: immediately pair with existing opposite halfedge if it exists
+                var rname = (newEdges[j].Prev.Vertex.Name, newEdges[j].Vertex.Name);
+                if (_mPolyMesh.Halfedges.TryGetHalfedge(rname, out var pair))
+                {
+                    newEdges[j].Pair = pair;
+                    pair.Pair = newEdges[j];
+                }
             }
 
             // add face to mesh

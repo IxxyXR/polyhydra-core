@@ -1607,7 +1607,7 @@ namespace Polyhydra.Core
                     else
                     {
                         PrevThirdVertex = edges[j].Next.PointAlongEdge(1 - ratio);
-                        keyName = edges[j].Next.Name + "-Pair";
+                        keyName = edges[j].Next.Name.ToString() + "-Pair";
                     }
 
                     if (newVerts.ContainsKey(keyName))
@@ -1631,7 +1631,7 @@ namespace Polyhydra.Core
                     else
                     {
                         PairOneThird = edges[j].PointAlongEdge(1 - ratio);
-                        keyName = edges[j].Name + "-Pair";
+                        keyName = edges[j].Name.ToString() + "-Pair";
                     }
 
                     if (newVerts.ContainsKey(keyName))
@@ -2789,7 +2789,7 @@ namespace Polyhydra.Core
                     }
                     else
                     {
-                        edgePairName = edge.Name + "-Pair";
+                        edgePairName = edge.Name.ToString() + "-Pair";
                     }
 
                     string edgeNextPairName;
@@ -2910,7 +2910,7 @@ namespace Polyhydra.Core
                     }
                     else
                     {
-                        edgeNextPairName = edge.Next.Name + "-Pair";
+                        edgeNextPairName = edge.Next.Name.ToString() + "-Pair";
                     }
 
                     var hexagon = new[]
