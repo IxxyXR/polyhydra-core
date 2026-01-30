@@ -28,9 +28,9 @@ MonoBehaviour:
   PlanarizeIterations: 0
   FaceInset: 0.0025
   ColorMethod: 3
-  polyhedronType: 5
-  InputPreset: {fileID: 11400000, guid: 17b4f64c00f405948ac3765baf1858a4, type: 2}
-  sides: 7
+  polyhedronType: 0
+  InputPreset: {fileID: 0}
+  sides: 8
   geodesicFrequency: 3
   geodesicMethod: 2
   tilingPattern: 4
@@ -62,6 +62,6 @@ MonoBehaviour:
   dualRadius: 1
   conwayN: 2
   conwayM: 0
-  createZonohedronFromVertices: 1
-  canonicalize: 1
+  createZonohedronFromVertices: 0
+  canonicalize: 0
   canonicalizeIterations: 1520

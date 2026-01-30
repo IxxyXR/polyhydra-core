@@ -182,6 +182,34 @@ namespace Antiprism
     public static class AntiprismPlugin
     {
         public const string LIBRARY_NAME = "antiprism";
+        private static bool dataPathInitialized = false;
+
+        static AntiprismPlugin()
+        {
+            TrySetDataPath();
+        }
+
+        private static void TrySetDataPath()
+        {
+            if (dataPathInitialized)
+                return;
+
+            try
+            {
+                string path = System.IO.Path.Combine(Application.streamingAssetsPath, "antiprism");
+                anti_set_data_path(path);
+                dataPathInitialized = true;
+            }
+            catch
+            {
+                // Ignore failures; caller can still set ANTIPRISM_DATA manually.
+            }
+        }
+
+        internal static void EnsureDataPath()
+        {
+            TrySetDataPath();
+        }
 
         /// <summary>
         /// Get the Antiprism library version
@@ -415,6 +443,9 @@ namespace Antiprism
 
         [DllImport(LIBRARY_NAME)]
         private static extern IntPtr anti_get_version();
+
+        [DllImport(LIBRARY_NAME)]
+        private static extern void anti_set_data_path(string path);
     }
 
     /// <summary>
@@ -430,6 +461,7 @@ namespace Antiprism
         /// </summary>
         public Geometry()
         {
+            AntiprismPlugin.EnsureDataPath();
             handle = anti_geometry_create();
             if (handle == IntPtr.Zero)
                 throw new Exception("Failed to create geometry");
