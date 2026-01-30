@@ -4,6 +4,13 @@ using Antiprism;
 using Polyhydra.Core;
 using UnityEngine;
 
+public enum SymmetryType
+{
+    T = 'T',
+    O = 'O',
+    I = 'I'
+}
+
 [CreateAssetMenu(fileName = "AntiprismPluginSettings", menuName = "Polyhydra/AntiprismPluginSettings", order = 1)]
 public class AntiprismPluginSettings : BaseSettings
 {
@@ -83,7 +90,7 @@ public class AntiprismPluginSettings : BaseSettings
 
     [Header("Symmetrohedra Settings (Kaplan-Hart notation: -k sym,mult0,mult1,mult2)")]
     [Tooltip("Symmetry: T (tetrahedral), O (octahedral), I (icosahedral)")]
-    public char symmetroSym = 'O';
+    public SymmetryType symmetroSym = SymmetryType.O;
 
     [Tooltip("Multiplier for primary axis (axis orders: T=[3,3,2], O=[4,3,2], I=[5,3,2])")]
     [Range(0, 10)]
@@ -182,7 +189,7 @@ public class AntiprismPluginSettings : BaseSettings
     public override PolyMesh BuildBaseShape()
     {
         Geometry geom;
-        if (InputPreset!= null)
+        if (InputPreset != null)
         {
             var inputPoly = InputPreset.BuildBaseShape();
             inputPoly = InputPreset.ApplyModifiers(inputPoly);
@@ -209,7 +216,7 @@ public class AntiprismPluginSettings : BaseSettings
                 trapezohedronD,
                 trapezohedronHeightA,
                 trapezohedronHeightB,
-                symmetroSym,
+                (char)symmetroSym,
                 symmetroMult0,
                 symmetroMult1,
                 symmetroMult2,
