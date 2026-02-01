@@ -1,0 +1,78 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e657a0bbc80b3b4eba818c3bf4aa988, type: 3}
+  m_Name: AntiprismPluginSettings 4
+  m_EditorClassIdentifier: 
+  Operators:
+  - Active: 0
+    OpType: 115
+    Parameter1: 0.333
+    Parameter2: 0.333
+    Iterations: 2
+    Parameter1Randomize: 0
+    Parameter2Randomize: 0
+    FilterType: 0
+    FilterParam: 0
+    FilterFlip: 0
+  FastConicalize: 1
+  CanonicalizeIterations: 0
+  PlanarizeIterations: 0
+  FaceInset: 0.001
+  ColorMethod: 0
+  polyhedronType: 9
+  InputPreset: {fileID: 0}
+  sides: 8
+  geodesicFrequency: 7
+  geodesicMethod: 0
+  tilingPattern: 1
+  tilingSurface: 0
+  tilingWidth: 20
+  tilingHeight: 20
+  tilingMinorRadius: 1.42
+  tilingMajorRadius: 3
+  isoKiteModel: 5
+  isoKiteHeightA: 0.58
+  isoKiteHeightB: 0.35
+  isoKiteHeightC: 0
+  trapezohedronN: 7
+  trapezohedronD: 3
+  trapezohedronHeightA: 0.81
+  trapezohedronHeightB: 0
+  symmetroSym: 73
+  symmetroMult0: 3
+  symmetroMult1: 0
+  symmetroMult2: 4
+  johnsonNumber: 64
+  uniformNumber: 6
+  wenningerNumber: 65
+  antiprismModifiers:
+  - Active: 1
+    Type: 1
+    CanonicalizeIterations: 3597
+    ConwayN: 3
+    ConwayM: 2
+    TruncateRatio: 0.28
+    TruncateOrder: 0
+    KisFaceSides: 0
+    NeedleHeight: 1.4
+    DualRadius: 1.06
+  - Active: 0
+    Type: 17
+    CanonicalizeIterations: 3453
+    ConwayN: 0
+    ConwayM: 0
+    TruncateRatio: 0.24
+    TruncateOrder: 0
+    KisFaceSides: 0
+    NeedleHeight: 0
+    DualRadius: 0
+  createZonohedronFromVertices: 0
