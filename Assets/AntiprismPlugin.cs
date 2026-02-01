@@ -159,7 +159,9 @@ namespace Antiprism
         Bevel,
         Snub,
         Ortho,
-        ConvexHull
+        ConvexHull,
+        Zonohedron,
+        Canonicalize
     }
 
     /// <summary>

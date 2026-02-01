@@ -155,20 +155,13 @@ public class PolyhedronExample : MonoBehaviour
     [Range(0, 10)]
     public int conwayM = 0;
 
-    [Header("Zonohedra")]
-    [Tooltip("Create zonohedron from vertices (e.g., Cube→Rhombic Dodecahedron)")]
-    public bool createZonohedronFromVertices = false;
+    [Tooltip("Canonicalize iterations (used by Canonicalize modifier, 0 for default 1000)")]
+    [Range(0, 10000)]
+    public int canonicalizeIterations = 0;
 
     [Header("Rendering")]
     [Tooltip("Use flat shading (hard edges) - recommended for polyhedra")]
     public bool flatShading = true;
-
-    [Tooltip("Canonicalize geometry (adjust vertices for more uniform edge lengths)")]
-    public bool canonicalize = false;
-
-    [Tooltip("Maximum iterations for canonicalization (0 for default 1000)")]
-    [Range(0, 10000)]
-    public int canonicalizeIterations = 0;
 
     [Header("Transform")]
     [Tooltip("Scale factor for the polyhedron")]
@@ -330,18 +323,7 @@ public class PolyhedronExample : MonoBehaviour
         {
             using (var geom = CreateBasePolyhedron())
             {
-                // Apply zonohedron transformation if enabled
-                if (createZonohedronFromVertices)
-                {
-                    using (var zonoGeom = Geometry.CreateZonohedronFromVertices(geom))
-                    {
-                        ApplyTransformationsAndRender(zonoGeom);
-                    }
-                }
-                else
-                {
-                    ApplyTransformationsAndRender(geom);
-                }
+                ApplyTransformationsAndRender(geom);
             }
         }
         catch (System.Exception e)
@@ -354,14 +336,6 @@ public class PolyhedronExample : MonoBehaviour
     {
         // Apply modifier
         ApplyModifier(geom);
-
-        // Canonicalize if enabled (adjust vertices for uniform edge lengths)
-        if (canonicalize)
-        {
-            Status canonStatus = geom.Canonicalize(canonicalizeIterations);
-            if (canonStatus != Status.OK)
-                Debug.LogWarning($"Canonicalize operation failed: {canonStatus}");
-        }
 
         // Normalize to unit sphere
         geom.Unitize();
@@ -378,9 +352,7 @@ public class PolyhedronExample : MonoBehaviour
         // Apply to Unity mesh with flat or smooth shading
         geom.ApplyToMesh(mesh, flatShading);
 
-        string zonoSuffix = createZonohedronFromVertices ? " [Zonohedron]" : "";
-        string canonSuffix = canonicalize ? " [Canonicalized]" : "";
-        Debug.Log($"Generated {polyhedronType}{zonoSuffix}{canonSuffix} ({modifier}): {geom.VertexCount} vertices, {geom.FaceCount} faces");
+        Debug.Log($"Generated {polyhedronType} ({modifier}): {geom.VertexCount} vertices, {geom.FaceCount} faces");
     }
 
     /// <summary>
@@ -530,6 +502,24 @@ public class PolyhedronExample : MonoBehaviour
                     Debug.LogWarning($"ConvexHull operation failed: {hullStatus}");
                 break;
 
+            case ModifierType.Zonohedron:
+                // Create zonohedron from vertices (e.g., Cube→Rhombic Dodecahedron)
+                using (var zonoGeom = Geometry.CreateZonohedronFromVertices(geom))
+                {
+                    Vector3[] verts;
+                    int[][] faces;
+                    zonoGeom.GetPolyhedronData(out verts, out faces);
+                    geom.SetPolyhedronData(verts, faces);
+                }
+                break;
+
+            case ModifierType.Canonicalize:
+                // Adjust vertices for more uniform edge lengths
+                Status canonStatus = geom.Canonicalize(canonicalizeIterations);
+                if (canonStatus != Status.OK)
+                    Debug.LogWarning($"Canonicalize operation failed: {canonStatus}");
+                break;
+
             case ModifierType.None:
             default:
                 // No modifier
@@ -572,3 +562,4 @@ public class PolyhedronExample : MonoBehaviour
         GeneratePolyhedron();
     }
 }
+
