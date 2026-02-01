@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Antiprism;
@@ -9,6 +10,46 @@ public enum SymmetryType
     T = 'T',
     O = 'O',
     I = 'I'
+}
+
+[Serializable]
+public class AntiprismModifierConfig
+{
+    public bool Active = true;
+    public ModifierType Type = ModifierType.None;
+
+    // Parameters for different modifier types
+    [Tooltip("Maximum iterations for canonicalization (0 for default 1000)")]
+    [Range(0, 10000)]
+    public int CanonicalizeIterations = 0; // Canonicalize
+
+    [Tooltip("Conway subscript parameter n (for Gyro, Meta, Bevel, Snub, Expand, Subdivide, Ortho)")]
+    [Range(0, 10)]
+    public int ConwayN = 2; // Gyro, Meta, Bevel, Snub, Expand, Subdivide, Ortho
+
+    [Tooltip("Conway subscript parameter m (for Expand, Subdivide, Ortho)")]
+    [Range(0, 10)]
+    public int ConwayM = 0; // Expand, Subdivide, Ortho
+
+    [Tooltip("Truncate/Bevel ratio (0.0-1.0, typically 0.333)")]
+    [Range(0.1f, 0.9f)]
+    public float TruncateRatio = 0.333f; // Truncate, Bevel
+
+    [Tooltip("Truncate vertex order filter (0 = all vertices, 3 = order-3 only, etc.)")]
+    [Range(0, 10)]
+    public int TruncateOrder = 0; // Truncate
+
+    [Tooltip("Kis face sides filter (0 = all faces, 3 = triangles only, 4 = quads only, etc.)")]
+    [Range(0, 10)]
+    public int KisFaceSides = 0; // Kis
+
+    [Tooltip("Needle height multiplier (how far spikes extend)")]
+    [Range(1.0f, 5.0f)]
+    public float NeedleHeight = 2.0f; // Needle
+
+    [Tooltip("Dual reciprocation radius (affects size/shape of dual)")]
+    [Range(0.1f, 3.0f)]
+    public float DualRadius = 1.0f; // Dual
 }
 
 [CreateAssetMenu(fileName = "AntiprismPluginSettings", menuName = "Polyhydra/AntiprismPluginSettings", order = 1)]
@@ -137,49 +178,13 @@ public class AntiprismPluginSettings : BaseSettings
 
 
 
-    [Header("Modifiers")]
-    [Tooltip("Apply a modifier operation")]
-    public ModifierType modifier = ModifierType.None;
-
-    [Header("Modifier Parameters")]
-    [Tooltip("Truncate/Bevel ratio (0.0-1.0, typically 0.333)")]
-    [Range(0.1f, 0.9f)]
-    public float truncateRatio = 0.3333f;
-
-    [Tooltip("Truncate vertex order filter (0 = all vertices, 3 = order-3 only, etc.)")]
-    [Range(0, 10)]
-    public int truncateOrder = 0;
-
-    [Tooltip("Kis face sides filter (0 = all faces, 3 = triangles only, 4 = quads only, etc.)")]
-    [Range(0, 10)]
-    public int kisFaceSides = 0;
-
-    [Tooltip("Needle height multiplier (how far spikes extend)")]
-    [Range(1.0f, 5.0f)]
-    public float needleHeight = 2.0f;
-
-    [Tooltip("Dual reciprocation radius (affects size/shape of dual)")]
-    [Range(0.1f, 3.0f)]
-    public float dualRadius = 1.0f;
-
-    [Tooltip("Conway subscript parameter n (for Gyro, Meta, Bevel, Snub, Expand, Subdivide, Ortho)")]
-    [Range(0, 10)]
-    public int conwayN = 2;
-
-    [Tooltip("Conway subscript parameter m (for Expand, Subdivide, Ortho)")]
-    [Range(0, 10)]
-    public int conwayM = 0;
+    [Header("Antiprism Modifiers")]
+    [Tooltip("Apply multiple modifier operations in sequence")]
+    public List<AntiprismModifierConfig> antiprismModifiers = new List<AntiprismModifierConfig>();
 
     [Header("Zonohedra")]
     [Tooltip("Create zonohedron from vertices (e.g., Cube→Rhombic Dodecahedron)")]
     public bool createZonohedronFromVertices = false;
-
-    [Tooltip("Canonicalize geometry (adjust vertices for more uniform edge lengths)")]
-    public bool canonicalize = false;
-
-    [Tooltip("Maximum iterations for canonicalization (0 for default 1000)")]
-    [Range(0, 10000)]
-    public int canonicalizeIterations = 0;
 
 
     private Vector3[] vertices;
@@ -226,128 +231,139 @@ public class AntiprismPluginSettings : BaseSettings
             );
         }
 
-        switch (modifier)
+        // Apply modifiers in sequence
+        foreach (var modConfig in antiprismModifiers)
         {
-            case ModifierType.Dual:
-                Status dualStatus = geom.Dual(dualRadius);
-                if (dualStatus != Status.OK)
-                    Debug.LogWarning($"Dual operation failed: {dualStatus}");
-                break;
+            if (!modConfig.Active) continue;
 
-            case ModifierType.Truncate:
-                // Truncate vertices (cut off corners)
-                Status truncStatus = geom.Truncate(truncateRatio, truncateOrder);
-                if (truncStatus != Status.OK)
-                    Debug.LogWarning($"Truncate operation failed: {truncStatus}");
-                break;
+            switch (modConfig.Type)
+            {
+                case ModifierType.Dual:
+                    Status dualStatus = geom.Dual(modConfig.DualRadius);
+                    if (dualStatus != Status.OK)
+                        Debug.LogWarning($"Dual operation failed: {dualStatus}");
+                    break;
 
-            case ModifierType.Kis:
-                // Place pyramid on each face
-                Status kisStatus = geom.Kis(kisFaceSides);
-                if (kisStatus != Status.OK)
-                    Debug.LogWarning($"Kis operation failed: {kisStatus}");
-                break;
+                case ModifierType.Truncate:
+                    // Truncate vertices (cut off corners)
+                    Status truncStatus = geom.Truncate(modConfig.TruncateRatio, modConfig.TruncateOrder);
+                    if (truncStatus != Status.OK)
+                        Debug.LogWarning($"Truncate operation failed: {truncStatus}");
+                    break;
 
-            case ModifierType.Ambo:
-                // Create vertices at edge midpoints (rectify)
-                Status amboStatus = geom.Ambo();
-                if (amboStatus != Status.OK)
-                    Debug.LogWarning($"Ambo operation failed: {amboStatus}");
-                break;
+                case ModifierType.Kis:
+                    // Place pyramid on each face
+                    Status kisStatus = geom.Kis(modConfig.KisFaceSides);
+                    if (kisStatus != Status.OK)
+                        Debug.LogWarning($"Kis operation failed: {kisStatus}");
+                    break;
 
-            case ModifierType.Gyro:
-                // Rotate and subdivide faces
-                Status gyroStatus = geom.Gyro(conwayN);
-                if (gyroStatus != Status.OK)
-                    Debug.LogWarning($"Gyro operation failed: {gyroStatus}");
-                break;
+                case ModifierType.Ambo:
+                    // Create vertices at edge midpoints (rectify)
+                    Status amboStatus = geom.Ambo();
+                    if (amboStatus != Status.OK)
+                        Debug.LogWarning($"Ambo operation failed: {amboStatus}");
+                    break;
 
-            case ModifierType.Join:
-                // Dual of ambo (creates rhombic faces)
-                Status joinStatus = geom.Join();
-                if (joinStatus != Status.OK)
-                    Debug.LogWarning($"Join operation failed: {joinStatus}");
-                break;
+                case ModifierType.Gyro:
+                    // Rotate and subdivide faces
+                    Status gyroStatus = geom.Gyro(modConfig.ConwayN);
+                    if (gyroStatus != Status.OK)
+                        Debug.LogWarning($"Gyro operation failed: {gyroStatus}");
+                    break;
 
-            case ModifierType.Needle:
-                // Elongated kis (creates sharp spikes)
-                Status needleStatus = geom.Needle(needleHeight);
-                if (needleStatus != Status.OK)
-                    Debug.LogWarning($"Needle operation failed: {needleStatus}");
-                break;
+                case ModifierType.Join:
+                    // Dual of ambo (creates rhombic faces)
+                    Status joinStatus = geom.Join();
+                    if (joinStatus != Status.OK)
+                        Debug.LogWarning($"Join operation failed: {joinStatus}");
+                    break;
 
-            case ModifierType.Zip:
-                // Dual of kis
-                Status zipStatus = geom.Zip();
-                if (zipStatus != Status.OK)
-                    Debug.LogWarning($"Zip operation failed: {zipStatus}");
-                break;
+                case ModifierType.Needle:
+                    // Elongated kis (creates sharp spikes)
+                    Status needleStatus = geom.Needle(modConfig.NeedleHeight);
+                    if (needleStatus != Status.OK)
+                        Debug.LogWarning($"Needle operation failed: {needleStatus}");
+                    break;
 
-            case ModifierType.Subdivide:
-                // Subdivide faces into smaller quads
-                Status subdivideStatus = geom.Subdivide(conwayN, conwayM);
-                if (subdivideStatus != Status.OK)
-                    Debug.LogWarning($"Subdivide operation failed: {subdivideStatus}");
-                break;
+                case ModifierType.Zip:
+                    // Dual of kis
+                    Status zipStatus = geom.Zip();
+                    if (zipStatus != Status.OK)
+                        Debug.LogWarning($"Zip operation failed: {zipStatus}");
+                    break;
 
-            case ModifierType.Expand:
-                // Double ambo (separates faces)
-                Status expandStatus = geom.Expand(conwayN, conwayM);
-                if (expandStatus != Status.OK)
-                    Debug.LogWarning($"Expand operation failed: {expandStatus}");
-                break;
+                case ModifierType.Subdivide:
+                    // Subdivide faces into smaller quads
+                    Status subdivideStatus = geom.Subdivide(modConfig.ConwayN, modConfig.ConwayM);
+                    if (subdivideStatus != Status.OK)
+                        Debug.LogWarning($"Subdivide operation failed: {subdivideStatus}");
+                    break;
 
-            case ModifierType.Meta:
-                // Kis + dual (complex stellated form)
-                Status metaStatus = geom.Meta(conwayN);
-                if (metaStatus != Status.OK)
-                    Debug.LogWarning($"Meta operation failed: {metaStatus}");
-                break;
+                case ModifierType.Expand:
+                    // Double ambo (separates faces)
+                    Status expandStatus = geom.Expand(modConfig.ConwayN, modConfig.ConwayM);
+                    if (expandStatus != Status.OK)
+                        Debug.LogWarning($"Expand operation failed: {expandStatus}");
+                    break;
 
-            case ModifierType.Bevel:
-                // Truncate + ambo (chamfer edges and vertices)
-                Status bevelStatus = geom.Bevel(conwayN, truncateRatio);
-                if (bevelStatus != Status.OK)
-                    Debug.LogWarning($"Bevel operation failed: {bevelStatus}");
-                break;
+                case ModifierType.Meta:
+                    // Kis + dual (complex stellated form)
+                    Status metaStatus = geom.Meta(modConfig.ConwayN);
+                    if (metaStatus != Status.OK)
+                        Debug.LogWarning($"Meta operation failed: {metaStatus}");
+                    break;
 
-            case ModifierType.Snub:
-                // Dual + gyro (creates twisted form)
-                Status snubStatus = geom.Snub(conwayN);
-                if (snubStatus != Status.OK)
-                    Debug.LogWarning($"Snub operation failed: {snubStatus}");
-                break;
+                case ModifierType.Bevel:
+                    // Truncate + ambo (chamfer edges and vertices)
+                    Status bevelStatus = geom.Bevel(modConfig.ConwayN, modConfig.TruncateRatio);
+                    if (bevelStatus != Status.OK)
+                        Debug.LogWarning($"Bevel operation failed: {bevelStatus}");
+                    break;
 
-            case ModifierType.Ortho:
-                // Join + join (double join operation)
-                Status orthoStatus = geom.Ortho(conwayN, conwayM);
-                if (orthoStatus != Status.OK)
-                    Debug.LogWarning($"Ortho operation failed: {orthoStatus}");
-                break;
+                case ModifierType.Snub:
+                    // Dual + gyro (creates twisted form)
+                    Status snubStatus = geom.Snub(modConfig.ConwayN);
+                    if (snubStatus != Status.OK)
+                        Debug.LogWarning($"Snub operation failed: {snubStatus}");
+                    break;
 
-            case ModifierType.ConvexHull:
-                // Calculate convex hull
-                Status hullStatus = geom.ConvexHull();
-                if (hullStatus != Status.OK)
-                    Debug.LogWarning($"ConvexHull operation failed: {hullStatus}");
-                break;
+                case ModifierType.Ortho:
+                    // Join + join (double join operation)
+                    Status orthoStatus = geom.Ortho(modConfig.ConwayN, modConfig.ConwayM);
+                    if (orthoStatus != Status.OK)
+                        Debug.LogWarning($"Ortho operation failed: {orthoStatus}");
+                    break;
 
-            case ModifierType.None:
-            default:
-                // No modifier
-                break;
+                case ModifierType.ConvexHull:
+                    // Calculate convex hull
+                    Status hullStatus = geom.ConvexHull();
+                    if (hullStatus != Status.OK)
+                        Debug.LogWarning($"ConvexHull operation failed: {hullStatus}");
+                    break;
+
+                case ModifierType.Zonohedron:
+                    // Create zonohedron from vertices
+                    geom = Geometry.CreateZonohedronFromVertices(geom);
+                    break;
+
+                case ModifierType.Canonicalize:
+                    // Canonicalize geometry (adjust vertices for more uniform edge lengths)
+                    Status canonStatus = geom.Canonicalize(modConfig.CanonicalizeIterations);
+                    if (canonStatus != Status.OK)
+                        Debug.LogWarning($"Canonicalize operation failed: {canonStatus}");
+                    break;
+
+                case ModifierType.None:
+                default:
+                    // No modifier
+                    break;
+            }
         }
 
         if (createZonohedronFromVertices)
         {
             geom = Geometry.CreateZonohedronFromVertices(geom);
-        }
-
-        if (canonicalize)
-        {
-            Status canonStatus = geom.Canonicalize(canonicalizeIterations);
-            if (canonStatus != Status.OK)
-                Debug.LogWarning($"Canonicalize operation failed: {canonStatus}");
         }
 
         geom.Unitize();
