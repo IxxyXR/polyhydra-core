@@ -202,9 +202,12 @@ namespace Polyhydra.Core
                 {
                     var h = halfedges[i];
                     var eNorm = E[i].Normal;
-                    ve[2*i]   = cache.GetOrCreate($"ve_o_{MakeKey(h.PairedName)}",
+                    // Keys include the specific vertex name so that the adjacent face
+                    // (which traverses this edge in the opposite direction) resolves to
+                    // the same OVertex objects rather than swapping the two ve points.
+                    ve[2*i]   = cache.GetOrCreate($"ve_{h.Prev.Vertex.Name}_{MakeKey(h.PairedName)}",
                         Vector3.Lerp(h.Prev.Vertex.Position, E[i].Position, t), eNorm);
-                    ve[2*i+1] = cache.GetOrCreate($"ve_d_{MakeKey(h.PairedName)}",
+                    ve[2*i+1] = cache.GetOrCreate($"ve_{h.Vertex.Name}_{MakeKey(h.PairedName)}",
                         Vector3.Lerp(h.Vertex.Position, E[i].Position, t), eNorm);
                 }
                 ptsArray["ve"]   = ve;
