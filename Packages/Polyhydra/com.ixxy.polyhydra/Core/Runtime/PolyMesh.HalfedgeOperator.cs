@@ -438,8 +438,13 @@ namespace Polyhydra.Core
                 { var A = Arr("vf"); for (int i = 0; i < n; i++) result.Add((A[i], A[(i+1)%n])); return true; }
 
                 case "vf-vf!":
+                // Only the same-vertex connection: vf[i] — vf![2i] (near V[i] in adjacent face).
+                // The symmetric connection vf[i+1] — vf_adj[i+1] is added by the adjacent face's
+                // own processing of its pair halfedge, so no cross-connection is needed here.
+                // Adding vf[i] — vf![2i+1] (the cross-connection) causes near-collinearity with
+                // E[i] edges at vf[i], which breaks the CCW sort and produces wrong face loops.
                 { var A = Arr("vf"); var B = Arr("vf!");
-                  for (int i = 0; i < n; i++) { result.Add((A[i], B[2*i])); result.Add((A[i], B[2*i+1])); }
+                  for (int i = 0; i < n; i++) result.Add((A[i], B[2*i]));
                   return true; }
 
                 case "fe-vf":
