@@ -116,8 +116,17 @@ namespace Polyhydra.Core
                 int dash = atom.IndexOf('-');
                 if (dash < 0)
                     throw new ArgumentException($"Invalid atom '{atom.Trim()}' in operator '{op}': missing '-'");
-                return (atom.Substring(0, dash).Trim(), atom.Substring(dash + 1).Trim());
+                var a = NormalizeClass(atom.Substring(0, dash).Trim());
+                var b = NormalizeClass(atom.Substring(dash + 1).Trim());
+                return (a, b);
             }).ToList();
+        }
+
+        // Normalise class names: move a leading '!' to a trailing '!'.
+        // Allows "F-!F" and "F-F!" to mean the same thing.
+        private static string NormalizeClass(string c)
+        {
+            return c.StartsWith("!") ? c.Substring(1) + "!" : c;
         }
 
         // -------------------------------------------------------------------------
@@ -204,6 +213,8 @@ namespace Polyhydra.Core
             }
 
             // --- vf ---
+            // Keyed by (face, vertex) so that vf![2i]/vf![2i+1] in adjacent faces resolve
+            // to the same OVertex objects as the corresponding vf[k] computed from that face.
             if (needVf)
             {
                 if (F == null) { F = cache.GetOrCreate($"F_{face.Name}", face.Centroid, fn); ptsSingle["F"] = F; }
@@ -211,7 +222,8 @@ namespace Polyhydra.Core
                 for (int i = 0; i < n; i++)
                 {
                     var vert = halfedges[i].Prev.Vertex;
-                    vf[i] = new OVertex(
+                    vf[i] = cache.GetOrCreate(
+                        $"vf_{face.Name}_{vert.Name}",
                         Vector3.Lerp(vert.Position, F.Position, t),
                         Vector3.Lerp(vert.Normal, fn, t).normalized);
                 }
@@ -219,13 +231,16 @@ namespace Polyhydra.Core
             }
 
             // --- fe ---
+            // Keyed by (face, edge) so that fe![i] in adjacent faces resolve to the same
+            // OVertex objects as the corresponding fe[j] computed from that adjacent face.
             if (needFe)
             {
                 if (F == null) { F = cache.GetOrCreate($"F_{face.Name}", face.Centroid, fn); ptsSingle["F"] = F; }
                 if (E == null) { E = ComputeEArray(face, halfedges, n, fn, cache); ptsArray["E"] = E; }
                 var fe = new OVertex[n];
                 for (int i = 0; i < n; i++)
-                    fe[i] = new OVertex(
+                    fe[i] = cache.GetOrCreate(
+                        $"fe_{face.Name}_{MakeKey(halfedges[i].PairedName)}",
                         Vector3.Lerp(E[i].Position, F.Position, t),
                         Vector3.Lerp(E[i].Normal, fn, t).normalized);
                 ptsArray["fe"] = fe;
@@ -253,29 +268,42 @@ namespace Polyhydra.Core
             }
 
             // --- fe! ---
+            // fe![i] = the fe point in the adjacent face on the shared edge i.
+            // Uses the same cache key as the adjacent face's fe[j] for that edge,
+            // so they resolve to the same OVertex regardless of processing order.
             if (needFeAdj)
             {
                 if (E == null) { E = ComputeEArray(face, halfedges, n, fn, cache); ptsArray["E"] = E; }
                 var feAdj = new OVertex[n];
                 for (int i = 0; i < n; i++)
-                    feAdj[i] = new OVertex(
+                {
+                    var adjFaceName = halfedges[i].Pair?.Face.Name ?? face.Name;
+                    feAdj[i] = cache.GetOrCreate(
+                        $"fe_{adjFaceName}_{MakeKey(halfedges[i].PairedName)}",
                         Vector3.Lerp(E[i].Position, FAdjacent[i].Position, t),
                         Vector3.Lerp(E[i].Normal, FAdjacent[i].Normal, t).normalized);
+                }
                 ptsArray["fe!"] = feAdj;
             }
 
             // --- vf! ---
+            // vf![2i]   = vf point near V[i]       in the adjacent face.
+            // vf![2i+1] = vf point near V[(i+1)%n] in the adjacent face.
+            // Uses the same cache key as the adjacent face's vf[k] for those vertices.
             if (needVfAdj)
             {
                 var vfAdj = new OVertex[2 * n];
                 for (int i = 0; i < n; i++)
                 {
+                    var adjFaceName = halfedges[i].Pair?.Face.Name ?? face.Name;
                     var vOrigin = halfedges[i].Prev.Vertex;
                     var vDest   = halfedges[i].Vertex;
-                    vfAdj[2*i]   = new OVertex(
+                    vfAdj[2*i]   = cache.GetOrCreate(
+                        $"vf_{adjFaceName}_{vOrigin.Name}",
                         Vector3.Lerp(vOrigin.Position, FAdjacent[i].Position, t),
                         Vector3.Lerp(vOrigin.Normal,   FAdjacent[i].Normal,   t).normalized);
-                    vfAdj[2*i+1] = new OVertex(
+                    vfAdj[2*i+1] = cache.GetOrCreate(
+                        $"vf_{adjFaceName}_{vDest.Name}",
                         Vector3.Lerp(vDest.Position, FAdjacent[i].Position, t),
                         Vector3.Lerp(vDest.Normal,   FAdjacent[i].Normal,   t).normalized);
                 }
@@ -315,6 +343,7 @@ namespace Polyhydra.Core
 
             foreach (var (a, b) in tmp)
             {
+                if (a.Id == b.Id) continue; // skip degenerate self-loops (naked-edge fallback)
                 int lo = Math.Min(a.Id, b.Id), hi = Math.Max(a.Id, b.Id);
                 if (edgeSeen.Add((lo, hi)))
                     edges.Add((a, b));
@@ -416,10 +445,11 @@ namespace Polyhydra.Core
                   return true; }
 
                 case "fe-fe":
+                // Cyclic rule: fe[i] — fe[(i+1)%n], forming a loop around the face.
+                // (The plan's _fe_fe_connections diagonal rule was incorrect — the operator
+                // is described as "fe cycle" and the cyclic rule matches Zip = fe-fe,fe-fe!.)
                 { var A = Arr("fe");
-                  if (n % 2 != 0)
-                      throw new NotSupportedException($"fe-fe atom is only defined for even-valence faces (n={n})");
-                  for (int i = 0; i < n/2; i++) result.Add((A[i], A[n-1-i]));
+                  for (int i = 0; i < n; i++) result.Add((A[i], A[(i+1)%n]));
                   return true; }
 
                 case "fe-fe!":
