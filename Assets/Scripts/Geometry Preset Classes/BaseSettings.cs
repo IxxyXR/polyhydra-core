@@ -13,6 +13,7 @@ public abstract class BaseSettings : ScriptableObject
     {
         public bool Active = true;
         public PolyMesh.Operation OpType;
+        public string StringParameter;
         public float Parameter1 = .3f;
         public float Parameter2 = 0;
         public int Iterations = 1;
@@ -33,7 +34,6 @@ public abstract class BaseSettings : ScriptableObject
     public event Action OnSettingsChanged;
 
     private PolyhydraGenerator _Generator;
-    public string m_Taxo = "V-V";
 
     void OnEnable()
     {
@@ -99,31 +99,31 @@ public abstract class BaseSettings : ScriptableObject
                 (false, false) => new OpParams(
                     op.Parameter1,
                     op.Parameter2,
+                    op.StringParameter,
                     filter: opFilter
                 ),
                 (true, false) => new OpParams(
                     opRandomValue1,
                     op.Parameter2,
+                    op.StringParameter,
                     filter: opFilter
                 ),
                 (false, true) => new OpParams(
                     op.Parameter1,
                     opRandomValue2,
+                    op.StringParameter,
                     filter: opFilter
                 ),
                 (true, true) => new OpParams(
                     opRandomValue1,
                     opRandomValue2,
+                    op.StringParameter,
                     filter: opFilter
                 ),
             };
 
             for (int iteration = 0; iteration < op.Iterations; iteration++)
             {
-                if (op.OpType == PolyMesh.Operation.FooBar)
-                {
-                    poly.taxo = m_Taxo;
-                }
                 poly = poly.AppyOperation(op.OpType, opParams);
             }
         }
