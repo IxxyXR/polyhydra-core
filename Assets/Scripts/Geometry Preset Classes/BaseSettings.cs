@@ -33,6 +33,7 @@ public abstract class BaseSettings : ScriptableObject
     public event Action OnSettingsChanged;
 
     private PolyhydraGenerator _Generator;
+    public string m_Taxo = "V-V";
 
     void OnEnable()
     {
@@ -119,6 +120,10 @@ public abstract class BaseSettings : ScriptableObject
 
             for (int iteration = 0; iteration < op.Iterations; iteration++)
             {
+                if (op.OpType == PolyMesh.Operation.FooBar)
+                {
+                    poly.taxo = m_Taxo;
+                }
                 poly = poly.AppyOperation(op.OpType, opParams);
             }
         }

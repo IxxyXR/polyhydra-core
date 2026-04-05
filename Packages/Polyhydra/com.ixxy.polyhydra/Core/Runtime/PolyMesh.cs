@@ -199,6 +199,7 @@ namespace Polyhydra.Core
         }
 
         public List<Vector3> DebugVerts;
+        public string taxo;
 
         public PolyMesh()
         {
@@ -1685,6 +1686,9 @@ namespace Polyhydra.Core
             // Generator Ops
 
             Sweep = 95,
+
+            FooBar = 999,
+            Flub = 998,
         }
 
         public PolyMesh AppyOperation(Operation op, OpParams p)
@@ -1764,6 +1768,9 @@ namespace Polyhydra.Core
                     break;
                 case Operation.Quinto:
                     polyMesh = polyMesh.Quinto(p);
+                    break;
+                case Operation.FooBar:
+                    polyMesh = polyMesh.ApplyHalfedgeOperator(polyMesh.taxo);
                     break;
                 case Operation.Lace:
                     polyMesh = polyMesh.Lace(p);
