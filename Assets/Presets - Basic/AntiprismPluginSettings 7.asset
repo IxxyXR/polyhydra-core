@@ -10,13 +10,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1e657a0bbc80b3b4eba818c3bf4aa988, type: 3}
-  m_Name: AntiprismPluginSettings
+  m_Name: AntiprismPluginSettings 7
   m_EditorClassIdentifier: 
   Operators:
-  - Active: 0
-    OpType: 111
-    Parameter1: 6.31
-    Parameter2: 0.57
+  - Active: 1
+    OpType: 11
+    Parameter1: 0.63
+    Parameter2: 0
     Iterations: 1
     Parameter1Randomize: 0
     Parameter2Randomize: 0
@@ -24,8 +24,8 @@ MonoBehaviour:
     FilterParam: 0
     FilterFlip: 0
   - Active: 0
-    OpType: 4
-    Parameter1: 0.17
+    OpType: 104
+    Parameter1: 0.02
     Parameter2: 0
     Iterations: 1
     Parameter1Randomize: 0
@@ -36,14 +36,14 @@ MonoBehaviour:
   FastConicalize: 1
   CanonicalizeIterations: 0
   PlanarizeIterations: 0
-  FaceInset: 0.01
+  FaceInset: 0
   ColorMethod: 1
-  polyhedronType: 9
+  polyhedronType: 6
   InputPreset: {fileID: 0}
   sides: 8
   geodesicFrequency: 7
   geodesicMethod: 0
-  tilingPattern: 2
+  tilingPattern: 5
   tilingSurface: 1
   tilingWidth: 24
   tilingHeight: 12
@@ -57,10 +57,10 @@ MonoBehaviour:
   trapezohedronD: 3
   trapezohedronHeightA: 0.81
   trapezohedronHeightB: 0
-  symmetroSym: 79
-  symmetroMult0: 5
-  symmetroMult1: 2
-  symmetroMult2: 0
+  symmetroSym: 73
+  symmetroMult0: 3
+  symmetroMult1: 0
+  symmetroMult2: 4
   johnsonNumber: 64
   uniformNumber: 6
   wenningerNumber: 65

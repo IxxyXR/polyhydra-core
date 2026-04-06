@@ -54,14 +54,5 @@ MonoBehaviour:
   johnsonNumber: 64
   uniformNumber: 42
   wenningerNumber: 65
-  modifier: 2
-  truncateRatio: 0.147
-  truncateOrder: 0
-  kisFaceSides: 0
-  needleHeight: 2
-  dualRadius: 1
-  conwayN: 2
-  conwayM: 0
-  createZonohedronFromVertices: 0
-  canonicalize: 0
-  canonicalizeIterations: 1520
+  antiprismModifiers: []
+  createZonohedronFromVertices: 1
