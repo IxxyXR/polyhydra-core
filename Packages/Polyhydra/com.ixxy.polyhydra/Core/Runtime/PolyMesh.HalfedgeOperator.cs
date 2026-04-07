@@ -102,8 +102,7 @@ namespace Polyhydra.Core
                     AddAtomConnections(classA, classB, ptsSingle, ptsArray, n, edges, edgeSeen);
             }
 
-            bool isOpenMesh = Faces.Any(f => f.HasNakedEdge());
-            return BuildMeshFromEdges(edges, isOpenMesh);
+            return BuildMeshFromEdges(edges);
         }
 
         // -------------------------------------------------------------------------
@@ -479,7 +478,7 @@ namespace Polyhydra.Core
         //   Phase 4 — walk unvisited halfedges to extract face loops
         // -------------------------------------------------------------------------
 
-        private PolyMesh BuildMeshFromEdges(List<(OVertex, OVertex)> edges, bool isOpenMesh = false)
+        private PolyMesh BuildMeshFromEdges(List<(OVertex, OVertex)> edges)
         {
             if (edges.Count == 0)
                 throw new ArgumentException("Operator produced no edges");
@@ -552,11 +551,11 @@ namespace Polyhydra.Core
                 if (loop.Count >= 3)
                 {
                     // Discard outer / boundary-tracing face loops.
-                    // For CLOSED meshes: interior faces are CCW from outside, so their Newell
-                    // normal aligns with the average vertex normal (dot > 0).
-                    // For OPEN meshes: the DCEL next-pointer rule causes interior loops to be
-                    // wound CW from outside (Newell normal opposes vertex normals, dot < 0).
-                    // The outer boundary loop of an open mesh is CCW (dot > 0) and must be discarded.
+                    // The DCEL next-pointer rule (twin[out[j]].next = out[j+1]) causes all
+                    // interior face loops to be wound CW from outside: their Newell normal
+                    // opposes the average outward vertex normal (dot < 0). This holds for
+                    // both open and closed meshes. The outer boundary loop of an open mesh
+                    // is CCW (dot > 0) and is correctly discarded by this test.
                     var centroid = Vector3.zero;
                     foreach (var v in loop) centroid += v.Position;
                     centroid /= loop.Count;
@@ -573,9 +572,12 @@ namespace Polyhydra.Core
                     foreach (var v in loop) avgVertNormal += v.Normal;
 
                     float dot = Vector3.Dot(faceNormal, avgVertNormal);
-                    bool keep = isOpenMesh ? (dot < 0f) : (dot > 0f);
-                    if (keep)
+
+                    if (dot < 0f)
+                    {
+                        loop.Reverse();
                         faceLists.Add(loop);
+                    }
                 }
             }
 
