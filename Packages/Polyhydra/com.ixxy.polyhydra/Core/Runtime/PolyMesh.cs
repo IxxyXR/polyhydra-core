@@ -614,8 +614,7 @@ namespace Polyhydra.Core
                         parts = line.Trim().Split(sep, StringSplitOptions.RemoveEmptyEntries);
                         if (parts.Length < 4)
                         {
-                            Debug.Log("Not enough vertex values");
-                            Debug.Log(line);
+                            Debug.LogWarning($"Obj parse error. Not enough vertex values:\n{line}");
                             return false;
                         }
 
@@ -627,8 +626,7 @@ namespace Polyhydra.Core
                         }
                         catch (FormatException)
                         {
-                            Debug.Log("Unexpected vertex value");
-                            Debug.Log(line);
+                            Debug.LogWarning($"Obj parse error. Unexpected vertex value:\n{line}");
                             return false;
                         }
                     }
@@ -637,8 +635,7 @@ namespace Polyhydra.Core
                         parts = line.Trim().Split(sep, StringSplitOptions.RemoveEmptyEntries);
                         if (parts.Count() < 3)
                         {
-                            Debug.Log("Not enough tex vertex values");
-                            Debug.Log(line);
+                            Debug.LogWarning($"Obj parse error. Not enough tex vertex values:\n{line}");
                             return false;
                         }
 
@@ -671,8 +668,7 @@ namespace Polyhydra.Core
                         parts = line.Trim().Split(sep, StringSplitOptions.RemoveEmptyEntries);
                         if (parts.Length < 4)
                         {
-                            Debug.Log("Not vertex values in a face");
-                            Debug.Log(line);
+                            Debug.LogWarning($"Obj parse error. Not vertex values in a face:\n{line}");
                             return false;
                         }
 
