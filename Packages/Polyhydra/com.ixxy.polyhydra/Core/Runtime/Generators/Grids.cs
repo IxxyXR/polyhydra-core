@@ -251,7 +251,37 @@ namespace Polyhydra.Core
 		        int parentFaceIndex = int.Parse(parts[0]);
 		        int parentEdgeIndex = parts.Length > 1 ? int.Parse(parts[1]) : 0;
 		        sides = parts.Length > 2 ? int.Parse(parts[2]) : 4;
-		        tile.ExtendFace(parentFaceIndex, parentEdgeIndex, sides);
+                if (parentFaceIndex < 0 || parentFaceIndex >= tile.Faces.Count)
+                {
+                    throw new InvalidOperationException(
+                        $"Invalid parent face index {parentFaceIndex} at format line '{line}'. " +
+                        $"Current face count: {tile.Faces.Count}");
+                }
+
+                var parentFace = tile.Faces[parentFaceIndex];
+                if (parentEdgeIndex < 0 || parentEdgeIndex >= parentFace.Sides)
+                {
+                    throw new InvalidOperationException(
+                        $"Invalid parent edge index {parentEdgeIndex} for face {parentFaceIndex} " +
+                        $"with {parentFace.Sides} sides at format line '{line}'.");
+                }
+
+                var parentEdge = parentFace.GetHalfEdge(parentEdgeIndex);
+                if (parentEdge.Pair != null)
+                {
+                    throw new InvalidOperationException(
+                        $"Edge {parentEdgeIndex} on face {parentFaceIndex} is not a boundary edge " +
+                        $"at format line '{line}'.");
+                }
+
+		        int newFaceIndex = tile.ExtendFace(parentFaceIndex, parentEdgeIndex, sides);
+                if (newFaceIndex < 0)
+                {
+                    throw new InvalidOperationException(
+                        $"ExtendFace failed for face {parentFaceIndex}, edge {parentEdgeIndex}, sides {sides} " +
+                        $"at format line '{line}'.");
+                }
+
 			    roles.Add(parts.Length > 3 ? (Roles)int.Parse(parts[3]) : Roles.ExistingAlt);
 	        }
 
