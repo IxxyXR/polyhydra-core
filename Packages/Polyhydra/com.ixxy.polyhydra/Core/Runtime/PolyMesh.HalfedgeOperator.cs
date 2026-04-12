@@ -48,6 +48,24 @@ namespace Polyhydra.Core
             }
         }
 
+        private enum OperatorAtomFamily
+        {
+            Vertex,
+            Edge,
+            Face,
+            VertexEdge,
+            EdgeFace,
+            VertexFace,
+        }
+
+        private class OEdge
+        {
+            public OVertex A;
+            public OVertex B;
+            public string Atom;
+            public OperatorAtomFamily Family;
+        }
+
         // -------------------------------------------------------------------------
         // Cache that maps canonical string keys to shared OVertex objects
         // -------------------------------------------------------------------------
@@ -86,7 +104,7 @@ namespace Polyhydra.Core
 
             var cache    = new OperatorVertexCache();
             var edgeSeen = new HashSet<(int, int)>();
-            var edges    = new List<(OVertex, OVertex)>();
+            var edges    = new List<OEdge>();
 
             foreach (var face in Faces)
             {
@@ -335,7 +353,7 @@ namespace Polyhydra.Core
         private static void AddAtomConnections(
             string classA, string classB,
             Dictionary<string, OVertex> ptsSingle, Dictionary<string, OVertex[]> ptsArray,
-            int n, List<(OVertex, OVertex)> edges, HashSet<(int, int)> edgeSeen)
+            int n, List<OEdge> edges, HashSet<(int, int)> edgeSeen)
         {
             var tmp = new List<(OVertex, OVertex)>();
             if (!TryConnections(classA, classB, ptsSingle, ptsArray, n, tmp))
@@ -344,12 +362,66 @@ namespace Polyhydra.Core
                     throw new ArgumentException($"Unknown atom: '{classA}-{classB}'");
             }
 
+            var atom = $"{classA}-{classB}";
+            var family = GetAtomFamily(classA, classB);
             foreach (var (a, b) in tmp)
             {
                 if (a.Id == b.Id) continue; // skip degenerate self-loops (naked-edge fallback)
                 int lo = Math.Min(a.Id, b.Id), hi = Math.Max(a.Id, b.Id);
                 if (edgeSeen.Add((lo, hi)))
-                    edges.Add((a, b));
+                {
+                    edges.Add(new OEdge
+                    {
+                        A = a,
+                        B = b,
+                        Atom = atom,
+                        Family = family
+                    });
+                }
+            }
+        }
+
+        private static OperatorAtomFamily GetAtomFamily(string classA, string classB)
+        {
+            var familyA = GetPointFamily(classA);
+            var familyB = GetPointFamily(classB);
+            if (familyA == familyB)
+                return familyA;
+
+            if ((familyA == OperatorAtomFamily.Vertex && familyB == OperatorAtomFamily.Edge) ||
+                (familyA == OperatorAtomFamily.Edge && familyB == OperatorAtomFamily.Vertex))
+                return OperatorAtomFamily.VertexEdge;
+
+            if ((familyA == OperatorAtomFamily.Edge && familyB == OperatorAtomFamily.Face) ||
+                (familyA == OperatorAtomFamily.Face && familyB == OperatorAtomFamily.Edge))
+                return OperatorAtomFamily.EdgeFace;
+
+            return OperatorAtomFamily.VertexFace;
+        }
+
+        private static OperatorAtomFamily GetPointFamily(string pointClass)
+        {
+            switch (pointClass)
+            {
+                case "V":
+                    return OperatorAtomFamily.Vertex;
+
+                case "E":
+                case "ve":
+                case "ve_e":
+                case "ve_c":
+                    return OperatorAtomFamily.Edge;
+
+                case "F":
+                case "F!":
+                case "vf":
+                case "vf!":
+                case "fe":
+                case "fe!":
+                    return OperatorAtomFamily.Face;
+
+                default:
+                    throw new ArgumentException($"Unknown point class '{pointClass}'");
             }
         }
 
@@ -478,7 +550,7 @@ namespace Polyhydra.Core
         //   Phase 4 — walk unvisited halfedges to extract face loops
         // -------------------------------------------------------------------------
 
-        private PolyMesh BuildMeshFromEdges(List<(OVertex, OVertex)> edges)
+        private PolyMesh BuildMeshFromEdges(List<OEdge> edges)
         {
             if (edges.Count == 0)
                 throw new ArgumentException("Operator produced no edges");
@@ -493,7 +565,8 @@ namespace Polyhydra.Core
 
             for (int i = 0; i < nEdges; i++)
             {
-                var (u, v) = edges[i];
+                var u = edges[i].A;
+                var v = edges[i].B;
                 heOrigin[2*i]   = u;
                 heOrigin[2*i+1] = v;
             }
@@ -533,29 +606,26 @@ namespace Polyhydra.Core
             // Extract face loops
             var visited   = new bool[nHE];
             var faceLists = new List<List<OVertex>>();
+            var faceRoles = new List<Roles>();
 
             for (int hStart = 0; hStart < nHE; hStart++)
             {
                 if (visited[hStart] || heNext[hStart] < 0) continue;
 
                 var loop = new List<OVertex>();
+                var boundaryFamilies = new List<OperatorAtomFamily>();
                 int h = hStart;
                 while (!visited[h])
                 {
                     visited[h] = true;
                     loop.Add(heOrigin[h]);
+                    boundaryFamilies.Add(edges[h / 2].Family);
                     h = heNext[h];
                     if (h < 0) break;
                 }
 
                 if (loop.Count >= 3)
                 {
-                    // Discard outer / boundary-tracing face loops.
-                    // The DCEL next-pointer rule (twin[out[j]].next = out[j+1]) causes all
-                    // interior face loops to be wound CW from outside: their Newell normal
-                    // opposes the average outward vertex normal (dot < 0). This holds for
-                    // both open and closed meshes. The outer boundary loop of an open mesh
-                    // is CCW (dot > 0) and is correctly discarded by this test.
                     var centroid = Vector3.zero;
                     foreach (var v in loop) centroid += v.Position;
                     centroid /= loop.Count;
@@ -572,11 +642,14 @@ namespace Polyhydra.Core
                     foreach (var v in loop) avgVertNormal += v.Normal;
 
                     float dot = Vector3.Dot(faceNormal, avgVertNormal);
+                    bool kept = dot < 0f;
 
-                    if (dot < 0f)
+                    if (kept)
                     {
                         loop.Reverse();
+                        boundaryFamilies.Reverse();
                         faceLists.Add(loop);
+                        faceRoles.Add(ClassifyFaceRole(boundaryFamilies));
                     }
                 }
             }
@@ -595,10 +668,102 @@ namespace Polyhydra.Core
 
             var positions   = allVerts.Select(v => v.Position).ToList();
             var faceIdxs    = faceLists.Select(fv => (IEnumerable<int>)fv.Select(v => vertIdxMap[v]).ToList()).ToList();
-            var faceRoles   = Enumerable.Repeat(Roles.New, faceLists.Count).ToList();
             var vertexRoles = Enumerable.Repeat(Roles.New, allVerts.Count).ToList();
 
             return new PolyMesh(positions, faceIdxs, faceRoles, vertexRoles);
+        }
+
+        private static Roles ClassifyFaceRole(List<OperatorAtomFamily> boundaryFamilies)
+        {
+            var counts = new Dictionary<OperatorAtomFamily, int>();
+            foreach (var family in boundaryFamilies)
+            {
+                if (!counts.ContainsKey(family))
+                    counts[family] = 0;
+                counts[family]++;
+            }
+
+            var dominantFamily = counts
+                .OrderByDescending(x => x.Value)
+                .ThenBy(x => (int)x.Key)
+                .First()
+                .Key;
+
+            int vertexScore = 0;
+            int edgeScore = 0;
+            int faceScore = 0;
+
+            foreach (var family in boundaryFamilies)
+            {
+                switch (family)
+                {
+                    case OperatorAtomFamily.Vertex:
+                        vertexScore += 2;
+                        break;
+
+                    case OperatorAtomFamily.Edge:
+                        edgeScore += 2;
+                        break;
+
+                    case OperatorAtomFamily.Face:
+                        faceScore += 2;
+                        break;
+
+                    case OperatorAtomFamily.VertexEdge:
+                        vertexScore++;
+                        edgeScore++;
+                        break;
+
+                    case OperatorAtomFamily.EdgeFace:
+                        edgeScore++;
+                        faceScore++;
+                        break;
+
+                    case OperatorAtomFamily.VertexFace:
+                        vertexScore++;
+                        faceScore++;
+                        break;
+                }
+            }
+
+            if (IsStrictlyLargest(faceScore, edgeScore, vertexScore))
+                return Roles.Existing;
+
+            if (IsStrictlyLargest(edgeScore, faceScore, vertexScore))
+                return Roles.NewAlt;
+
+            if (IsStrictlyLargest(vertexScore, faceScore, edgeScore))
+                return Roles.New;
+
+            return MapAtomFamilyToRole(dominantFamily);
+        }
+
+        private static bool IsStrictlyLargest(int candidate, int otherA, int otherB)
+        {
+            return candidate > otherA && candidate > otherB;
+        }
+
+        private static Roles MapAtomFamilyToRole(OperatorAtomFamily family)
+        {
+            switch (family)
+            {
+                case OperatorAtomFamily.Face:
+                    return Roles.Existing;
+
+                case OperatorAtomFamily.Edge:
+                    return Roles.NewAlt;
+
+                case OperatorAtomFamily.Vertex:
+                    return Roles.New;
+
+                case OperatorAtomFamily.VertexEdge:
+                    return Roles.New;
+
+                case OperatorAtomFamily.EdgeFace:
+                case OperatorAtomFamily.VertexFace:
+                default:
+                    return Roles.ExistingAlt;
+            }
         }
 
         // Twin of halfedge h: swap the LSB (2i <-> 2i+1)
