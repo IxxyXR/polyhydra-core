@@ -66,6 +66,14 @@ namespace Polyhydra.Core
             public OperatorAtomFamily Family;
         }
 
+        private class ReconstructedFaceInfo
+        {
+            public List<OVertex> Vertices;
+            public List<string> BoundaryAtoms;
+            public List<OperatorAtomFamily> BoundaryFamilies;
+            public string Signature;
+        }
+
         // -------------------------------------------------------------------------
         // Cache that maps canonical string keys to shared OVertex objects
         // -------------------------------------------------------------------------
@@ -604,21 +612,22 @@ namespace Polyhydra.Core
             }
 
             // Extract face loops
-            var visited   = new bool[nHE];
-            var faceLists = new List<List<OVertex>>();
-            var faceRoles = new List<Roles>();
+            var visited = new bool[nHE];
+            var faceInfos = new List<ReconstructedFaceInfo>();
 
             for (int hStart = 0; hStart < nHE; hStart++)
             {
                 if (visited[hStart] || heNext[hStart] < 0) continue;
 
                 var loop = new List<OVertex>();
+                var boundaryAtoms = new List<string>();
                 var boundaryFamilies = new List<OperatorAtomFamily>();
                 int h = hStart;
                 while (!visited[h])
                 {
                     visited[h] = true;
                     loop.Add(heOrigin[h]);
+                    boundaryAtoms.Add(edges[h / 2].Atom);
                     boundaryFamilies.Add(edges[h / 2].Family);
                     h = heNext[h];
                     if (h < 0) break;
@@ -647,9 +656,15 @@ namespace Polyhydra.Core
                     if (kept)
                     {
                         loop.Reverse();
+                        boundaryAtoms.Reverse();
                         boundaryFamilies.Reverse();
-                        faceLists.Add(loop);
-                        faceRoles.Add(ClassifyFaceRole(boundaryFamilies));
+                        faceInfos.Add(new ReconstructedFaceInfo
+                        {
+                            Vertices = loop,
+                            BoundaryAtoms = boundaryAtoms,
+                            BoundaryFamilies = boundaryFamilies,
+                            Signature = BuildAtomSignature(boundaryAtoms)
+                        });
                     }
                 }
             }
@@ -658,8 +673,8 @@ namespace Polyhydra.Core
             var allVerts  = new List<OVertex>();
             var vertIdxMap = new Dictionary<OVertex, int>();
 
-            foreach (var fv in faceLists)
-                foreach (var v in fv)
+            foreach (var faceInfo in faceInfos)
+                foreach (var v in faceInfo.Vertices)
                     if (!vertIdxMap.ContainsKey(v))
                     {
                         vertIdxMap[v] = allVerts.Count;
@@ -667,10 +682,94 @@ namespace Polyhydra.Core
                     }
 
             var positions   = allVerts.Select(v => v.Position).ToList();
-            var faceIdxs    = faceLists.Select(fv => (IEnumerable<int>)fv.Select(v => vertIdxMap[v]).ToList()).ToList();
+            var faceIdxs    = faceInfos.Select(f => (IEnumerable<int>)f.Vertices.Select(v => vertIdxMap[v]).ToList()).ToList();
+            var faceRoles   = AssignFaceRoles(faceInfos);
             var vertexRoles = Enumerable.Repeat(Roles.New, allVerts.Count).ToList();
 
             return new PolyMesh(positions, faceIdxs, faceRoles, vertexRoles);
+        }
+
+        private static List<Roles> AssignFaceRoles(List<ReconstructedFaceInfo> faceInfos)
+        {
+            var signatureRoleMap = BuildSignatureRoleMap(faceInfos);
+            return faceInfos.Select(faceInfo => signatureRoleMap[faceInfo.Signature]).ToList();
+        }
+
+        private static Dictionary<string, Roles> BuildSignatureRoleMap(List<ReconstructedFaceInfo> faceInfos)
+        {
+            var availableRoles = new List<Roles>
+            {
+                Roles.Existing,
+                Roles.New,
+                Roles.NewAlt,
+                Roles.ExistingAlt
+            };
+
+            var groupedSignatures = faceInfos
+                .GroupBy(faceInfo => faceInfo.Signature)
+                .Select(group => new
+                {
+                    Signature = group.Key,
+                    Count = group.Count(),
+                    Families = group.First().BoundaryFamilies,
+                    PreferredRole = ClassifyFaceRole(group.First().BoundaryFamilies)
+                })
+                .OrderByDescending(group => group.Count)
+                .ThenBy(group => group.Signature, StringComparer.Ordinal)
+                .ToList();
+
+            var roleAssignments = new Dictionary<string, Roles>();
+            foreach (var group in groupedSignatures)
+            {
+                if (availableRoles.Contains(group.PreferredRole))
+                {
+                    roleAssignments[group.Signature] = group.PreferredRole;
+                    availableRoles.Remove(group.PreferredRole);
+                    continue;
+                }
+
+                if (availableRoles.Count > 0)
+                {
+                    roleAssignments[group.Signature] = availableRoles[0];
+                    availableRoles.RemoveAt(0);
+                    continue;
+                }
+
+                roleAssignments[group.Signature] = group.PreferredRole;
+            }
+
+            return roleAssignments;
+        }
+
+        private static string BuildAtomSignature(List<string> boundaryAtoms)
+        {
+            if (boundaryAtoms.Count == 0)
+                return string.Empty;
+
+            var forward = CanonicalizeCyclicSequence(boundaryAtoms);
+            var reversed = CanonicalizeCyclicSequence(boundaryAtoms.AsEnumerable().Reverse().ToList());
+            return string.CompareOrdinal(forward, reversed) <= 0 ? forward : reversed;
+        }
+
+        private static string CanonicalizeCyclicSequence(List<string> atoms)
+        {
+            var best = string.Empty;
+            bool initialized = false;
+            for (int start = 0; start < atoms.Count; start++)
+            {
+                var rotated = new string[atoms.Count];
+                for (int i = 0; i < atoms.Count; i++)
+                    rotated[i] = atoms[(start + i) % atoms.Count];
+
+                var candidate = string.Join("|", rotated);
+                if (!initialized || string.CompareOrdinal(candidate, best) < 0)
+                {
+                    best = candidate;
+                    initialized = true;
+                }
+            }
+
+            return best;
         }
 
         private static Roles ClassifyFaceRole(List<OperatorAtomFamily> boundaryFamilies)
