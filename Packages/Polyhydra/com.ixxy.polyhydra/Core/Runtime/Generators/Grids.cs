@@ -942,7 +942,7 @@ namespace Polyhydra.Core
 			        for (int i = 1; i < 6; i++)
 			        {
 				        floret.Transform(Vector3.zero, new Vector3(0, 60, 0));
-				        tile.Append(floret);
+				        tile.Append(floret, forceDuplicate: true);
 			        }
 
 			        xOffset = tile.Vertices[25].Position - tile.Vertices[5].Position;
