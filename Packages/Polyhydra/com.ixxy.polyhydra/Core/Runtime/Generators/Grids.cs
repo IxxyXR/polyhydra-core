@@ -956,10 +956,10 @@ namespace Polyhydra.Core
 					        {
 						        Roles.Existing,
 						        Roles.ExistingAlt,
+						        Roles.New,
 						        Roles.Existing,
 						        Roles.ExistingAlt,
-						        Roles.Existing,
-						        Roles.ExistingAlt
+						        Roles.New,
 					        }
 				        }
 			        };
