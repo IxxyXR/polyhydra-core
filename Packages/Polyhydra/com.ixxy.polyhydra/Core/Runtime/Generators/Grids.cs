@@ -1187,11 +1187,11 @@ namespace Polyhydra.Core
 3 21
 0 8 4 0
 0 10 4 0
-0 12 4 0
-0 14 4 0
+0 0 4 0
+0 2 4 0
 0 9 6 4
 0 11 6 4
-0 13 6 4
+0 1 6 4
 1 3 3 1
 2 3 3 5
 6 3 4 0
@@ -1245,7 +1245,7 @@ namespace Polyhydra.Core
 0 3 3 0
 0 4 3 0
 0 5 3 0
-0 6 3 0
+0 0 3 0
 1 0 3 4
 2 0 3 4
 3 0 3 4
@@ -1288,9 +1288,9 @@ namespace Polyhydra.Core
 2 4
 3 6
 0 1 3 0
-0 6 3 4
+0 0 3 4
 1 2 3 4
-2 3 3 0";
+2 0 3 0";
 			        tileDef = BuildTileDefFromFormat(format);
 			        break;
 
@@ -1300,7 +1300,7 @@ namespace Polyhydra.Core
 					format = @"6 0 0
 2 5
 3 8
-0 6 3 1
+0 0 3 1
 0 5 3 1
 0 1 4 4
 1 0 4 5";
