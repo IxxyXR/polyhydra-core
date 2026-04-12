@@ -34,8 +34,8 @@ namespace Polyhydra.Core
         public PolyMesh _Dual(bool edgeVertex = true)
         {
             var newFaceTags = new List<HashSet<string>>();
-            var faceRoles = new List<Roles>();
             var vertexRoles = new List<Roles>();
+            var dualFaceInfos = new List<(List<int> Indices, string Signature)>();
 
             // Create vertices from faces
             var vertexPoints = new List<Vector3>(Faces.Count);
@@ -43,7 +43,7 @@ namespace Polyhydra.Core
             {
                 var f = Faces[faceIndex];
                 vertexPoints.Add(f.Centroid);
-                vertexRoles.Add(Roles.New);
+                vertexRoles.Add(faceIndex < FaceRoles.Count ? FaceRoles[faceIndex] : Roles.New);
             }
 
             // Create sublist of non-boundary vertices
@@ -135,17 +135,18 @@ namespace Polyhydra.Core
                 if (fIndex.Count >= 3)
                 {
                     faceIndices.Add(fIndex);
-                    try
-                    {
-                        faceRoles.Add(VertexRoles[vertexIndex]);
-                    }
-                    catch (Exception e)
-                    {
-                        Debug.LogWarning(
-                            $"Dual op failed to set face role based on existing vertex role. " +
-                            $"Faces.Count: {Faces.Count} Verts: {Vertices.Count} " +
-                            $"old VertexRoles.Count: {VertexRoles.Count} i: {vertexIndex}. Error: {e.Message}");
-                    }
+
+                    var incidentFaceRoles = vertexFaces
+                        .Select(face => Faces.IndexOf(face))
+                        .Where(faceIndex => faceIndex >= 0 && faceIndex < FaceRoles.Count)
+                        .Select(faceIndex => FaceRoles[faceIndex])
+                        .ToList();
+
+                    if (naked.ContainsKey(vertex.Name) && naked[vertex.Name])
+                        incidentFaceRoles.Add(Roles.New);
+
+                    dualFaceInfos.Add((fIndex, BuildDualRoleSignature(incidentFaceRoles)));
+
                     var vertexFaceIndices = vertexFaces.Select(f => Faces.IndexOf(f));
                     var existingTagSets =
                         vertexFaceIndices.Select(fi => FaceTags[fi]);
@@ -158,6 +159,8 @@ namespace Polyhydra.Core
                 }
             }
 
+            var faceRoles = AssignDualFaceRoles(dualFaceInfos);
+
             // If we're ended up with an invalid number of roles then just set them all to 'New'
             if (faceRoles.Count != faceIndices.Count)
                 faceRoles = Enumerable.Repeat(Roles.New, faceIndices.Count).ToList();
@@ -165,6 +168,99 @@ namespace Polyhydra.Core
                 vertexRoles = Enumerable.Repeat(Roles.New, vertexPoints.Count).ToList();
 
             return new PolyMesh(vertexPoints, faceIndices.ToArray(), faceRoles, vertexRoles, newFaceTags);
+        }
+
+        private static List<Roles> AssignDualFaceRoles(List<(List<int> Indices, string Signature)> dualFaceInfos)
+        {
+            var availableRoles = new List<Roles>
+            {
+                Roles.Existing,
+                Roles.New,
+                Roles.NewAlt,
+                Roles.ExistingAlt
+            };
+
+            var groupedSignatures = dualFaceInfos
+                .GroupBy(faceInfo => faceInfo.Signature)
+                .Select(group => new
+                {
+                    Signature = group.Key,
+                    Count = group.Count(),
+                    PreferredRole = GetPreferredDualRole(group.Key)
+                })
+                .OrderByDescending(group => group.Count)
+                .ThenBy(group => group.Signature, StringComparer.Ordinal)
+                .ToList();
+
+            var roleAssignments = new Dictionary<string, Roles>();
+            foreach (var group in groupedSignatures)
+            {
+                if (availableRoles.Contains(group.PreferredRole))
+                {
+                    roleAssignments[group.Signature] = group.PreferredRole;
+                    availableRoles.Remove(group.PreferredRole);
+                    continue;
+                }
+
+                if (availableRoles.Count > 0)
+                {
+                    roleAssignments[group.Signature] = availableRoles[0];
+                    availableRoles.RemoveAt(0);
+                    continue;
+                }
+
+                roleAssignments[group.Signature] = group.PreferredRole;
+            }
+
+            return dualFaceInfos.Select(faceInfo => roleAssignments[faceInfo.Signature]).ToList();
+        }
+
+        private static Roles GetPreferredDualRole(string signature)
+        {
+            if (string.IsNullOrEmpty(signature))
+                return Roles.New;
+
+            if (signature.Contains(nameof(Roles.ExistingAlt), StringComparison.Ordinal))
+                return Roles.ExistingAlt;
+
+            if (signature.Contains(nameof(Roles.NewAlt), StringComparison.Ordinal))
+                return Roles.NewAlt;
+
+            if (signature.Contains(nameof(Roles.Existing), StringComparison.Ordinal))
+                return Roles.Existing;
+
+            return Roles.New;
+        }
+
+        private static string BuildDualRoleSignature(List<Roles> incidentFaceRoles)
+        {
+            if (incidentFaceRoles.Count == 0)
+                return string.Empty;
+
+            var forward = CanonicalizeDualRoleSequence(incidentFaceRoles);
+            var reversed = CanonicalizeDualRoleSequence(incidentFaceRoles.AsEnumerable().Reverse().ToList());
+            return string.CompareOrdinal(forward, reversed) <= 0 ? forward : reversed;
+        }
+
+        private static string CanonicalizeDualRoleSequence(List<Roles> roles)
+        {
+            var best = string.Empty;
+            bool initialized = false;
+            for (int start = 0; start < roles.Count; start++)
+            {
+                var rotated = new string[roles.Count];
+                for (int i = 0; i < roles.Count; i++)
+                    rotated[i] = roles[(start + i) % roles.Count].ToString();
+
+                var candidate = string.Join("|", rotated);
+                if (!initialized || string.CompareOrdinal(candidate, best) < 0)
+                {
+                    best = candidate;
+                    initialized = true;
+                }
+            }
+
+            return best;
         }
 
         public PolyMesh AddDual(float scale)
