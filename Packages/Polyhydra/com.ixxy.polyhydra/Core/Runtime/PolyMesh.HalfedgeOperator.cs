@@ -10,7 +10,7 @@ namespace Polyhydra.Core
         // ===== Halfedge Operator Application =====
         //
         // Applies a Conway-style operator defined by a compact notation string such as
-        // "E-E", "F-F!", "E-E,E-F", "ve_e-ve_e,ve_c-ve_c", etc.
+        // "E-E", "F-F!", "E-E,E-F", "ve0-ve0,ve1-ve1", etc.
         //
         // Each atom "A-B" means: for every face, connect every point of class A to its
         // corresponding point(s) of class B. The resulting edge set is reconstructed into
@@ -20,7 +20,7 @@ namespace Polyhydra.Core
         //   V   — original vertices (shared)
         //   E   — edge midpoints (shared by 2 faces)
         //   F   — face centroid (face-local)
-        //   ve  — midpoints between V and E, 2 per edge; ve_e = same-edge pair, ve_c = corner pair (shared)
+        //   ve  — midpoints between V and E, 2 per edge; ve0 = same-edge pair, ve1 = corner pair (shared)
         //   vf  — midpoints between V and F, 1 per vertex per face (face-local)
         //   fe  — midpoints between E and F, 1 per edge per face (face-local)
         //   F!  — adjacent face centroid, reached via halfedge twin (shared via cache)
@@ -100,7 +100,7 @@ namespace Polyhydra.Core
         /// <summary>
         /// Applies the operator described by <paramref name="operatorNotation"/> and returns the
         /// resulting mesh. The notation is a comma-separated list of atoms, e.g. "E-E,E-F",
-        /// "F-F!" (dual), or "ve_e-ve_e,ve_c-ve_c".
+        /// "F-F!" (dual), or "ve0-ve0,ve1-ve1".
         /// <para><paramref name="t"/> controls midpoint placement (0.5 = exact midpoint).</para>
         /// </summary>
         public PolyMesh ApplyHalfedgeOperator(string operatorNotation, float t = 0.5f)
@@ -183,7 +183,7 @@ namespace Polyhydra.Core
             bool needV     = classesNeeded.Contains("V");
             bool needE     = classesNeeded.Contains("E");
             bool needF     = classesNeeded.Contains("F");
-            bool needVe    = classesNeeded.Contains("ve") || classesNeeded.Contains("ve_e") || classesNeeded.Contains("ve_c");
+            bool needVe    = classesNeeded.Contains("ve") || classesNeeded.Contains("ve0") || classesNeeded.Contains("ve1");
             bool needVf    = classesNeeded.Contains("vf");
             bool needFe    = classesNeeded.Contains("fe");
             bool needFAdj  = classesNeeded.Contains("F!");
@@ -219,7 +219,7 @@ namespace Polyhydra.Core
                 ptsSingle["F"] = F;
             }
 
-            // --- ve / ve_e / ve_c  (all share the same backing array) ---
+            // --- ve / ve0 / ve1  (all share the same backing array) ---
             if (needVe)
             {
                 if (E == null) { E = ComputeEArray(face, halfedges, n, fn, cache); ptsArray["E"] = E; }
@@ -237,8 +237,8 @@ namespace Polyhydra.Core
                         Vector3.Lerp(h.Vertex.Position, E[i].Position, t), eNorm);
                 }
                 ptsArray["ve"]   = ve;
-                ptsArray["ve_e"] = ve;
-                ptsArray["ve_c"] = ve;
+                ptsArray["ve0"] = ve;
+                ptsArray["ve1"] = ve;
             }
 
             // --- vf ---
@@ -416,8 +416,8 @@ namespace Polyhydra.Core
 
                 case "E":
                 case "ve":
-                case "ve_e":
-                case "ve_c":
+                case "ve0":
+                case "ve1":
                     return OperatorAtomFamily.Edge;
 
                 case "F":
@@ -454,7 +454,7 @@ namespace Polyhydra.Core
                   for (int i = 0; i < n; i++) { result.Add((A[i], B[i])); result.Add((A[i], B[(i+1)%n])); }
                   return true; }
 
-                case "E-ve": case "E-ve_e": case "E-ve_c":
+                case "E-ve": case "E-ve0": case "E-ve1":
                 { var A = Arr("E"); var B = Arr("ve");
                   for (int i = 0; i < n; i++) { result.Add((A[i], B[2*i])); result.Add((A[i], B[2*i+1])); }
                   return true; }
@@ -473,7 +473,7 @@ namespace Polyhydra.Core
                 case "F-V":
                 { var A = Single("F"); var B = Arr("V"); for (int i = 0; i < n; i++) result.Add((A, B[i])); return true; }
 
-                case "F-ve": case "F-ve_e": case "F-ve_c":
+                case "F-ve": case "F-ve0": case "F-ve1":
                 { var A = Single("F"); var B = Arr("ve"); for (int j = 0; j < 2*n; j++) result.Add((A, B[j])); return true; }
 
                 case "F-vf":
@@ -485,7 +485,7 @@ namespace Polyhydra.Core
                 case "V-V":
                 { var A = Arr("V"); for (int i = 0; i < n; i++) result.Add((A[i], A[(i+1)%n])); return true; }
 
-                case "V-ve": case "V-ve_e": case "V-ve_c":
+                case "V-ve": case "V-ve0": case "V-ve1":
                 { var A = Arr("V"); var B = Arr("ve");
                   for (int i = 0; i < n; i++) { result.Add((A[i], B[ActualMod(2*i-1, 2*n)])); result.Add((A[i], B[2*i])); }
                   return true; }
@@ -498,18 +498,18 @@ namespace Polyhydra.Core
                   for (int i = 0; i < n; i++) { result.Add((A[i], B[i])); result.Add((A[i], B[(i+1)%n])); }
                   return true; }
 
-                case "ve_e-ve_e":
-                { var A = Arr("ve_e"); for (int i = 0; i < n; i++) result.Add((A[2*i], A[2*i+1])); return true; }
+                case "ve0-ve0":
+                { var A = Arr("ve0"); for (int i = 0; i < n; i++) result.Add((A[2*i], A[2*i+1])); return true; }
 
-                case "ve_c-ve_c":
-                { var A = Arr("ve_c"); for (int i = 0; i < n; i++) result.Add((A[2*i+1], A[(2*i+2)%(2*n)])); return true; }
+                case "ve1-ve1":
+                { var A = Arr("ve1"); for (int i = 0; i < n; i++) result.Add((A[2*i+1], A[(2*i+2)%(2*n)])); return true; }
 
-                case "ve-vf": case "ve_e-vf": case "ve_c-vf":
+                case "ve-vf": case "ve0-vf": case "ve1-vf":
                 { var A = Arr("ve"); var B = Arr("vf");
                   for (int i = 0; i < n; i++) { result.Add((A[2*i], B[i])); result.Add((A[2*i+1], B[(i+1)%n])); }
                   return true; }
 
-                case "fe-ve": case "fe-ve_e": case "fe-ve_c":
+                case "fe-ve": case "fe-ve0": case "fe-ve1":
                 { var A = Arr("fe"); var B = Arr("ve");
                   for (int i = 0; i < n; i++) { result.Add((A[i], B[2*i])); result.Add((A[i], B[2*i+1])); }
                   return true; }
