@@ -10,12 +10,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5bf388923ca042dbaaa277a440745831, type: 3}
-  m_Name: GridSettings 33_
+  m_Name: GridSettings 32a
   m_EditorClassIdentifier: 
   Operators:
   - Active: 1
-    OpType: 110
-    Parameter1: -1
+    OpType: 4
+    StringParameter: 
+    Parameter1: 0.29
     Parameter2: 0
     Iterations: 1
     Parameter1Randomize: 0
@@ -24,18 +25,9 @@ MonoBehaviour:
     FilterParam: 0
     FilterFlip: 0
   - Active: 1
-    OpType: 56
-    Parameter1: 0.2
-    Parameter2: 0
-    Iterations: 1
-    Parameter1Randomize: 0
-    Parameter2Randomize: 0
-    FilterType: 1
-    FilterParam: 6
-    FilterFlip: 0
-  - Active: 1
-    OpType: 63
-    Parameter1: 0.2
+    OpType: 114
+    StringParameter: 
+    Parameter1: 0.5
     Parameter2: 0
     Iterations: 1
     Parameter1Randomize: 0
@@ -44,8 +36,9 @@ MonoBehaviour:
     FilterParam: 0
     FilterFlip: 0
   - Active: 1
-    OpType: 110
-    Parameter1: -2.77
+    OpType: 17
+    StringParameter: 
+    Parameter1: 0.29
     Parameter2: 0
     Iterations: 1
     Parameter1Randomize: 0
@@ -56,9 +49,9 @@ MonoBehaviour:
   FastConicalize: 1
   CanonicalizeIterations: 0
   PlanarizeIterations: 0
-  FaceInset: 0
+  FaceInset: 0.01
   ColorMethod: 1
-  type: 38
+  type: 0
   shape: 0
-  X: 6
-  Y: 6
+  X: 4
+  Y: 4
