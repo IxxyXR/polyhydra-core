@@ -9,13 +9,24 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 63be2e6bb0184595ac92a61275f5a8f6, type: 3}
-  m_Name: WythoffSettings 20
+  m_Script: {fileID: 11500000, guid: 2c2880ed5b584425b92968f04cae7e21, type: 3}
+  m_Name: ShapesSettings 2
   m_EditorClassIdentifier: 
   Operators:
+  - Active: 0
+    OpType: 8
+    StringParameter: 
+    Parameter1: 0.5
+    Parameter2: 0.5
+    Iterations: 1
+    Parameter1Randomize: 0
+    Parameter2Randomize: 0
+    FilterType: 0
+    FilterParam: 0
+    FilterFlip: 0
   - Active: 1
     OpType: 9999
-    StringParameter: ve-vf,fe-ve,fe-vf,fe-fe,fe-fe!
+    StringParameter: E-ve,E-fe,ve_c-ve_c,fe-fe
     Parameter1: 0.5
     Parameter2: 0
     Iterations: 1
@@ -24,10 +35,10 @@ MonoBehaviour:
     FilterType: 0
     FilterParam: 0
     FilterFlip: 0
-  - Active: 1
+  - Active: 0
     OpType: 11
-    StringParameter: 
-    Parameter1: 0
+    StringParameter: E-ve,E-fe,ve_c-ve_c,fe-fe
+    Parameter1: 0.5
     Parameter2: 0
     Iterations: 1
     Parameter1Randomize: 0
@@ -35,32 +46,15 @@ MonoBehaviour:
     FilterType: 0
     FilterParam: 0
     FilterFlip: 0
-  - Active: 0
-    OpType: 40
-    StringParameter: 
-    Parameter1: 0.975
-    Parameter2: 0
-    Iterations: 1
-    Parameter1Randomize: 0
-    Parameter2Randomize: 0
-    FilterType: 0
-    FilterParam: 0
-    FilterFlip: 0
-  - Active: 0
-    OpType: 15
-    StringParameter: 
-    Parameter1: 0.23
-    Parameter2: 0
-    Iterations: 1
-    Parameter1Randomize: 0
-    Parameter2Randomize: 0
-    FilterType: 0
-    FilterParam: 0
-    FilterFlip: 0
-  FastConicalize: 0
-  CanonicalizeIterations: 24
+  FastConicalize: 1
+  CanonicalizeIterations: 0
   PlanarizeIterations: 0
-  FaceInset: 0
-  ColorMethod: 0
-  WythoffType: 28
-  Sides: 5
+  FaceInset: 0.003
+  ColorMethod: 1
+  type: 1
+  method: 2
+  A: 6
+  B: 0.61
+  C: 0.33
+  Layers: 1
+  LayerHeight: 0.5

@@ -72,7 +72,7 @@ MonoBehaviour:
   CanonicalizeIterations: 0
   PlanarizeIterations: 0
   FaceInset: 0.01
-  ColorMethod: 0
+  ColorMethod: 1
   type: 3
   shape: 0
   X: 6

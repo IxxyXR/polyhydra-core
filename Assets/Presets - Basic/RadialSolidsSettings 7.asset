@@ -50,7 +50,7 @@ MonoBehaviour:
   CanonicalizeIterations: 0
   PlanarizeIterations: 0
   FaceInset: 0
-  ColorMethod: 0
+  ColorMethod: 1
   type: 1
   Sides: 6
   SetHeight: 0
