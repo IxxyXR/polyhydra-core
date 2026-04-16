@@ -812,28 +812,21 @@ namespace Polyhydra.Core
                         RotateLeft(boundaryStepDescriptions);
                     }
 
-                    if (IsAdjacentDuplicateEdgeTriangle(loop))
+                    int faceIndex = faceInfos.Count;
+                    faceInfos.Add(new ReconstructedFaceInfo
                     {
-                        rejectedLoopSignatures.Add(pointClassSequence);
-                    }
-                    else
-                    {
-                        int faceIndex = faceInfos.Count;
-                        faceInfos.Add(new ReconstructedFaceInfo
-                        {
-                            Vertices = loop,
-                            BoundaryHalfedges = boundaryHalfedges,
-                            BoundaryAtoms = boundaryAtoms,
-                            BoundaryFamilies = boundaryFamilies,
-                            BoundarySourceFaces = boundarySourceFaces,
-                            BoundarySourceEdges = boundarySourceEdges,
-                            BoundaryStepDescriptions = boundaryStepDescriptions,
-                            Signature = BuildAtomSignature(boundaryAtoms)
-                        });
-                        if (dot >= 0f)
-                            positiveOrientationFaceIndices.Add(faceIndex);
-                        keptLoopSignatures.Add(pointClassSequence);
-                    }
+                        Vertices = loop,
+                        BoundaryHalfedges = boundaryHalfedges,
+                        BoundaryAtoms = boundaryAtoms,
+                        BoundaryFamilies = boundaryFamilies,
+                        BoundarySourceFaces = boundarySourceFaces,
+                        BoundarySourceEdges = boundarySourceEdges,
+                        BoundaryStepDescriptions = boundaryStepDescriptions,
+                        Signature = BuildAtomSignature(boundaryAtoms)
+                    });
+                    if (dot >= 0f)
+                        positiveOrientationFaceIndices.Add(faceIndex);
+                    keptLoopSignatures.Add(pointClassSequence);
                 }
             }
 
