@@ -37,12 +37,14 @@ namespace Polyhydra.Core
         {
             private static int _idCounter;
             public readonly int Id;
+            public string PointClass;
             public Vector3 Position;
             public Vector3 Normal;
 
-            public OVertex(Vector3 pos, Vector3 normal)
+            public OVertex(string pointClass, Vector3 pos, Vector3 normal)
             {
                 Id = ++_idCounter;
+                PointClass = pointClass;
                 Position = pos;
                 Normal = normal;
             }
@@ -64,6 +66,14 @@ namespace Polyhydra.Core
             public OVertex B;
             public string Atom;
             public OperatorAtomFamily Family;
+            public string SourceEdgeKey;
+        }
+
+        private struct OperatorConnection
+        {
+            public OVertex A;
+            public OVertex B;
+            public int SourceEdgeIndex;
         }
 
         private class ReconstructedFaceInfo
@@ -82,11 +92,11 @@ namespace Polyhydra.Core
         {
             private readonly Dictionary<string, OVertex> _cache = new Dictionary<string, OVertex>();
 
-            public OVertex GetOrCreate(string key, Vector3 pos, Vector3 normal)
+            public OVertex GetOrCreate(string key, string pointClass, Vector3 pos, Vector3 normal)
             {
                 if (!_cache.TryGetValue(key, out var v))
                 {
-                    v = new OVertex(pos, normal);
+                    v = new OVertex(pointClass, pos, normal);
                     _cache[key] = v;
                 }
                 return v;
@@ -118,6 +128,9 @@ namespace Polyhydra.Core
             {
                 var halfedges = face.GetHalfedges();
                 int n = halfedges.Count;
+                var sourceEdgeKeys = new string[n];
+                for (int i = 0; i < n; i++)
+                    sourceEdgeKeys[i] = GetSourceEdgeKey(halfedges[i]);
 
                 var ptsSingle = new Dictionary<string, OVertex>();
                 var ptsArray  = new Dictionary<string, OVertex[]>();
@@ -125,7 +138,7 @@ namespace Polyhydra.Core
                 BuildFacePoints(face, halfedges, n, classesNeeded, cache, t, ptsSingle, ptsArray);
 
                 foreach (var (classA, classB) in atoms)
-                    AddAtomConnections(classA, classB, ptsSingle, ptsArray, n, edges, edgeSeen);
+                    AddAtomConnections(classA, classB, sourceEdgeKeys, ptsSingle, ptsArray, n, edges, edgeSeen);
             }
 
             return BuildMeshFromEdges(edges);
@@ -164,9 +177,9 @@ namespace Polyhydra.Core
         //   ve[2i]    = lerp(V[i],       E[i], t)          (near V[i])
         //   ve[2i+1]  = lerp(V[(i+1)%n], E[i], t)          (near V[(i+1)%n])
         //   vf[i]     = lerp(V[i],   F, t)
-        //   fe[i]     = lerp(E[i],   F, t)
+        //   fe[i]     = lerp(F,      E[i], t)
         //   F![i]     = centroid of face across edge i
-        //   fe![i]    = lerp(E[i],   F![i], t)
+        //   fe![i]    = lerp(F![i],  E[i], t)
         //   vf![2i]   = lerp(V[i],       F![i], t)
         //   vf![2i+1] = lerp(V[(i+1)%n], F![i], t)
         // -------------------------------------------------------------------------
@@ -198,7 +211,7 @@ namespace Polyhydra.Core
                 for (int i = 0; i < n; i++)
                 {
                     var vert = halfedges[i].Prev.Vertex;
-                    V[i] = cache.GetOrCreate($"V_{vert.Name}", vert.Position, vert.Normal);
+                    V[i] = cache.GetOrCreate($"V_{vert.Name}", "V", vert.Position, vert.Normal);
                 }
                 ptsArray["V"] = V;
             }
@@ -215,7 +228,7 @@ namespace Polyhydra.Core
             OVertex F = null;
             if (needF || needVf || needFe)
             {
-                F = cache.GetOrCreate($"F_{face.Name}", face.Centroid, fn);
+                F = cache.GetOrCreate($"F_{face.Name}", "F", face.Centroid, fn);
                 ptsSingle["F"] = F;
             }
 
@@ -231,9 +244,9 @@ namespace Polyhydra.Core
                     // Keys include the specific vertex name so that the adjacent face
                     // (which traverses this edge in the opposite direction) resolves to
                     // the same OVertex objects rather than swapping the two ve points.
-                    ve[2*i]   = cache.GetOrCreate($"ve_{h.Prev.Vertex.Name}_{MakeKey(h.PairedName)}",
+                    ve[2*i]   = cache.GetOrCreate($"ve_{h.Prev.Vertex.Name}_{MakeKey(h.PairedName)}", "ve",
                         Vector3.Lerp(h.Prev.Vertex.Position, E[i].Position, t), eNorm);
-                    ve[2*i+1] = cache.GetOrCreate($"ve_{h.Vertex.Name}_{MakeKey(h.PairedName)}",
+                    ve[2*i+1] = cache.GetOrCreate($"ve_{h.Vertex.Name}_{MakeKey(h.PairedName)}", "ve",
                         Vector3.Lerp(h.Vertex.Position, E[i].Position, t), eNorm);
                 }
                 ptsArray["ve"]   = ve;
@@ -246,13 +259,14 @@ namespace Polyhydra.Core
             // to the same OVertex objects as the corresponding vf[k] computed from that face.
             if (needVf)
             {
-                if (F == null) { F = cache.GetOrCreate($"F_{face.Name}", face.Centroid, fn); ptsSingle["F"] = F; }
+                if (F == null) { F = cache.GetOrCreate($"F_{face.Name}", "F", face.Centroid, fn); ptsSingle["F"] = F; }
                 var vf = new OVertex[n];
                 for (int i = 0; i < n; i++)
                 {
                     var vert = halfedges[i].Prev.Vertex;
                     vf[i] = cache.GetOrCreate(
                         $"vf_{face.Name}_{vert.Name}",
+                        "vf",
                         Vector3.Lerp(vert.Position, F.Position, t),
                         Vector3.Lerp(vert.Normal, fn, t).normalized);
                 }
@@ -264,13 +278,14 @@ namespace Polyhydra.Core
             // OVertex objects as the corresponding fe[j] computed from that adjacent face.
             if (needFe)
             {
-                if (F == null) { F = cache.GetOrCreate($"F_{face.Name}", face.Centroid, fn); ptsSingle["F"] = F; }
+                if (F == null) { F = cache.GetOrCreate($"F_{face.Name}", "F", face.Centroid, fn); ptsSingle["F"] = F; }
                 if (E == null) { E = ComputeEArray(face, halfedges, n, fn, cache); ptsArray["E"] = E; }
                 var fe = new OVertex[n];
                 for (int i = 0; i < n; i++)
                     fe[i] = cache.GetOrCreate(
                         $"fe_{face.Name}_{MakeKey(halfedges[i].PairedName)}",
-                        Vector3.Lerp(E[i].Position, F.Position, t),
+                        "fe",
+                        Vector3.Lerp(F.Position, E[i].Position, t),
                         Vector3.Lerp(E[i].Normal, fn, t).normalized);
                 ptsArray["fe"] = fe;
             }
@@ -285,12 +300,12 @@ namespace Polyhydra.Core
                     var pair = halfedges[i].Pair;
                     if (pair == null)
                     {
-                        FAdjacent[i] = cache.GetOrCreate($"F_{face.Name}", face.Centroid, fn);
+                        FAdjacent[i] = cache.GetOrCreate($"F_{face.Name}", "F!", face.Centroid, fn);
                     }
                     else
                     {
                         var adj = pair.Face;
-                        FAdjacent[i] = cache.GetOrCreate($"F_{adj.Name}", adj.Centroid, adj.Normal);
+                        FAdjacent[i] = cache.GetOrCreate($"F_{adj.Name}", "F!", adj.Centroid, adj.Normal);
                     }
                 }
                 ptsArray["F!"] = FAdjacent;
@@ -309,7 +324,8 @@ namespace Polyhydra.Core
                     var adjFaceName = halfedges[i].Pair?.Face.Name ?? face.Name;
                     feAdj[i] = cache.GetOrCreate(
                         $"fe_{adjFaceName}_{MakeKey(halfedges[i].PairedName)}",
-                        Vector3.Lerp(E[i].Position, FAdjacent[i].Position, t),
+                        "fe!",
+                        Vector3.Lerp(FAdjacent[i].Position, E[i].Position, t),
                         Vector3.Lerp(E[i].Normal, FAdjacent[i].Normal, t).normalized);
                 }
                 ptsArray["fe!"] = feAdj;
@@ -329,10 +345,12 @@ namespace Polyhydra.Core
                     var vDest   = halfedges[i].Vertex;
                     vfAdj[2*i]   = cache.GetOrCreate(
                         $"vf_{adjFaceName}_{vOrigin.Name}",
+                        "vf!",
                         Vector3.Lerp(vOrigin.Position, FAdjacent[i].Position, t),
                         Vector3.Lerp(vOrigin.Normal,   FAdjacent[i].Normal,   t).normalized);
                     vfAdj[2*i+1] = cache.GetOrCreate(
                         $"vf_{adjFaceName}_{vDest.Name}",
+                        "vf!",
                         Vector3.Lerp(vDest.Position, FAdjacent[i].Position, t),
                         Vector3.Lerp(vDest.Normal,   FAdjacent[i].Normal,   t).normalized);
                 }
@@ -349,7 +367,7 @@ namespace Polyhydra.Core
                 var h = halfedges[i];
                 var pairNormal = h.Pair?.Face.Normal ?? fn;
                 var eNormal = ((fn + pairNormal) * 0.5f).normalized;
-                E[i] = cache.GetOrCreate($"E_{MakeKey(h.PairedName)}", h.Midpoint, eNormal);
+                E[i] = cache.GetOrCreate($"E_{MakeKey(h.PairedName)}", "E", h.Midpoint, eNormal);
             }
             return E;
         }
@@ -360,10 +378,11 @@ namespace Polyhydra.Core
 
         private static void AddAtomConnections(
             string classA, string classB,
+            string[] sourceEdgeKeys,
             Dictionary<string, OVertex> ptsSingle, Dictionary<string, OVertex[]> ptsArray,
             int n, List<OEdge> edges, HashSet<(int, int)> edgeSeen)
         {
-            var tmp = new List<(OVertex, OVertex)>();
+            var tmp = new List<OperatorConnection>();
             if (!TryConnections(classA, classB, ptsSingle, ptsArray, n, tmp))
             {
                 if (!TryConnections(classB, classA, ptsSingle, ptsArray, n, tmp))
@@ -372,8 +391,10 @@ namespace Polyhydra.Core
 
             var atom = $"{classA}-{classB}";
             var family = GetAtomFamily(classA, classB);
-            foreach (var (a, b) in tmp)
+            foreach (var connection in tmp)
             {
+                var a = connection.A;
+                var b = connection.B;
                 if (a.Id == b.Id) continue; // skip degenerate self-loops (naked-edge fallback)
                 int lo = Math.Min(a.Id, b.Id), hi = Math.Max(a.Id, b.Id);
                 if (edgeSeen.Add((lo, hi)))
@@ -383,10 +404,20 @@ namespace Polyhydra.Core
                         A = a,
                         B = b,
                         Atom = atom,
-                        Family = family
+                        Family = family,
+                        SourceEdgeKey = connection.SourceEdgeIndex >= 0 && connection.SourceEdgeIndex < sourceEdgeKeys.Length
+                            ? sourceEdgeKeys[connection.SourceEdgeIndex]
+                            : null
                     });
                 }
             }
+        }
+
+        private static string GetSourceEdgeKey(Halfedge halfedge)
+        {
+            var a = halfedge.Prev.Vertex.Name;
+            var b = halfedge.Vertex.Name;
+            return a.CompareTo(b) <= 0 ? $"{a}_{b}" : $"{b}_{a}";
         }
 
         private static OperatorAtomFamily GetAtomFamily(string classA, string classB)
@@ -436,86 +467,95 @@ namespace Polyhydra.Core
         private static bool TryConnections(
             string a, string b,
             Dictionary<string, OVertex> ptsSingle, Dictionary<string, OVertex[]> ptsArray,
-            int n, List<(OVertex, OVertex)> result)
+            int n, List<OperatorConnection> result)
         {
             OVertex[] Arr(string key) => ptsArray.TryGetValue(key, out var v) ? v : null;
             OVertex Single(string key) => ptsSingle.TryGetValue(key, out var v) ? v : null;
+            void Add(OVertex from, OVertex to, int sourceEdgeIndex = -1)
+            {
+                result.Add(new OperatorConnection
+                {
+                    A = from,
+                    B = to,
+                    SourceEdgeIndex = sourceEdgeIndex
+                });
+            }
 
             switch ($"{a}-{b}")
             {
                 case "E-E":
-                { var A = Arr("E"); for (int i = 0; i < n; i++) result.Add((A[i], A[(i+1)%n])); return true; }
+                { var A = Arr("E"); for (int i = 0; i < n; i++) Add(A[i], A[(i+1)%n], i); return true; }
 
                 case "E-F":
-                { var A = Arr("E"); var B = Single("F"); for (int i = 0; i < n; i++) result.Add((A[i], B)); return true; }
+                { var A = Arr("E"); var B = Single("F"); for (int i = 0; i < n; i++) Add(A[i], B, i); return true; }
 
                 case "E-V":
                 { var A = Arr("E"); var B = Arr("V");
-                  for (int i = 0; i < n; i++) { result.Add((A[i], B[i])); result.Add((A[i], B[(i+1)%n])); }
+                  for (int i = 0; i < n; i++) { Add(A[i], B[i], i); Add(A[i], B[(i+1)%n], i); }
                   return true; }
 
                 case "E-ve": case "E-ve0": case "E-ve1":
                 { var A = Arr("E"); var B = Arr("ve");
-                  for (int i = 0; i < n; i++) { result.Add((A[i], B[2*i])); result.Add((A[i], B[2*i+1])); }
+                  for (int i = 0; i < n; i++) { Add(A[i], B[2*i], i); Add(A[i], B[2*i+1], i); }
                   return true; }
 
                 case "E-vf":
                 { var A = Arr("E"); var B = Arr("vf");
-                  for (int i = 0; i < n; i++) { result.Add((A[i], B[i])); result.Add((A[i], B[(i+1)%n])); }
+                  for (int i = 0; i < n; i++) { Add(A[i], B[i], i); Add(A[i], B[(i+1)%n], i); }
                   return true; }
 
                 case "E-fe":
-                { var A = Arr("E"); var B = Arr("fe"); for (int i = 0; i < n; i++) result.Add((A[i], B[i])); return true; }
+                { var A = Arr("E"); var B = Arr("fe"); for (int i = 0; i < n; i++) Add(A[i], B[i], i); return true; }
 
                 case "F-F!":
-                { var A = Single("F"); var B = Arr("F!"); for (int i = 0; i < n; i++) result.Add((A, B[i])); return true; }
+                { var A = Single("F"); var B = Arr("F!"); for (int i = 0; i < n; i++) Add(A, B[i], i); return true; }
 
                 case "F-V":
-                { var A = Single("F"); var B = Arr("V"); for (int i = 0; i < n; i++) result.Add((A, B[i])); return true; }
+                { var A = Single("F"); var B = Arr("V"); for (int i = 0; i < n; i++) Add(A, B[i]); return true; }
 
                 case "F-ve": case "F-ve0": case "F-ve1":
-                { var A = Single("F"); var B = Arr("ve"); for (int j = 0; j < 2*n; j++) result.Add((A, B[j])); return true; }
+                { var A = Single("F"); var B = Arr("ve"); for (int j = 0; j < 2*n; j++) Add(A, B[j]); return true; }
 
                 case "F-vf":
-                { var A = Single("F"); var B = Arr("vf"); for (int i = 0; i < n; i++) result.Add((A, B[i])); return true; }
+                { var A = Single("F"); var B = Arr("vf"); for (int i = 0; i < n; i++) Add(A, B[i]); return true; }
 
                 case "F-fe":
-                { var A = Single("F"); var B = Arr("fe"); for (int i = 0; i < n; i++) result.Add((A, B[i])); return true; }
+                { var A = Single("F"); var B = Arr("fe"); for (int i = 0; i < n; i++) Add(A, B[i], i); return true; }
 
                 case "V-V":
-                { var A = Arr("V"); for (int i = 0; i < n; i++) result.Add((A[i], A[(i+1)%n])); return true; }
+                { var A = Arr("V"); for (int i = 0; i < n; i++) Add(A[i], A[(i+1)%n], i); return true; }
 
                 case "V-ve": case "V-ve0": case "V-ve1":
                 { var A = Arr("V"); var B = Arr("ve");
-                  for (int i = 0; i < n; i++) { result.Add((A[i], B[ActualMod(2*i-1, 2*n)])); result.Add((A[i], B[2*i])); }
+                  for (int i = 0; i < n; i++) { Add(A[i], B[ActualMod(2*i-1, 2*n)], ActualMod(i - 1, n)); Add(A[i], B[2*i], i); }
                   return true; }
 
                 case "V-vf":
-                { var A = Arr("V"); var B = Arr("vf"); for (int i = 0; i < n; i++) result.Add((A[i], B[i])); return true; }
+                { var A = Arr("V"); var B = Arr("vf"); for (int i = 0; i < n; i++) Add(A[i], B[i]); return true; }
 
                 case "fe-V":
                 { var A = Arr("fe"); var B = Arr("V");
-                  for (int i = 0; i < n; i++) { result.Add((A[i], B[i])); result.Add((A[i], B[(i+1)%n])); }
+                  for (int i = 0; i < n; i++) { Add(A[i], B[i], i); Add(A[i], B[(i+1)%n], i); }
                   return true; }
 
                 case "ve0-ve0":
-                { var A = Arr("ve0"); for (int i = 0; i < n; i++) result.Add((A[2*i], A[2*i+1])); return true; }
+                { var A = Arr("ve0"); for (int i = 0; i < n; i++) Add(A[2*i], A[2*i+1], i); return true; }
 
                 case "ve1-ve1":
-                { var A = Arr("ve1"); for (int i = 0; i < n; i++) result.Add((A[2*i+1], A[(2*i+2)%(2*n)])); return true; }
+                { var A = Arr("ve1"); for (int i = 0; i < n; i++) Add(A[2*i+1], A[(2*i+2)%(2*n)], i); return true; }
 
                 case "ve-vf": case "ve0-vf": case "ve1-vf":
                 { var A = Arr("ve"); var B = Arr("vf");
-                  for (int i = 0; i < n; i++) { result.Add((A[2*i], B[i])); result.Add((A[2*i+1], B[(i+1)%n])); }
+                  for (int i = 0; i < n; i++) { Add(A[2*i], B[i], i); Add(A[2*i+1], B[(i+1)%n], i); }
                   return true; }
 
                 case "fe-ve": case "fe-ve0": case "fe-ve1":
                 { var A = Arr("fe"); var B = Arr("ve");
-                  for (int i = 0; i < n; i++) { result.Add((A[i], B[2*i])); result.Add((A[i], B[2*i+1])); }
+                  for (int i = 0; i < n; i++) { Add(A[i], B[2*i], i); Add(A[i], B[2*i+1], i); }
                   return true; }
 
                 case "vf-vf":
-                { var A = Arr("vf"); for (int i = 0; i < n; i++) result.Add((A[i], A[(i+1)%n])); return true; }
+                { var A = Arr("vf"); for (int i = 0; i < n; i++) Add(A[i], A[(i+1)%n], i); return true; }
 
                 case "vf-vf!":
                 // Only the same-vertex connection: vf[i] — vf![2i] (near V[i] in adjacent face).
@@ -524,12 +564,12 @@ namespace Polyhydra.Core
                 // Adding vf[i] — vf![2i+1] (the cross-connection) causes near-collinearity with
                 // E[i] edges at vf[i], which breaks the CCW sort and produces wrong face loops.
                 { var A = Arr("vf"); var B = Arr("vf!");
-                  for (int i = 0; i < n; i++) result.Add((A[i], B[2*i]));
+                  for (int i = 0; i < n; i++) Add(A[i], B[2*i], i);
                   return true; }
 
                 case "fe-vf":
                 { var A = Arr("fe"); var B = Arr("vf");
-                  for (int i = 0; i < n; i++) { result.Add((A[i], B[i])); result.Add((A[i], B[(i+1)%n])); }
+                  for (int i = 0; i < n; i++) { Add(A[i], B[i], i); Add(A[i], B[(i+1)%n], i); }
                   return true; }
 
                 case "fe-fe":
@@ -537,11 +577,11 @@ namespace Polyhydra.Core
                 // (The plan's _fe_fe_connections diagonal rule was incorrect — the operator
                 // is described as "fe cycle" and the cyclic rule matches Zip = fe-fe,fe-fe!.)
                 { var A = Arr("fe");
-                  for (int i = 0; i < n; i++) result.Add((A[i], A[(i+1)%n]));
+                  for (int i = 0; i < n; i++) Add(A[i], A[(i+1)%n], i);
                   return true; }
 
                 case "fe-fe!":
-                { var A = Arr("fe"); var B = Arr("fe!"); for (int i = 0; i < n; i++) result.Add((A[i], B[i])); return true; }
+                { var A = Arr("fe"); var B = Arr("fe!"); for (int i = 0; i < n; i++) Add(A[i], B[i], i); return true; }
 
                 default:
                     return false;
@@ -606,14 +646,15 @@ namespace Polyhydra.Core
                 }
 
                 SortCCW(outList, vert, heOrigin);
+                TryRewriteTwoBundleVfStarOrder(vert, outList, edges);
 
                 for (int j = 0; j < k; j++)
                     heNext[Twin(outList[j])] = outList[(j + 1) % k];
             }
-
             // Extract face loops
             var visited = new bool[nHE];
             var faceInfos = new List<ReconstructedFaceInfo>();
+            var positiveOrientationFaceIndices = new List<int>();
 
             for (int hStart = 0; hStart < nHE; hStart++)
             {
@@ -626,9 +667,10 @@ namespace Polyhydra.Core
                 while (!visited[h])
                 {
                     visited[h] = true;
+                    var edge = edges[h / 2];
                     loop.Add(heOrigin[h]);
-                    boundaryAtoms.Add(edges[h / 2].Atom);
-                    boundaryFamilies.Add(edges[h / 2].Family);
+                    boundaryAtoms.Add(edge.Atom);
+                    boundaryFamilies.Add(edge.Family);
                     h = heNext[h];
                     if (h < 0) break;
                 }
@@ -651,23 +693,29 @@ namespace Polyhydra.Core
                     foreach (var v in loop) avgVertNormal += v.Normal;
 
                     float dot = Vector3.Dot(faceNormal, avgVertNormal);
-                    bool kept = dot < 0f;
-
-                    if (kept)
+                    if (dot < 0f)
                     {
                         loop.Reverse();
                         boundaryAtoms.Reverse();
                         boundaryFamilies.Reverse();
-                        faceInfos.Add(new ReconstructedFaceInfo
-                        {
-                            Vertices = loop,
-                            BoundaryAtoms = boundaryAtoms,
-                            BoundaryFamilies = boundaryFamilies,
-                            Signature = BuildAtomSignature(boundaryAtoms)
-                        });
+                        RotateLeft(boundaryAtoms);
+                        RotateLeft(boundaryFamilies);
                     }
+
+                    int faceIndex = faceInfos.Count;
+                    faceInfos.Add(new ReconstructedFaceInfo
+                    {
+                        Vertices = loop,
+                        BoundaryAtoms = boundaryAtoms,
+                        BoundaryFamilies = boundaryFamilies,
+                        Signature = BuildAtomSignature(boundaryAtoms)
+                    });
+                    if (dot >= 0f)
+                        positiveOrientationFaceIndices.Add(faceIndex);
                 }
             }
+
+            PruneUniqueLongestPositiveOrientationLoop(faceInfos, positiveOrientationFaceIndices);
 
             // Assemble PolyMesh
             var allVerts  = new List<OVertex>();
@@ -687,6 +735,51 @@ namespace Polyhydra.Core
             var vertexRoles = Enumerable.Repeat(Roles.New, allVerts.Count).ToList();
 
             return new PolyMesh(positions, faceIdxs, faceRoles, vertexRoles);
+        }
+
+
+        private static void PruneUniqueLongestPositiveOrientationLoop(
+            List<ReconstructedFaceInfo> faceInfos,
+            List<int> positiveOrientationFaceIndices)
+        {
+            if (positiveOrientationFaceIndices.Count == 0)
+                return;
+
+            var candidates = positiveOrientationFaceIndices
+                .Distinct()
+                .Where(index => index >= 0 && index < faceInfos.Count)
+                .Select(index => new { Index = index, Length = faceInfos[index].Vertices.Count })
+                .ToList();
+
+            if (candidates.Count == 0)
+                return;
+
+            int maxLength = candidates.Max(candidate => candidate.Length);
+            var longestFaces = candidates.Where(candidate => candidate.Length == maxLength).ToList();
+            if (longestFaces.Count != 1)
+                return;
+
+            int secondLongest = candidates
+                .Where(candidate => candidate.Length < maxLength)
+                .Select(candidate => candidate.Length)
+                .DefaultIfEmpty(0)
+                .Max();
+
+            if (maxLength <= secondLongest)
+                return;
+
+            faceInfos.RemoveAt(longestFaces[0].Index);
+        }
+
+        private static void RotateLeft<T>(List<T> items)
+        {
+            if (items.Count <= 1)
+                return;
+
+            var first = items[0];
+            for (int i = 0; i < items.Count - 1; i++)
+                items[i] = items[i + 1];
+            items[items.Count - 1] = first;
         }
 
         private static List<Roles> AssignFaceRoles(List<ReconstructedFaceInfo> faceInfos)
@@ -893,13 +986,83 @@ namespace Polyhydra.Core
                 var da = heOrigin[Twin(ha)].Position - center;
                 da -= Vector3.Dot(da, normal) * normal;
                 float angleA = Mathf.Atan2(Vector3.Dot(da, perpDir), Vector3.Dot(da, refDir));
+                float radiusA = da.magnitude;
 
                 var db = heOrigin[Twin(hb)].Position - center;
                 db -= Vector3.Dot(db, normal) * normal;
                 float angleB = Mathf.Atan2(Vector3.Dot(db, perpDir), Vector3.Dot(db, refDir));
+                float radiusB = db.magnitude;
 
-                return angleA.CompareTo(angleB);
+                int angleCompare = angleA.CompareTo(angleB);
+                if (angleCompare != 0)
+                    return angleCompare;
+
+                int radiusCompare = radiusA.CompareTo(radiusB);
+                if (radiusCompare != 0)
+                    return radiusCompare;
+
+                return ha.CompareTo(hb);
             });
         }
+
+        private static bool TryRewriteTwoBundleVfStarOrder(OVertex vert, List<int> outList, List<OEdge> edges)
+        {
+            if (vert.PointClass != "vf" || outList.Count != 4)
+                return false;
+
+            var bundles = outList
+                .Select((halfedge, index) => new
+                {
+                    Halfedge = halfedge,
+                    Index = index,
+                    Edge = edges[halfedge / 2]
+                })
+                .Where(item => item.Edge.SourceEdgeKey != null)
+                .GroupBy(item => item.Edge.SourceEdgeKey, StringComparer.Ordinal)
+                .Select(group => new
+                {
+                    SourceEdgeKey = group.Key,
+                    Items = group.OrderBy(item => item.Index).ToList()
+                })
+                .OrderBy(group => group.Items.Min(item => item.Index))
+                .ToList();
+
+            if (bundles.Count != 2 || bundles.Any(group => group.Items.Count != 2))
+                return false;
+
+            var rewritten = new List<int>(4);
+            foreach (var bundle in bundles)
+            {
+                var far = bundle.Items.SingleOrDefault(item => item.Edge.Atom == "vf-vf");
+                var near = bundle.Items.SingleOrDefault(item => item.Edge.Atom == "fe-vf");
+                if (far == null || near == null)
+                    return false;
+
+                rewritten.Add(near.Halfedge);
+                rewritten.Add(far.Halfedge);
+            }
+
+            int temp = rewritten[2];
+            rewritten[2] = rewritten[3];
+            rewritten[3] = temp;
+
+            bool changed = false;
+            for (int i = 0; i < outList.Count; i++)
+            {
+                if (outList[i] != rewritten[i])
+                {
+                    changed = true;
+                    break;
+                }
+            }
+
+            if (!changed)
+                return false;
+
+            outList.Clear();
+            outList.AddRange(rewritten);
+            return true;
+        }
+
     }
 }
