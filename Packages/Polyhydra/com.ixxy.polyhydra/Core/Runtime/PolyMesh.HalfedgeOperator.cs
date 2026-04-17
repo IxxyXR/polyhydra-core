@@ -7,29 +7,6 @@ namespace Polyhydra.Core
 {
     public partial class PolyMesh
     {
-        private const string HalfedgeOperatorBaselineDebugPrefix = "[HOP0_BASE_20260415A]";
-        private const string HalfedgeOperatorMultiplicityDebugPrefix = "[HOP0_MULTI_20260415B]";
-        private const string HalfedgeOperatorOrientationDebugPrefix = "[HOP0_ORIENT_20260415C]";
-        private const string HalfedgeOperatorSortDebugPrefix = "[HOP0_SORT_20260415D]";
-        private const string HalfedgeOperatorOrderDebugPrefix = "[HOP0_ORDER_20260415E]";
-        private const string HalfedgeOperatorFeOrderDebugPrefix = "[HOP0_FEORDER_20260415F]";
-        private const string HalfedgeOperatorBundleDebugPrefix = "[HOP0_BUNDLE_20260415G]";
-        private const string HalfedgeOperatorSampleDebugPrefix = "[HOP0_SAMPLE_20260415H]";
-        private const string HalfedgeOperatorFaceSampleDebugPrefix = "[HOP0_FACESRC_20260416A]";
-        private const string HalfedgeOperatorChoiceDebugPrefix = "[HOP0_CHOICE_20260416C]";
-        private const string HalfedgeOperatorSourceEdgeDebugPrefix = "[HOP0_SRCEDGE_20260416E]";
-        private const string HalfedgeOperatorVfTransitionDebugPrefix = "[HOP0_VFTRANS_20260416G]";
-        private const string HalfedgeOperatorVfClassDebugPrefix = "[HOP0_VFCLASS_20260416I]";
-        private const string HalfedgeOperatorVfOrderRewriteDebugPrefix = "[HOP0_VFORDER_20260416J]";
-        private const string HalfedgeOperatorFeTransitionDebugPrefix = "[HOP0_FETRANS_20260416K]";
-        private const string HalfedgeOperatorVfIncomingFeDebugPrefix = "[HOP0_VFFEIN_20260416L]";
-        private const string HalfedgeOperatorEdgeCoverageDebugPrefix = "[HOP0_EDGECOV_20260416M]";
-        private const string HalfedgeOperatorRejectDebugPrefix = "[HOP0_REJECT_20260416O]";
-        private const string HalfedgeOperatorFePlacementDebugPrefix = "[HOP0_FEPOS_20260416V]";
-        private static string _activeHalfedgeOperatorNotation;
-        private static int _remainingDetailedOrderLogs;
-        private static int _remainingFeOrderLogs;
-
         // ===== Halfedge Operator Application =====
         //
         // Applies a Conway-style operator defined by a compact notation string such as
@@ -89,7 +66,6 @@ namespace Polyhydra.Core
             public OVertex B;
             public string Atom;
             public OperatorAtomFamily Family;
-            public string SourceFaceName;
             public string SourceEdgeKey;
         }
 
@@ -103,12 +79,8 @@ namespace Polyhydra.Core
         private class ReconstructedFaceInfo
         {
             public List<OVertex> Vertices;
-            public List<int> BoundaryHalfedges;
             public List<string> BoundaryAtoms;
             public List<OperatorAtomFamily> BoundaryFamilies;
-            public List<string> BoundarySourceFaces;
-            public List<string> BoundarySourceEdges;
-            public List<string> BoundaryStepDescriptions;
             public string Signature;
         }
 
@@ -143,9 +115,6 @@ namespace Polyhydra.Core
         /// </summary>
         public PolyMesh ApplyHalfedgeOperator(string operatorNotation, float t = 0.5f)
         {
-            _activeHalfedgeOperatorNotation = operatorNotation;
-            _remainingDetailedOrderLogs = string.Equals(operatorNotation, "vf-vf,fe-vf,fe-fe!", StringComparison.Ordinal) ? 8 : 0;
-            _remainingFeOrderLogs = string.Equals(operatorNotation, "vf-vf,fe-vf,fe-fe!", StringComparison.Ordinal) ? 8 : 0;
             var atoms = ParseHalfedgeOperatorString(operatorNotation);
 
             var classesNeeded = new HashSet<string>();
@@ -154,7 +123,6 @@ namespace Polyhydra.Core
             var cache    = new OperatorVertexCache();
             var edgeSeen = new HashSet<(int, int)>();
             var edges    = new List<OEdge>();
-            var attemptedEdgeAtoms = new Dictionary<(int, int), List<string>>();
 
             foreach (var face in Faces)
             {
@@ -170,21 +138,10 @@ namespace Polyhydra.Core
                 BuildFacePoints(face, halfedges, n, classesNeeded, cache, t, ptsSingle, ptsArray);
 
                 foreach (var (classA, classB) in atoms)
-                    AddAtomConnections(classA, classB, face.Name, sourceEdgeKeys, ptsSingle, ptsArray, n, edges, edgeSeen, attemptedEdgeAtoms);
+                    AddAtomConnections(classA, classB, sourceEdgeKeys, ptsSingle, ptsArray, n, edges, edgeSeen);
             }
 
-            LogAttemptedEdgeMultiplicity(operatorNotation, attemptedEdgeAtoms);
-
-            try
-            {
-                return BuildMeshFromEdges(edges, operatorNotation);
-            }
-            finally
-            {
-                _activeHalfedgeOperatorNotation = null;
-                _remainingDetailedOrderLogs = 0;
-                _remainingFeOrderLogs = 0;
-            }
+            return BuildMeshFromEdges(edges);
         }
 
         // -------------------------------------------------------------------------
@@ -421,11 +378,9 @@ namespace Polyhydra.Core
 
         private static void AddAtomConnections(
             string classA, string classB,
-            string sourceFaceName,
             string[] sourceEdgeKeys,
             Dictionary<string, OVertex> ptsSingle, Dictionary<string, OVertex[]> ptsArray,
-            int n, List<OEdge> edges, HashSet<(int, int)> edgeSeen,
-            Dictionary<(int, int), List<string>> attemptedEdgeAtoms)
+            int n, List<OEdge> edges, HashSet<(int, int)> edgeSeen)
         {
             var tmp = new List<OperatorConnection>();
             if (!TryConnections(classA, classB, ptsSingle, ptsArray, n, tmp))
@@ -442,13 +397,6 @@ namespace Polyhydra.Core
                 var b = connection.B;
                 if (a.Id == b.Id) continue; // skip degenerate self-loops (naked-edge fallback)
                 int lo = Math.Min(a.Id, b.Id), hi = Math.Max(a.Id, b.Id);
-                var key = (lo, hi);
-                if (!attemptedEdgeAtoms.TryGetValue(key, out var attemptedAtoms))
-                {
-                    attemptedAtoms = new List<string>();
-                    attemptedEdgeAtoms[key] = attemptedAtoms;
-                }
-                attemptedAtoms.Add(atom);
                 if (edgeSeen.Add((lo, hi)))
                 {
                     edges.Add(new OEdge
@@ -457,30 +405,12 @@ namespace Polyhydra.Core
                         B = b,
                         Atom = atom,
                         Family = family,
-                        SourceFaceName = sourceFaceName,
                         SourceEdgeKey = connection.SourceEdgeIndex >= 0 && connection.SourceEdgeIndex < sourceEdgeKeys.Length
                             ? sourceEdgeKeys[connection.SourceEdgeIndex]
                             : null
                     });
                 }
             }
-        }
-
-        private static void LogAttemptedEdgeMultiplicity(string operatorNotation, Dictionary<(int, int), List<string>> attemptedEdgeAtoms)
-        {
-            if (!string.Equals(operatorNotation, "vf-vf,fe-vf,fe-fe!", StringComparison.Ordinal))
-                return;
-
-            var duplicates = attemptedEdgeAtoms
-                .Where(entry => entry.Value.Count > 1)
-                .Select(entry => $"{entry.Value.Count}x{string.Join("/", entry.Value.OrderBy(atom => atom, StringComparer.Ordinal))}")
-                .GroupBy(text => text)
-                .OrderByDescending(group => group.Count())
-                .ThenBy(group => group.Key, StringComparer.Ordinal)
-                .Take(12)
-                .Select(group => $"{group.Count()}x{group.Key}");
-
-            Debug.Log($"{HalfedgeOperatorMultiplicityDebugPrefix} duplicate-pairs=[{string.Join(" | ", duplicates)}]");
         }
 
         private static string GetSourceEdgeKey(Halfedge halfedge)
@@ -668,7 +598,7 @@ namespace Polyhydra.Core
         //   Phase 4 — walk unvisited halfedges to extract face loops
         // -------------------------------------------------------------------------
 
-        private PolyMesh BuildMeshFromEdges(List<OEdge> edges, string operatorNotation)
+        private PolyMesh BuildMeshFromEdges(List<OEdge> edges)
         {
             if (edges.Count == 0)
                 throw new ArgumentException("Operator produced no edges");
@@ -690,8 +620,6 @@ namespace Polyhydra.Core
             }
 
             for (int i = 0; i < nHE; i++) heNext[i] = -1;
-            var hePrev = new int[nHE];
-            for (int i = 0; i < nHE; i++) hePrev[i] = -1;
 
             // Group outgoing halfedges per origin vertex
             var outgoing = new Dictionary<OVertex, List<int>>();
@@ -706,9 +634,6 @@ namespace Polyhydra.Core
                 lst.Add(h);
             }
 
-            var orderedOutgoing = new Dictionary<OVertex, List<int>>();
-            int rewrittenTwoBundleVfStars = 0;
-
             // Sort CCW and set next pointers
             foreach (var (vert, outList) in outgoing)
             {
@@ -720,33 +645,15 @@ namespace Polyhydra.Core
                     continue;
                 }
 
-                SortCCW(outList, vert, heOrigin, edges);
-                if (TryRewriteTwoBundleVfStarOrder(vert, outList, edges))
-                    rewrittenTwoBundleVfStars++;
-                orderedOutgoing[vert] = outList.ToList();
+                SortCCW(outList, vert, heOrigin);
+                TryRewriteTwoBundleVfStarOrder(vert, outList, edges);
 
                 for (int j = 0; j < k; j++)
-                {
                     heNext[Twin(outList[j])] = outList[(j + 1) % k];
-                    hePrev[Twin(outList[j])] = outList[(j - 1 + k) % k];
-                }
-
             }
-
-            LogOrientationComparison(operatorNotation, edges, heOrigin, heNext, hePrev);
-            LogBundleRuleComparison(operatorNotation, edges, heOrigin, heNext, orderedOutgoing);
-            LogVfStarTransitionSummary(operatorNotation, edges, heNext, orderedOutgoing);
-            LogVfStarTransitionClasses(operatorNotation, edges, heNext, orderedOutgoing);
-            LogVfIncomingFeClasses(operatorNotation, edges, heNext, orderedOutgoing);
-            LogFeStarTransitionClasses(operatorNotation, edges, heNext, orderedOutgoing);
-            if (string.Equals(operatorNotation, "vf-vf,fe-vf,fe-fe!", StringComparison.Ordinal))
-                Debug.Log($"{HalfedgeOperatorVfOrderRewriteDebugPrefix} rewritten-two-bundle-vf-stars={rewrittenTwoBundleVfStars}");
-
             // Extract face loops
             var visited = new bool[nHE];
             var faceInfos = new List<ReconstructedFaceInfo>();
-            var keptLoopSignatures = new List<string>();
-            var rejectedLoopSignatures = new List<string>();
             var positiveOrientationFaceIndices = new List<int>();
 
             for (int hStart = 0; hStart < nHE; hStart++)
@@ -754,26 +661,16 @@ namespace Polyhydra.Core
                 if (visited[hStart] || heNext[hStart] < 0) continue;
 
                 var loop = new List<OVertex>();
-                var boundaryHalfedges = new List<int>();
                 var boundaryAtoms = new List<string>();
                 var boundaryFamilies = new List<OperatorAtomFamily>();
-                var boundarySourceFaces = new List<string>();
-                var boundarySourceEdges = new List<string>();
-                var boundaryStepDescriptions = new List<string>();
                 int h = hStart;
                 while (!visited[h])
                 {
                     visited[h] = true;
-                    var origin = heOrigin[h];
-                    var dest = heOrigin[Twin(h)];
                     var edge = edges[h / 2];
-                    loop.Add(origin);
-                    boundaryHalfedges.Add(h);
+                    loop.Add(heOrigin[h]);
                     boundaryAtoms.Add(edge.Atom);
                     boundaryFamilies.Add(edge.Family);
-                    boundarySourceFaces.Add(edge.SourceFaceName);
-                    boundarySourceEdges.Add(edge.SourceEdgeKey);
-                    boundaryStepDescriptions.Add($"{origin.PointClass}:{origin.Id}-{edge.Atom}:{edge.SourceEdgeKey}->{dest.PointClass}:{dest.Id}");
                     h = heNext[h];
                     if (h < 0) break;
                 }
@@ -796,44 +693,29 @@ namespace Polyhydra.Core
                     foreach (var v in loop) avgVertNormal += v.Normal;
 
                     float dot = Vector3.Dot(faceNormal, avgVertNormal);
-                    string pointClassSequence = CanonicalizePointClassSequence(loop);
-
                     if (dot < 0f)
                     {
                         loop.Reverse();
-                        boundaryHalfedges.Reverse();
                         boundaryAtoms.Reverse();
                         boundaryFamilies.Reverse();
-                        RotateLeft(boundaryHalfedges);
                         RotateLeft(boundaryAtoms);
                         RotateLeft(boundaryFamilies);
-                        RotateLeft(boundarySourceFaces);
-                        RotateLeft(boundarySourceEdges);
-                        RotateLeft(boundaryStepDescriptions);
                     }
 
                     int faceIndex = faceInfos.Count;
                     faceInfos.Add(new ReconstructedFaceInfo
                     {
                         Vertices = loop,
-                        BoundaryHalfedges = boundaryHalfedges,
                         BoundaryAtoms = boundaryAtoms,
                         BoundaryFamilies = boundaryFamilies,
-                        BoundarySourceFaces = boundarySourceFaces,
-                        BoundarySourceEdges = boundarySourceEdges,
-                        BoundaryStepDescriptions = boundaryStepDescriptions,
                         Signature = BuildAtomSignature(boundaryAtoms)
                     });
                     if (dot >= 0f)
                         positiveOrientationFaceIndices.Add(faceIndex);
-                    keptLoopSignatures.Add(pointClassSequence);
                 }
             }
 
-            PruneUniqueLongestPositiveOrientationLoop(operatorNotation, faceInfos, keptLoopSignatures, rejectedLoopSignatures, positiveOrientationFaceIndices);
-            LogBaselineLoopSummary(operatorNotation, faceInfos, edges, heOrigin, heNext, orderedOutgoing);
-            LogEdgeTriangleCoverage(operatorNotation, edges, faceInfos);
-            LogRejectedLoopSummary(operatorNotation, keptLoopSignatures, rejectedLoopSignatures);
+            PruneUniqueLongestPositiveOrientationLoop(faceInfos, positiveOrientationFaceIndices);
 
             // Assemble PolyMesh
             var allVerts  = new List<OVertex>();
@@ -852,277 +734,12 @@ namespace Polyhydra.Core
             var faceRoles   = AssignFaceRoles(faceInfos);
             var vertexRoles = Enumerable.Repeat(Roles.New, allVerts.Count).ToList();
 
-            LogConstructorRejectedFaces(operatorNotation, positions, faceInfos, faceIdxs, faceRoles);
-            var result = new PolyMesh(positions, faceIdxs, faceRoles, vertexRoles);
-            LogFinalAcceptedFaceSummary(operatorNotation, faceInfos, result);
-            LogTriangleGeometrySamples(operatorNotation, faceInfos, result);
-            return result;
+            return new PolyMesh(positions, faceIdxs, faceRoles, vertexRoles);
         }
 
-        private static void LogBaselineLoopSummary(
-            string operatorNotation,
-            List<ReconstructedFaceInfo> faceInfos,
-            List<OEdge> edges,
-            OVertex[] heOrigin,
-            int[] heNext,
-            Dictionary<OVertex, List<int>> orderedOutgoing)
-        {
-            if (!string.Equals(operatorNotation, "vf-vf,fe-vf,fe-fe!", StringComparison.Ordinal))
-                return;
-
-            var loopSummary = faceInfos
-                .GroupBy(faceInfo => CanonicalizePointClassSequence(faceInfo.Vertices))
-                .OrderByDescending(group => group.Count())
-                .ThenBy(group => group.Key, StringComparer.Ordinal)
-                .Take(12)
-                .Select(group => $"{group.Count()}x{group.Key}");
-
-            Debug.Log($"{HalfedgeOperatorBaselineDebugPrefix} loops=[{string.Join(" | ", loopSummary)}]");
-
-            var representative = faceInfos
-                .GroupBy(faceInfo => CanonicalizePointClassSequence(faceInfo.Vertices))
-                .OrderByDescending(group => group.Count())
-                .ThenBy(group => group.Key, StringComparer.Ordinal)
-                .Select(group => new
-                {
-                    Sequence = group.Key,
-                    Sample = group.First()
-                })
-                .Take(6)
-                .Select(entry => $"{entry.Sequence} => {DescribeLoop(entry.Sample)}");
-
-            Debug.Log($"{HalfedgeOperatorSampleDebugPrefix} samples=[{string.Join(" || ", representative)}]");
-
-            var faceRepresentative = faceInfos
-                .GroupBy(faceInfo => CanonicalizePointClassSequence(faceInfo.Vertices))
-                .OrderByDescending(group => group.Count())
-                .ThenBy(group => group.Key, StringComparer.Ordinal)
-                .Select(group => new
-                {
-                    Sequence = group.Key,
-                    Sample = group.First()
-                })
-                .Take(4)
-                .Select(entry => $"{entry.Sequence} => {DescribeLoopFaces(entry.Sample)}");
-
-            Debug.Log($"{HalfedgeOperatorFaceSampleDebugPrefix} samples=[{string.Join(" || ", faceRepresentative)}]");
-
-            var sourceEdgeRepresentative = faceInfos
-                .GroupBy(faceInfo => CanonicalizePointClassSequence(faceInfo.Vertices))
-                .OrderByDescending(group => group.Count())
-                .ThenBy(group => group.Key, StringComparer.Ordinal)
-                .Select(group => new
-                {
-                    Sequence = group.Key,
-                    Sample = group.First()
-                })
-                .Take(4)
-                .Select(entry => $"{entry.Sequence} => {DescribeLoopSourceEdges(entry.Sample)}");
-
-            Debug.Log($"{HalfedgeOperatorSourceEdgeDebugPrefix} samples=[{string.Join(" || ", sourceEdgeRepresentative)}]");
-
-            var longBadLoop = faceInfos
-                .Where(faceInfo => faceInfo.Vertices.Count >= 8 && faceInfo.Vertices.Any(vertex => vertex.PointClass == "fe"))
-                .OrderByDescending(faceInfo => faceInfo.Vertices.Count)
-                .FirstOrDefault();
-            if (longBadLoop != null)
-                Debug.Log($"{HalfedgeOperatorChoiceDebugPrefix} trace=[{DescribeLoopChoices(longBadLoop, edges, heOrigin, heNext, orderedOutgoing)}]");
-        }
-
-        private static void LogOrientationComparison(
-            string operatorNotation,
-            List<OEdge> edges,
-            OVertex[] heOrigin,
-            int[] heNext,
-            int[] hePrev)
-        {
-            if (!string.Equals(operatorNotation, "vf-vf,fe-vf,fe-fe!", StringComparison.Ordinal))
-                return;
-
-            var nextSummary = SummarizeLoopSequences(edges, heOrigin, heNext);
-            var prevSummary = SummarizeLoopSequences(edges, heOrigin, hePrev);
-            Debug.Log($"{HalfedgeOperatorOrientationDebugPrefix} next=[{nextSummary}] prev=[{prevSummary}]");
-        }
-
-        private static void LogBundleRuleComparison(
-            string operatorNotation,
-            List<OEdge> edges,
-            OVertex[] heOrigin,
-            int[] heNext,
-            Dictionary<OVertex, List<int>> orderedOutgoing)
-        {
-            if (!string.Equals(operatorNotation, "vf-vf,fe-vf,fe-fe!", StringComparison.Ordinal))
-                return;
-
-            var sameBundle = (int[])heNext.Clone();
-            var laneNext = (int[])heNext.Clone();
-            var farOnly = (int[])heNext.Clone();
-
-            foreach (var (vert, outList) in orderedOutgoing)
-            {
-                if (vert.PointClass != "vf" || outList.Count != 4)
-                    continue;
-
-                if (!TryGetTwoBundleVfOrder(vert, outList, heOrigin, out var near0, out var far0, out var near1, out var far1))
-                    continue;
-
-                sameBundle[Twin(near0)] = far0;
-                sameBundle[Twin(far0)] = near0;
-                sameBundle[Twin(near1)] = far1;
-                sameBundle[Twin(far1)] = near1;
-
-                laneNext[Twin(near0)] = near1;
-                laneNext[Twin(far0)] = far1;
-                laneNext[Twin(near1)] = near0;
-                laneNext[Twin(far1)] = far0;
-
-                farOnly[Twin(far0)] = far1;
-                farOnly[Twin(far1)] = far0;
-            }
-
-            var sameBundleSummary = SummarizeLoopSequences(edges, heOrigin, sameBundle);
-            var laneNextSummary = SummarizeLoopSequences(edges, heOrigin, laneNext);
-            var farOnlySummary = SummarizeLoopSequences(edges, heOrigin, farOnly);
-            Debug.Log($"{HalfedgeOperatorBundleDebugPrefix} same=[{sameBundleSummary}] lane=[{laneNextSummary}] far=[{farOnlySummary}]");
-        }
-
-
-        private static bool TryGetTwoBundleVfOrder(
-            OVertex vert,
-            List<int> outList,
-            OVertex[] heOrigin,
-            out int near0,
-            out int far0,
-            out int near1,
-            out int far1)
-        {
-            near0 = far0 = near1 = far1 = -1;
-
-            var normal = vert.Normal.normalized;
-            var center = vert.Position;
-            if (normal.sqrMagnitude < 1e-10f)
-                normal = Vector3.up;
-
-            var firstDest = heOrigin[Twin(outList[0])].Position - center;
-            var refDir = firstDest - Vector3.Dot(firstDest, normal) * normal;
-            if (refDir.sqrMagnitude < 1e-10f)
-            {
-                var arb = Mathf.Abs(normal.x) < 0.9f ? Vector3.right : Vector3.up;
-                refDir = Vector3.Cross(normal, arb);
-            }
-            refDir = refDir.normalized;
-            var perpDir = Vector3.Cross(normal, refDir);
-
-            var infos = outList.Select(halfedge =>
-            {
-                var delta = heOrigin[Twin(halfedge)].Position - center;
-                delta -= Vector3.Dot(delta, normal) * normal;
-                return new
-                {
-                    Halfedge = halfedge,
-                    Angle = Mathf.Atan2(Vector3.Dot(delta, perpDir), Vector3.Dot(delta, refDir)),
-                    Radius = delta.magnitude
-                };
-            }).OrderBy(info => info.Angle).ThenBy(info => info.Radius).ThenBy(info => info.Halfedge).ToList();
-
-            const float angleEpsilon = 1e-4f;
-            if (infos.Count != 4)
-                return false;
-            if (Mathf.Abs(infos[1].Angle - infos[0].Angle) > angleEpsilon)
-                return false;
-            if (Mathf.Abs(infos[3].Angle - infos[2].Angle) > angleEpsilon)
-                return false;
-            if (Mathf.Abs(infos[2].Angle - infos[1].Angle) <= angleEpsilon)
-                return false;
-
-            near0 = infos[0].Halfedge;
-            far0 = infos[1].Halfedge;
-            near1 = infos[2].Halfedge;
-            far1 = infos[3].Halfedge;
-            return true;
-        }
-
-        private static string SummarizeLoopSequences(List<OEdge> edges, OVertex[] heOrigin, int[] successor)
-        {
-            var visited = new bool[successor.Length];
-            var summaries = new List<string>();
-
-            for (int hStart = 0; hStart < successor.Length; hStart++)
-            {
-                if (visited[hStart] || successor[hStart] < 0)
-                    continue;
-
-                var loop = new List<OVertex>();
-                int h = hStart;
-                while (!visited[h])
-                {
-                    visited[h] = true;
-                    loop.Add(heOrigin[h]);
-                    h = successor[h];
-                    if (h < 0)
-                        break;
-                }
-
-                if (loop.Count < 3)
-                    continue;
-
-                var centroid = Vector3.zero;
-                foreach (var vertex in loop)
-                    centroid += vertex.Position;
-                centroid /= loop.Count;
-
-                var faceNormal = Vector3.zero;
-                for (int i = 0; i < loop.Count; i++)
-                {
-                    var curr = loop[i].Position - centroid;
-                    var next = loop[(i + 1) % loop.Count].Position - centroid;
-                    faceNormal += Vector3.Cross(curr, next);
-                }
-
-                var avgVertNormal = Vector3.zero;
-                foreach (var vertex in loop)
-                    avgVertNormal += vertex.Normal;
-
-                if (Vector3.Dot(faceNormal, avgVertNormal) < 0f)
-                    loop.Reverse();
-
-                summaries.Add(CanonicalizePointClassSequence(loop));
-            }
-
-            return string.Join(" | ", summaries
-                .GroupBy(sequence => sequence)
-                .OrderByDescending(group => group.Count())
-                .ThenBy(group => group.Key, StringComparer.Ordinal)
-                .Take(8)
-                .Select(group => $"{group.Count()}x{group.Key}"));
-        }
-
-        private static string CanonicalizePointClassSequence(List<OVertex> loop)
-        {
-            if (loop.Count == 0)
-                return string.Empty;
-
-            var pointClasses = loop.Select(vertex => vertex.PointClass).ToList();
-            var forward = CanonicalizeCyclicSequence(pointClasses);
-            var reversed = CanonicalizeCyclicSequence(pointClasses.AsEnumerable().Reverse().ToList());
-            return string.CompareOrdinal(forward, reversed) <= 0 ? forward : reversed;
-        }
-
-        private static bool IsAdjacentDuplicateEdgeTriangle(List<OVertex> loop)
-        {
-            if (loop.Count != 3)
-                return false;
-
-            int vfCount = loop.Count(vertex => vertex.PointClass == "vf");
-            int feBangCount = loop.Count(vertex => vertex.PointClass == "fe!");
-            return vfCount == 2 && feBangCount == 1;
-        }
 
         private static void PruneUniqueLongestPositiveOrientationLoop(
-            string operatorNotation,
             List<ReconstructedFaceInfo> faceInfos,
-            List<string> keptLoopSignatures,
-            List<string> rejectedLoopSignatures,
             List<int> positiveOrientationFaceIndices)
         {
             if (positiveOrientationFaceIndices.Count == 0)
@@ -1131,39 +748,27 @@ namespace Polyhydra.Core
             var candidates = positiveOrientationFaceIndices
                 .Distinct()
                 .Where(index => index >= 0 && index < faceInfos.Count)
-                .Select(index => new { index, length = faceInfos[index].Vertices.Count })
+                .Select(index => new { Index = index, Length = faceInfos[index].Vertices.Count })
                 .ToList();
 
             if (candidates.Count == 0)
                 return;
 
-            int maxLength = candidates.Max(candidate => candidate.length);
-            var longestFaces = candidates
-                .Where(candidate => candidate.length == maxLength)
-                .ToList();
-
+            int maxLength = candidates.Max(candidate => candidate.Length);
+            var longestFaces = candidates.Where(candidate => candidate.Length == maxLength).ToList();
             if (longestFaces.Count != 1)
                 return;
 
             int secondLongest = candidates
-                .Where(candidate => candidate.length < maxLength)
-                .Select(candidate => candidate.length)
+                .Where(candidate => candidate.Length < maxLength)
+                .Select(candidate => candidate.Length)
                 .DefaultIfEmpty(0)
                 .Max();
 
             if (maxLength <= secondLongest)
                 return;
 
-            int exteriorIndex = longestFaces[0].index;
-            string rejectedSignature = CanonicalizePointClassSequence(faceInfos[exteriorIndex].Vertices);
-            faceInfos.RemoveAt(exteriorIndex);
-            int keptIndex = keptLoopSignatures.IndexOf(rejectedSignature);
-            if (keptIndex >= 0)
-                keptLoopSignatures.RemoveAt(keptIndex);
-            rejectedLoopSignatures.Add(rejectedSignature);
-
-            if (string.Equals(operatorNotation, "vf-vf,fe-vf,fe-fe!", StringComparison.Ordinal))
-                Debug.Log($"[HOP0_OUTER_20260416P] positive={candidates.Count} dropped-length={maxLength} next-length={secondLongest} remaining={faceInfos.Count}");
+            faceInfos.RemoveAt(longestFaces[0].Index);
         }
 
         private static void RotateLeft<T>(List<T> items)
@@ -1175,62 +780,6 @@ namespace Polyhydra.Core
             for (int i = 0; i < items.Count - 1; i++)
                 items[i] = items[i + 1];
             items[items.Count - 1] = first;
-        }
-
-        private static string DescribeLoop(ReconstructedFaceInfo faceInfo)
-        {
-            return string.Join(" | ", faceInfo.BoundaryStepDescriptions);
-        }
-
-        private static string DescribeLoopFaces(ReconstructedFaceInfo faceInfo)
-        {
-            return string.Join(" | ", faceInfo.BoundaryStepDescriptions);
-        }
-
-        private static string DescribeLoopSourceEdges(ReconstructedFaceInfo faceInfo)
-        {
-            var parts = new List<string>(faceInfo.BoundaryHalfedges.Count);
-            for (int i = 0; i < faceInfo.BoundaryHalfedges.Count; i++)
-            {
-                var sourceEdge = faceInfo.BoundarySourceEdges[i] ?? "?";
-                parts.Add($"{faceInfo.BoundaryAtoms[i]}:{sourceEdge}");
-            }
-
-            return string.Join(" | ", parts);
-        }
-
-        private static string DescribeLoopChoices(
-            ReconstructedFaceInfo faceInfo,
-            List<OEdge> edges,
-            OVertex[] heOrigin,
-            int[] heNext,
-            Dictionary<OVertex, List<int>> orderedOutgoing)
-        {
-            var parts = new List<string>();
-            for (int i = 0; i < faceInfo.BoundaryHalfedges.Count; i++)
-            {
-                int h = faceInfo.BoundaryHalfedges[i];
-                int next = heNext[h];
-                var origin = heOrigin[h];
-                var chosenEdge = edges[next / 2];
-                var chosen = $"{chosenEdge.Atom}:{chosenEdge.SourceEdgeKey}";
-                string options = "?";
-                if (orderedOutgoing.TryGetValue(heOrigin[Twin(h)], out var outList))
-                {
-                    options = string.Join(",",
-                        outList.Select(outHe =>
-                        {
-                            var edge = edges[outHe / 2];
-                            var dest = heOrigin[Twin(outHe)];
-                            return $"{edge.Atom}:{edge.SourceEdgeKey}->{dest.PointClass}:{dest.Id}";
-                        }));
-                }
-
-                var edgeKey = edges[h / 2].SourceEdgeKey ?? "?";
-                parts.Add($"{origin.PointClass}:{origin.Id}-{edges[h / 2].Atom}:{edgeKey}->next={chosen}@{heOrigin[Twin(h)].PointClass}:{heOrigin[Twin(h)].Id} opts=[{options}]");
-            }
-
-            return string.Join(" || ", parts);
         }
 
         private static List<Roles> AssignFaceRoles(List<ReconstructedFaceInfo> faceInfos)
@@ -1412,449 +961,8 @@ namespace Polyhydra.Core
         // Twin of halfedge h: swap the LSB (2i <-> 2i+1)
         private static int Twin(int h) => h ^ 1;
 
-        private static void LogVfStarTransitionSummary(
-            string operatorNotation,
-            List<OEdge> edges,
-            int[] heNext,
-            Dictionary<OVertex, List<int>> orderedOutgoing)
-        {
-            if (!string.Equals(operatorNotation, "vf-vf,fe-vf,fe-fe!", StringComparison.Ordinal))
-                return;
-
-            var groups = new Dictionary<string, int>(StringComparer.Ordinal);
-
-            foreach (var (vert, outList) in orderedOutgoing)
-            {
-                if (vert.PointClass != "vf" || outList.Count != 4)
-                    continue;
-
-                var bundleCounts = outList
-                    .Select(h => edges[h / 2].SourceEdgeKey)
-                    .Where(key => key != null)
-                    .GroupBy(key => key)
-                    .ToDictionary(group => group.Key, group => group.Count(), StringComparer.Ordinal);
-
-                if (bundleCounts.Count != 2 || bundleCounts.Any(pair => pair.Value != 2))
-                    continue;
-
-                foreach (int outgoing in outList)
-                {
-                    int incoming = Twin(outgoing);
-                    int chosen = heNext[incoming];
-                    if (chosen < 0)
-                        continue;
-
-                    var incomingEdge = edges[incoming / 2];
-                    var chosenEdge = edges[chosen / 2];
-                    if (incomingEdge.Atom != "vf-vf")
-                        continue;
-                    string key =
-                        $"{incomingEdge.Atom}:{incomingEdge.SourceEdgeKey}->{chosenEdge.Atom}:{chosenEdge.SourceEdgeKey}";
-
-                    groups.TryGetValue(key, out int count);
-                    groups[key] = count + 1;
-                }
-            }
-
-            if (groups.Count == 0)
-                return;
-
-            var summary = groups
-                .OrderByDescending(pair => pair.Value)
-                .ThenBy(pair => pair.Key, StringComparer.Ordinal)
-                .Take(16)
-                .Select(pair => $"{pair.Value}x{pair.Key}");
-
-            Debug.Log($"{HalfedgeOperatorVfTransitionDebugPrefix} transitions=[{string.Join(" | ", summary)}]");
-        }
-
-        private static void LogVfStarTransitionClasses(
-            string operatorNotation,
-            List<OEdge> edges,
-            int[] heNext,
-            Dictionary<OVertex, List<int>> orderedOutgoing)
-        {
-            if (!string.Equals(operatorNotation, "vf-vf,fe-vf,fe-fe!", StringComparison.Ordinal))
-                return;
-
-            var classes = new Dictionary<string, int>(StringComparer.Ordinal);
-
-            foreach (var (vert, outList) in orderedOutgoing)
-            {
-                if (vert.PointClass != "vf" || outList.Count != 4)
-                    continue;
-
-                var bundleCounts = outList
-                    .Select(h => edges[h / 2].SourceEdgeKey)
-                    .Where(key => key != null)
-                    .GroupBy(key => key)
-                    .ToDictionary(group => group.Key, group => group.Count(), StringComparer.Ordinal);
-
-                if (bundleCounts.Count != 2 || bundleCounts.Any(pair => pair.Value != 2))
-                    continue;
-
-                foreach (int outgoing in outList)
-                {
-                    int incoming = Twin(outgoing);
-                    int chosen = heNext[incoming];
-                    if (chosen < 0)
-                        continue;
-
-                    var incomingEdge = edges[incoming / 2];
-                    if (incomingEdge.Atom != "vf-vf")
-                        continue;
-
-                    var chosenEdge = edges[chosen / 2];
-                    string relation = string.Equals(incomingEdge.SourceEdgeKey, chosenEdge.SourceEdgeKey, StringComparison.Ordinal)
-                        ? "same"
-                        : "cross";
-                    string key = $"vf-vf->{chosenEdge.Atom}:{relation}";
-
-                    classes.TryGetValue(key, out int count);
-                    classes[key] = count + 1;
-                }
-            }
-
-            if (classes.Count == 0)
-                return;
-
-            var summary = classes
-                .OrderByDescending(pair => pair.Value)
-                .ThenBy(pair => pair.Key, StringComparer.Ordinal)
-                .Select(pair => $"{pair.Value}x{pair.Key}");
-
-            Debug.Log($"{HalfedgeOperatorVfClassDebugPrefix} classes=[{string.Join(" | ", summary)}]");
-        }
-
-        private static void LogFeStarTransitionClasses(
-            string operatorNotation,
-            List<OEdge> edges,
-            int[] heNext,
-            Dictionary<OVertex, List<int>> orderedOutgoing)
-        {
-            if (!string.Equals(operatorNotation, "vf-vf,fe-vf,fe-fe!", StringComparison.Ordinal))
-                return;
-
-            var classes = new Dictionary<string, int>(StringComparer.Ordinal);
-
-            foreach (var (vert, outList) in orderedOutgoing)
-            {
-                if (vert.PointClass != "fe" && vert.PointClass != "fe!")
-                    continue;
-
-                foreach (int outgoing in outList)
-                {
-                    int incoming = Twin(outgoing);
-                    int chosen = heNext[incoming];
-                    if (chosen < 0)
-                        continue;
-
-                    var incomingEdge = edges[incoming / 2];
-                    if (incomingEdge.Atom != "fe-vf")
-                        continue;
-
-                    var chosenEdge = edges[chosen / 2];
-                    string relation = string.Equals(incomingEdge.SourceEdgeKey, chosenEdge.SourceEdgeKey, StringComparison.Ordinal)
-                        ? "same"
-                        : "cross";
-                    string key = $"{vert.PointClass}:fe-vf->{chosenEdge.Atom}:{relation}";
-
-                    classes.TryGetValue(key, out int count);
-                    classes[key] = count + 1;
-                }
-            }
-
-            if (classes.Count == 0)
-                return;
-
-            var summary = classes
-                .OrderByDescending(pair => pair.Value)
-                .ThenBy(pair => pair.Key, StringComparer.Ordinal)
-                .Select(pair => $"{pair.Value}x{pair.Key}");
-
-            Debug.Log($"{HalfedgeOperatorFeTransitionDebugPrefix} classes=[{string.Join(" | ", summary)}]");
-        }
-
-        private static void LogVfIncomingFeClasses(
-            string operatorNotation,
-            List<OEdge> edges,
-            int[] heNext,
-            Dictionary<OVertex, List<int>> orderedOutgoing)
-        {
-            if (!string.Equals(operatorNotation, "vf-vf,fe-vf,fe-fe!", StringComparison.Ordinal))
-                return;
-
-            var classes = new Dictionary<string, int>(StringComparer.Ordinal);
-
-            foreach (var (vert, outList) in orderedOutgoing)
-            {
-                if (vert.PointClass != "vf" || outList.Count != 4)
-                    continue;
-
-                var bundleCounts = outList
-                    .Select(h => edges[h / 2].SourceEdgeKey)
-                    .Where(key => key != null)
-                    .GroupBy(key => key)
-                    .ToDictionary(group => group.Key, group => group.Count(), StringComparer.Ordinal);
-
-                if (bundleCounts.Count != 2 || bundleCounts.Any(pair => pair.Value != 2))
-                    continue;
-
-                foreach (int outgoing in outList)
-                {
-                    int incoming = Twin(outgoing);
-                    int chosen = heNext[incoming];
-                    if (chosen < 0)
-                        continue;
-
-                    var incomingEdge = edges[incoming / 2];
-                    if (incomingEdge.Atom != "fe-vf")
-                        continue;
-
-                    var chosenEdge = edges[chosen / 2];
-                    string relation = string.Equals(incomingEdge.SourceEdgeKey, chosenEdge.SourceEdgeKey, StringComparison.Ordinal)
-                        ? "same"
-                        : "cross";
-                    string key = $"fe-vf->{chosenEdge.Atom}:{relation}";
-
-                    classes.TryGetValue(key, out int count);
-                    classes[key] = count + 1;
-                }
-            }
-
-            if (classes.Count == 0)
-                return;
-
-            var summary = classes
-                .OrderByDescending(pair => pair.Value)
-                .ThenBy(pair => pair.Key, StringComparer.Ordinal)
-                .Select(pair => $"{pair.Value}x{pair.Key}");
-
-            Debug.Log($"{HalfedgeOperatorVfIncomingFeDebugPrefix} classes=[{string.Join(" | ", summary)}]");
-        }
-
-        private static void LogEdgeTriangleCoverage(
-            string operatorNotation,
-            List<OEdge> edges,
-            List<ReconstructedFaceInfo> faceInfos)
-        {
-            if (!string.Equals(operatorNotation, "vf-vf,fe-vf,fe-fe!", StringComparison.Ordinal))
-                return;
-
-            var allSourceEdges = edges
-                .Select(edge => edge.SourceEdgeKey)
-                .Where(key => !string.IsNullOrEmpty(key))
-                .Distinct(StringComparer.Ordinal)
-                .ToHashSet(StringComparer.Ordinal);
-
-            var triangleLoops = faceInfos
-                .Where(faceInfo =>
-                {
-                    string pointClassSequence = CanonicalizePointClassSequence(faceInfo.Vertices);
-                    return pointClassSequence == "fe|vf|vf" || pointClassSequence == "fe!|vf|vf";
-                })
-                .ToList();
-
-            var triangleSourceEdges = triangleLoops
-                .SelectMany(faceInfo => faceInfo.BoundarySourceEdges)
-                .Where(key => !string.IsNullOrEmpty(key))
-                .Distinct(StringComparer.Ordinal)
-                .ToHashSet(StringComparer.Ordinal);
-
-            var triangleSummary = triangleLoops
-                .GroupBy(faceInfo => CanonicalizePointClassSequence(faceInfo.Vertices), StringComparer.Ordinal)
-                .OrderByDescending(group => group.Count())
-                .ThenBy(group => group.Key, StringComparer.Ordinal)
-                .Select(group => $"{group.Count()}x{group.Key}");
-
-            Debug.Log(
-                $"{HalfedgeOperatorEdgeCoverageDebugPrefix} triangles=[{string.Join(" | ", triangleSummary)}] " +
-                $"unique-triangle-source-edges={triangleSourceEdges.Count} total-source-edges={allSourceEdges.Count}");
-        }
-
-        private static void LogRejectedLoopSummary(
-            string operatorNotation,
-            List<string> keptLoopSignatures,
-            List<string> rejectedLoopSignatures)
-        {
-            if (!string.Equals(operatorNotation, "vf-vf,fe-vf,fe-fe!", StringComparison.Ordinal))
-                return;
-
-            var keptSummary = keptLoopSignatures
-                .GroupBy(signature => signature, StringComparer.Ordinal)
-                .OrderByDescending(group => group.Count())
-                .ThenBy(group => group.Key, StringComparer.Ordinal)
-                .Take(8)
-                .Select(group => $"{group.Count()}x{group.Key}");
-
-            var rejectedSummary = rejectedLoopSignatures
-                .GroupBy(signature => signature, StringComparer.Ordinal)
-                .OrderByDescending(group => group.Count())
-                .ThenBy(group => group.Key, StringComparer.Ordinal)
-                .Take(8)
-                .Select(group => $"{group.Count()}x{group.Key}");
-
-            Debug.Log(
-                $"{HalfedgeOperatorRejectDebugPrefix} kept=[{string.Join(" | ", keptSummary)}] " +
-                $"rejected=[{string.Join(" | ", rejectedSummary)}]");
-        }
-
-        private static void LogFinalAcceptedFaceSummary(
-            string operatorNotation,
-            List<ReconstructedFaceInfo> extractedFaceInfos,
-            PolyMesh result)
-        {
-            if (!string.Equals(operatorNotation, "vf-vf,fe-vf,fe-fe!", StringComparison.Ordinal))
-                return;
-
-            var extractedSummary = extractedFaceInfos
-                .GroupBy(faceInfo => faceInfo.Vertices.Count)
-                .OrderByDescending(group => group.Count())
-                .ThenBy(group => group.Key)
-                .Select(group => $"{group.Count()}x{group.Key}");
-
-            var acceptedSummary = result.Faces
-                .GroupBy(face => face.Sides)
-                .OrderByDescending(group => group.Count())
-                .ThenBy(group => group.Key)
-                .Select(group => $"{group.Count()}x{group.Key}");
-
-            Debug.Log(
-                $"[HOP0_FINAL_20260416Q] extracted={extractedFaceInfos.Count} " +
-                $"extractedSides=[{string.Join(" | ", extractedSummary)}] " +
-                $"accepted={result.Faces.Count} acceptedSides=[{string.Join(" | ", acceptedSummary)}]");
-
-            var geomSummary = result.Faces
-                .Select((face, index) => new
-                {
-                    face.Sides,
-                    Area = face.GetArea(),
-                    Role = index < result.FaceRoles.Count ? result.FaceRoles[index] : Roles.New
-                })
-                .GroupBy(item => item.Sides)
-                .OrderBy(group => group.Key)
-                .Select(group =>
-                {
-                    float minArea = group.Min(item => item.Area);
-                    float maxArea = group.Max(item => item.Area);
-                    float avgArea = group.Average(item => item.Area);
-                    string roles = string.Join(",",
-                        group.GroupBy(item => item.Role)
-                            .OrderByDescending(roleGroup => roleGroup.Count())
-                            .ThenBy(roleGroup => roleGroup.Key.ToString(), StringComparer.Ordinal)
-                            .Select(roleGroup => $"{roleGroup.Key}x{roleGroup.Count()}"));
-                    return $"{group.Key}s[min={minArea:F6},avg={avgArea:F6},max={maxArea:F6};roles={roles}]";
-                });
-
-            Debug.Log($"[HOP0_FINALGEOM_20260416T] {string.Join(" | ", geomSummary)}");
-        }
-
-        private static void LogTriangleGeometrySamples(
-            string operatorNotation,
-            List<ReconstructedFaceInfo> extractedFaceInfos,
-            PolyMesh result)
-        {
-            if (!string.Equals(operatorNotation, "vf-vf,fe-vf,fe-fe!", StringComparison.Ordinal))
-                return;
-
-            string FormatPoint(Vector3 point) => $"({point.x:F4},{point.y:F4},{point.z:F4})";
-
-            float ExtractedArea(ReconstructedFaceInfo faceInfo)
-            {
-                if (faceInfo.Vertices.Count != 3)
-                    return 0f;
-
-                var a = faceInfo.Vertices[0].Position;
-                var b = faceInfo.Vertices[1].Position;
-                var c = faceInfo.Vertices[2].Position;
-                return Vector3.Cross(b - a, c - a).magnitude * 0.5f;
-            }
-
-            var extractedSamples = extractedFaceInfos
-                .Where(faceInfo => faceInfo.Vertices.Count == 3)
-                .Take(3)
-                .Select(faceInfo =>
-                    $"{CanonicalizePointClassSequence(faceInfo.Vertices)}:area={ExtractedArea(faceInfo):F6}:" +
-                    $"{string.Join(" | ", faceInfo.Vertices.Select(vertex => $"{vertex.PointClass}{FormatPoint(vertex.Position)}"))}");
-
-            var acceptedSamples = result.Faces
-                .Where(face => face.Sides == 3)
-                .Take(3)
-                .Select(face =>
-                    $"area={face.GetArea():F6}:{string.Join(" | ", face.GetVertices().Select(vertex => FormatPoint(vertex.Position)))}");
-
-            int extractedTriangleCount = extractedFaceInfos.Count(faceInfo => faceInfo.Vertices.Count == 3);
-            int extractedZeroAreaTriangleCount = extractedFaceInfos.Count(faceInfo => faceInfo.Vertices.Count == 3 && ExtractedArea(faceInfo) <= 1e-6f);
-            int acceptedTriangleCount = result.Faces.Count(face => face.Sides == 3);
-            int acceptedZeroAreaTriangleCount = result.Faces.Count(face => face.Sides == 3 && face.GetArea() <= 1e-6f);
-
-            Debug.Log(
-                $"[HOP0_TRIGEOM_20260416U] extracted=[{string.Join(" || ", extractedSamples)}] " +
-                $"accepted=[{string.Join(" || ", acceptedSamples)}]");
-            Debug.Log(
-                $"{HalfedgeOperatorFePlacementDebugPrefix} extractedTriangles={extractedTriangleCount} " +
-                $"extractedZeroArea={extractedZeroAreaTriangleCount} acceptedTriangles={acceptedTriangleCount} " +
-                $"acceptedZeroArea={acceptedZeroAreaTriangleCount}");
-        }
-
-        private static void LogConstructorRejectedFaces(
-            string operatorNotation,
-            List<Vector3> positions,
-            List<ReconstructedFaceInfo> extractedFaceInfos,
-            List<IEnumerable<int>> faceIdxs,
-            List<Roles> faceRoles)
-        {
-            if (!string.Equals(operatorNotation, "vf-vf,fe-vf,fe-fe!", StringComparison.Ordinal))
-                return;
-
-            var probe = new PolyMesh();
-            foreach (var position in positions)
-                probe.Vertices.Add(new Vertex(position));
-
-            var rejected = new List<string>();
-            var rejectedSamples = new List<string>();
-            for (int i = 0; i < extractedFaceInfos.Count; i++)
-            {
-                var indices = faceIdxs[i].ToList();
-                bool accepted = probe.Faces.Add(indices.Select(index => probe.Vertices[index]));
-
-                if (!accepted)
-                {
-                    indices.Reverse();
-                    accepted = probe.Faces.Add(indices.Select(index => probe.Vertices[index]));
-                }
-
-                if (accepted)
-                {
-                    probe.FaceRoles.Add(faceRoles[i]);
-                    probe.FaceTags.Add(new HashSet<string>());
-                    continue;
-                }
-
-                rejected.Add($"{CanonicalizePointClassSequence(extractedFaceInfos[i].Vertices)}:{extractedFaceInfos[i].Vertices.Count}");
-                if (rejectedSamples.Count < 6)
-                {
-                    rejectedSamples.Add(
-                        $"{CanonicalizePointClassSequence(extractedFaceInfos[i].Vertices)} => " +
-                        $"{string.Join(" | ", extractedFaceInfos[i].BoundaryStepDescriptions)}");
-                }
-            }
-
-            if (rejected.Count == 0)
-                return;
-
-            string summary = string.Join(" | ", rejected
-                .GroupBy(item => item, StringComparer.Ordinal)
-                .OrderByDescending(group => group.Count())
-                .ThenBy(group => group.Key, StringComparer.Ordinal)
-                .Select(group => $"{group.Count()}x{group.Key}"));
-
-            Debug.Log($"[HOP0_DROP_20260416R] rejected=[{summary}]");
-            Debug.Log($"[HOP0_DROPSAMPLE_20260416S] samples=[{string.Join(" || ", rejectedSamples)}]");
-        }
-
         // Sort outgoing halfedge indices CCW around vert using vert.Normal as the axis
-        private static void SortCCW(List<int> outList, OVertex vert, OVertex[] heOrigin, List<OEdge> edges)
+        private static void SortCCW(List<int> outList, OVertex vert, OVertex[] heOrigin)
         {
             var normal = vert.Normal.normalized;
             var center = vert.Position;
@@ -1872,15 +980,6 @@ namespace Polyhydra.Core
             }
             refDir = refDir.normalized;
             var perpDir = Vector3.Cross(normal, refDir); // 90° CCW from refDir
-
-            var angleInfos = new List<(int Halfedge, float Angle, float Radius)>(outList.Count);
-            foreach (var halfedge in outList)
-            {
-                var delta = heOrigin[Twin(halfedge)].Position - center;
-                delta -= Vector3.Dot(delta, normal) * normal;
-                float angle = Mathf.Atan2(Vector3.Dot(delta, perpDir), Vector3.Dot(delta, refDir));
-                angleInfos.Add((halfedge, angle, delta.magnitude));
-            }
 
             outList.Sort((ha, hb) =>
             {
@@ -1904,10 +1003,6 @@ namespace Polyhydra.Core
 
                 return ha.CompareTo(hb);
             });
-
-            LogSortAmbiguity(vert, angleInfos, edges, heOrigin);
-            LogDetailedOrder(vert, angleInfos, edges, heOrigin);
-            LogFeVertexOrder(vert, angleInfos, edges, heOrigin);
         }
 
         private static bool TryRewriteTwoBundleVfStarOrder(OVertex vert, List<int> outList, List<OEdge> edges)
@@ -1969,107 +1064,5 @@ namespace Polyhydra.Core
             return true;
         }
 
-        private static void LogSortAmbiguity(
-            OVertex vert,
-            List<(int Halfedge, float Angle, float Radius)> angleInfos,
-            List<OEdge> edges,
-            OVertex[] heOrigin)
-        {
-            if (!string.Equals(_activeHalfedgeOperatorNotation, "vf-vf,fe-vf,fe-fe!", StringComparison.Ordinal))
-                return;
-
-            const float angleEpsilon = 1e-4f;
-            var bundled = angleInfos
-                .OrderBy(info => info.Angle)
-                .ToList();
-
-            var ambiguousGroups = new List<string>();
-            int index = 0;
-            while (index < bundled.Count)
-            {
-                int end = index + 1;
-                while (end < bundled.Count && Mathf.Abs(bundled[end].Angle - bundled[index].Angle) <= angleEpsilon)
-                    end++;
-
-                if (end - index > 1)
-                {
-                    var groupText = string.Join(",",
-                        bundled.GetRange(index, end - index)
-                            .Select(info => $"{edges[info.Halfedge / 2].Atom}:{edges[info.Halfedge / 2].SourceEdgeKey}:{heOrigin[Twin(info.Halfedge)].PointClass}:{info.Radius:F4}"));
-                    ambiguousGroups.Add(groupText);
-                }
-
-                index = end;
-            }
-
-            if (ambiguousGroups.Count == 0)
-                return;
-
-            Debug.Log($"{HalfedgeOperatorSortDebugPrefix} v={vert.Id} groups=[{string.Join(" | ", ambiguousGroups)}]");
-        }
-
-        private static void LogDetailedOrder(
-            OVertex vert,
-            List<(int Halfedge, float Angle, float Radius)> angleInfos,
-            List<OEdge> edges,
-            OVertex[] heOrigin)
-        {
-            if (!string.Equals(_activeHalfedgeOperatorNotation, "vf-vf,fe-vf,fe-fe!", StringComparison.Ordinal))
-                return;
-            if (_remainingDetailedOrderLogs <= 0)
-                return;
-
-            const float angleEpsilon = 1e-4f;
-            var ordered = angleInfos
-                .OrderBy(info => info.Angle)
-                .ThenBy(info => info.Radius)
-                .ThenBy(info => info.Halfedge)
-                .ToList();
-
-            bool hasAmbiguity = false;
-            for (int i = 1; i < ordered.Count; i++)
-            {
-                if (Mathf.Abs(ordered[i].Angle - ordered[i - 1].Angle) <= angleEpsilon)
-                {
-                    hasAmbiguity = true;
-                    break;
-                }
-            }
-
-            if (!hasAmbiguity)
-                return;
-
-            _remainingDetailedOrderLogs--;
-
-            var orderText = string.Join(" | ", ordered.Select(info =>
-                $"{edges[info.Halfedge / 2].Atom}:{edges[info.Halfedge / 2].SourceEdgeKey}:{heOrigin[Twin(info.Halfedge)].PointClass}:a={info.Angle:F4}:r={info.Radius:F4}:h={info.Halfedge}"));
-            Debug.Log($"{HalfedgeOperatorOrderDebugPrefix} v={vert.Id} order=[{orderText}]");
-        }
-
-        private static void LogFeVertexOrder(
-            OVertex vert,
-            List<(int Halfedge, float Angle, float Radius)> angleInfos,
-            List<OEdge> edges,
-            OVertex[] heOrigin)
-        {
-            if (!string.Equals(_activeHalfedgeOperatorNotation, "vf-vf,fe-vf,fe-fe!", StringComparison.Ordinal))
-                return;
-            if (_remainingFeOrderLogs <= 0)
-                return;
-            if (vert.PointClass != "fe" && vert.PointClass != "fe!")
-                return;
-
-            _remainingFeOrderLogs--;
-
-            var ordered = angleInfos
-                .OrderBy(info => info.Angle)
-                .ThenBy(info => info.Radius)
-                .ThenBy(info => info.Halfedge)
-                .ToList();
-
-            var orderText = string.Join(" | ", ordered.Select(info =>
-                $"{edges[info.Halfedge / 2].Atom}:{edges[info.Halfedge / 2].SourceEdgeKey}:{heOrigin[Twin(info.Halfedge)].PointClass}:a={info.Angle:F4}:r={info.Radius:F4}:h={info.Halfedge}"));
-            Debug.Log($"{HalfedgeOperatorFeOrderDebugPrefix} v={vert.Id}:{vert.PointClass} order=[{orderText}]");
-        }
     }
 }
