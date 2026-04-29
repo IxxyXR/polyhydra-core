@@ -130,23 +130,30 @@ public abstract class BaseSettings : ScriptableObject
 
         poly = ModifyPostOp(poly);
 
-        if (FastConicalize)
+        try
         {
-            if (PlanarizeIterations > 0 && CanonicalizeIterations <= 0)
+            if (FastConicalize)
             {
-                PolyMesh.PlanarizeLeastSquares(poly, 0.001, PlanarizeIterations);
+                if (PlanarizeIterations > 0 && CanonicalizeIterations <= 0)
+                {
+                    PolyMesh.PlanarizeLeastSquares(poly, 0.001, PlanarizeIterations);
+                }
+                else if (CanonicalizeIterations > 0)
+                {
+                    poly = poly.Kanonicalize(CanonicalizeIterations);
+                }
             }
-            else if (CanonicalizeIterations > 0)
+            else
             {
-                poly = poly.Kanonicalize(CanonicalizeIterations);
+                if (CanonicalizeIterations > 0 || PlanarizeIterations > 0)
+                {
+                    poly = poly.Canonicalize(CanonicalizeIterations, PlanarizeIterations);
+                }
             }
         }
-        else
+        catch (Exception e)
         {
-            if (CanonicalizeIterations > 0 || PlanarizeIterations > 0)
-            {
-                poly = poly.Canonicalize(CanonicalizeIterations, PlanarizeIterations);
-            }
+            Debug.LogWarning($"Canonicalization failed and was skipped: {e.Message}");
         }
 
         if (FaceInset != 0) poly = poly.FaceInset(new OpParams(FaceInset));
