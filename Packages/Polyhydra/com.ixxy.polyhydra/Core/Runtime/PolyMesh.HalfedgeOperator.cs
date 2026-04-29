@@ -50,6 +50,297 @@ namespace Polyhydra.Core
             }
         }
 
+        public enum OmniPointClass
+        {
+            V = 0,
+            E,
+            F,
+            F_Adj,
+            ve,
+            ve0,
+            ve1,
+            vf,
+            vf_Adj,
+            fe,
+            fe_Adj
+        }
+
+        public static readonly string[] OmniPointClassNames =
+            { "V", "E", "F", "F!", "ve", "ve0", "ve1", "vf", "vf!", "fe", "fe!" };
+
+        public static string OmniPointClassToString(OmniPointClass c) =>
+            OmniPointClassNames[(int)c];
+
+        public static OmniPointClass OmniPointClassFromString(string s)
+        {
+            int idx = Array.IndexOf(OmniPointClassNames, s);
+            return idx >= 0 ? (OmniPointClass)idx : OmniPointClass.V;
+        }
+
+        public static readonly string[] OmniAtoms =
+        {
+            "E-E", "E-F", "E-V", "E-fe", "E-ve", "E-vf",
+            "F-F!", "F-V", "F-fe", "F-ve", "F-vf",
+            "V-V", "V-ve", "V-vf",
+            "fe-V", "fe-fe", "fe-fe!", "fe-ve", "fe-vf",
+            "ve-vf", "ve0-ve0", "ve1-ve1",
+            "vf-vf", "vf-vf!",
+        };
+
+        public static readonly Dictionary<string, HashSet<string>> OmniAtomCompatibility =
+            new Dictionary<string, HashSet<string>>()
+        {
+            { "E-E",      new HashSet<string> { "E-F", "E-V", "E-fe", "E-ve", "E-vf", "F-fe", "F-vf", "V-vf", "fe-fe", "fe-vf", "ve-vf", "ve1-ve1", "vf-vf", "vf-vf!" } },
+            { "E-F",      new HashSet<string> { "E-E", "E-V", "E-ve", "E-vf", "F-V", "F-ve", "F-vf", "vf-vf!" } },
+            { "E-V",      new HashSet<string> { "E-E", "E-F", "E-fe", "E-vf", "F-V", "V-vf", "fe-V", "fe-fe", "vf-vf" } },
+            { "E-fe",     new HashSet<string> { "E-E", "E-V", "E-ve", "E-vf", "F-fe", "fe-V", "fe-fe", "fe-ve", "fe-vf", "vf-vf", "vf-vf!" } },
+            { "E-ve",     new HashSet<string> { "E-E", "E-F", "E-fe", "E-vf", "F-ve", "fe-fe", "fe-ve", "ve-vf", "ve1-ve1", "vf-vf", "vf-vf!" } },
+            { "E-vf",     new HashSet<string> { "E-E", "E-F", "E-V", "E-fe", "E-ve", "F-vf", "V-vf", "fe-fe", "fe-vf", "ve-vf", "vf-vf", "vf-vf!" } },
+            { "F-F!",     new HashSet<string> { "F-V", "F-ve", "F-vf", "V-ve", "V-vf", "ve-vf", "ve1-ve1", "vf-vf!" } },
+            { "F-V",      new HashSet<string> { "E-F", "E-V", "F-F!", "F-fe", "F-ve", "V-V", "V-ve", "fe-V", "fe-fe!" } },
+            { "F-fe",     new HashSet<string> { "E-E", "E-fe", "F-V", "F-ve", "F-vf", "V-V", "fe-V", "fe-fe", "fe-fe!", "fe-ve", "fe-vf", "vf-vf", "vf-vf!" } },
+            { "F-ve",     new HashSet<string> { "E-F", "E-ve", "F-F!", "F-V", "F-fe", "F-vf", "V-ve", "fe-fe!", "fe-ve", "ve-vf", "ve0-ve0", "ve1-ve1", "vf-vf!" } },
+            { "F-vf",     new HashSet<string> { "E-E", "E-F", "E-vf", "F-F!", "F-fe", "F-ve", "V-V", "V-vf", "fe-fe!", "fe-vf", "ve-vf", "vf-vf", "vf-vf!" } },
+            { "V-V",      new HashSet<string> { "F-V", "F-fe", "F-vf", "V-vf", "fe-V", "fe-fe", "fe-vf", "vf-vf" } },
+            { "V-ve",     new HashSet<string> { "F-F!", "F-V", "F-ve", "V-vf", "fe-V", "fe-fe", "fe-fe!", "fe-ve", "ve-vf", "vf-vf", "vf-vf!" } },
+            { "V-vf",     new HashSet<string> { "E-E", "E-V", "E-vf", "F-F!", "F-vf", "V-V", "V-ve", "fe-V", "fe-fe", "fe-fe!", "fe-vf", "ve-vf", "vf-vf", "vf-vf!" } },
+            { "fe-V",     new HashSet<string> { "E-V", "E-fe", "F-V", "F-fe", "V-V", "V-ve", "V-vf", "fe-fe", "fe-fe!", "fe-ve", "fe-vf", "vf-vf" } },
+            { "fe-fe",    new HashSet<string> { "E-E", "E-V", "E-fe", "E-ve", "E-vf", "F-fe", "V-V", "V-ve", "V-vf", "fe-V", "fe-fe!", "fe-ve", "fe-vf", "ve-vf", "ve0-ve0", "ve1-ve1", "vf-vf", "vf-vf!" } },
+            { "fe-fe!",   new HashSet<string> { "F-V", "F-fe", "F-ve", "F-vf", "V-ve", "V-vf", "fe-V", "fe-fe", "fe-ve", "fe-vf", "ve-vf", "ve1-ve1", "vf-vf", "vf-vf!" } },
+            { "fe-ve",    new HashSet<string> { "E-fe", "E-ve", "F-fe", "F-ve", "V-ve", "fe-V", "fe-fe", "fe-fe!", "fe-vf", "ve-vf", "ve0-ve0", "ve1-ve1", "vf-vf", "vf-vf!" } },
+            { "fe-vf",    new HashSet<string> { "E-E", "E-fe", "E-vf", "F-fe", "F-vf", "V-V", "V-vf", "fe-V", "fe-fe", "fe-fe!", "fe-ve", "ve-vf", "vf-vf", "vf-vf!" } },
+            { "ve-vf",    new HashSet<string> { "E-E", "E-ve", "E-vf", "F-F!", "F-ve", "F-vf", "V-ve", "V-vf", "fe-fe", "fe-fe!", "fe-ve", "fe-vf", "ve0-ve0", "ve1-ve1", "vf-vf", "vf-vf!" } },
+            { "ve0-ve0",  new HashSet<string> { "F-ve", "fe-fe", "fe-ve", "ve-vf", "ve1-ve1", "vf-vf", "vf-vf!" } },
+            { "ve1-ve1",  new HashSet<string> { "E-E", "E-ve", "F-F!", "F-ve", "fe-fe", "fe-fe!", "fe-ve", "ve-vf", "ve0-ve0", "vf-vf", "vf-vf!" } },
+            { "vf-vf",    new HashSet<string> { "E-E", "E-V", "E-fe", "E-ve", "E-vf", "F-fe", "F-vf", "V-V", "V-ve", "V-vf", "fe-V", "fe-fe", "fe-fe!", "fe-ve", "fe-vf", "ve-vf", "ve0-ve0", "ve1-ve1", "vf-vf!" } },
+            { "vf-vf!",   new HashSet<string> { "E-E", "E-F", "E-fe", "E-ve", "E-vf", "F-F!", "F-fe", "F-ve", "F-vf", "V-ve", "V-vf", "fe-fe", "fe-fe!", "fe-ve", "fe-vf", "ve-vf", "ve0-ve0", "ve1-ve1", "vf-vf" } },
+        };
+
+        public static readonly HashSet<string>[] OmniValidOperators =
+        {
+            new HashSet<string> { "E-E" },
+            new HashSet<string> { "F-F!" },
+            new HashSet<string> { "V-V" },
+            new HashSet<string> { "vf-vf", "vf-vf!" },
+            new HashSet<string> { "fe-fe", "fe-fe!" },
+            new HashSet<string> { "F-V" },
+            new HashSet<string> { "E-E", "E-F" },
+            new HashSet<string> { "E-E", "E-V" },
+            new HashSet<string> { "E-vf", "vf-vf" },
+            new HashSet<string> { "E-vf", "vf-vf!" },
+            new HashSet<string> { "F-F!", "F-V" },
+            new HashSet<string> { "F-V", "V-V" },
+            new HashSet<string> { "F-vf", "vf-vf!" },
+            new HashSet<string> { "V-vf", "vf-vf" },
+            new HashSet<string> { "fe-V", "fe-fe" },
+            new HashSet<string> { "fe-V", "fe-fe!" },
+            new HashSet<string> { "ve0-ve0", "ve1-ve1" },
+            new HashSet<string> { "E-E", "E-vf", "vf-vf" },
+            new HashSet<string> { "E-E", "E-vf", "vf-vf!" },
+            new HashSet<string> { "E-E", "E-fe", "fe-fe" },
+            new HashSet<string> { "E-vf", "vf-vf", "vf-vf!" },
+            new HashSet<string> { "F-F!", "F-vf", "vf-vf!" },
+            new HashSet<string> { "F-vf", "vf-vf", "vf-vf!" },
+            new HashSet<string> { "F-fe", "fe-fe", "fe-fe!" },
+            new HashSet<string> { "V-V", "V-vf", "vf-vf" },
+            new HashSet<string> { "V-V", "fe-V", "fe-fe" },
+            new HashSet<string> { "V-vf", "vf-vf", "vf-vf!" },
+            new HashSet<string> { "fe-V", "fe-fe", "fe-fe!" },
+            new HashSet<string> { "vf-vf", "fe-vf", "fe-fe!" },
+            new HashSet<string> { "vf-vf!", "fe-vf", "fe-fe" },
+            new HashSet<string> { "vf-vf!", "fe-vf", "fe-fe!" },
+            new HashSet<string> { "vf-vf", "vf-vf!", "fe-vf", "fe-fe" },
+            new HashSet<string> { "vf-vf", "vf-vf!", "fe-vf", "fe-fe!" },
+            new HashSet<string> { "vf-vf!", "fe-vf", "fe-fe", "fe-fe!" },
+            new HashSet<string> { "E-F", "E-V" },
+            new HashSet<string> { "E-vf", "F-vf" },
+            new HashSet<string> { "E-vf", "V-vf" },
+            new HashSet<string> { "F-ve", "V-ve" },
+            new HashSet<string> { "F-ve", "ve0-ve0" },
+            new HashSet<string> { "F-ve", "ve1-ve1" },
+            new HashSet<string> { "F-fe", "fe-V" },
+            new HashSet<string> { "E-E", "E-F", "E-V" },
+            new HashSet<string> { "E-E", "E-ve", "ve1-ve1" },
+            new HashSet<string> { "E-E", "E-vf", "F-vf" },
+            new HashSet<string> { "E-E", "E-vf", "V-vf" },
+            new HashSet<string> { "E-F", "E-V", "F-V" },
+            new HashSet<string> { "E-F", "E-ve", "F-ve" },
+            new HashSet<string> { "E-F", "E-vf", "F-vf" },
+            new HashSet<string> { "E-F", "E-vf", "vf-vf!" },
+            new HashSet<string> { "E-V", "E-vf", "V-vf" },
+            new HashSet<string> { "E-V", "E-vf", "vf-vf" },
+            new HashSet<string> { "E-V", "E-fe", "fe-V" },
+            new HashSet<string> { "E-V", "E-fe", "fe-fe" },
+            new HashSet<string> { "E-ve", "E-vf", "ve-vf" },
+            new HashSet<string> { "E-vf", "E-fe", "fe-vf" },
+            new HashSet<string> { "E-vf", "F-vf", "vf-vf" },
+            new HashSet<string> { "E-vf", "F-vf", "vf-vf!" },
+            new HashSet<string> { "E-vf", "V-vf", "vf-vf" },
+            new HashSet<string> { "E-vf", "V-vf", "vf-vf!" },
+            new HashSet<string> { "E-vf", "fe-vf", "fe-fe" },
+            new HashSet<string> { "F-F!", "F-ve", "V-ve" },
+            new HashSet<string> { "F-F!", "F-ve", "ve1-ve1" },
+            new HashSet<string> { "F-V", "F-ve", "V-ve" },
+            new HashSet<string> { "F-V", "F-fe", "fe-V" },
+            new HashSet<string> { "F-V", "fe-V", "fe-fe!" },
+            new HashSet<string> { "F-ve", "F-vf", "ve-vf" },
+            new HashSet<string> { "F-ve", "F-fe", "fe-ve" },
+            new HashSet<string> { "F-ve", "ve-vf", "vf-vf!" },
+            new HashSet<string> { "F-ve", "fe-ve", "fe-fe!" },
+            new HashSet<string> { "F-vf", "V-vf", "vf-vf" },
+            new HashSet<string> { "F-vf", "V-vf", "vf-vf!" },
+            new HashSet<string> { "F-vf", "fe-vf", "fe-fe!" },
+            new HashSet<string> { "F-fe", "V-V", "fe-V" },
+            new HashSet<string> { "F-fe", "fe-V", "fe-fe" },
+            new HashSet<string> { "F-fe", "fe-V", "fe-fe!" },
+            new HashSet<string> { "F-fe", "vf-vf!", "fe-vf" },
+            new HashSet<string> { "V-ve", "fe-V", "fe-ve" },
+            new HashSet<string> { "V-ve", "ve-vf", "vf-vf" },
+            new HashSet<string> { "V-ve", "fe-ve", "fe-fe" },
+            new HashSet<string> { "V-ve", "fe-ve", "fe-fe!" },
+            new HashSet<string> { "V-vf", "fe-V", "fe-vf" },
+            new HashSet<string> { "V-vf", "fe-vf", "fe-fe" },
+            new HashSet<string> { "V-vf", "fe-vf", "fe-fe!" },
+            new HashSet<string> { "fe-V", "vf-vf", "fe-vf" },
+            new HashSet<string> { "ve0-ve0", "ve-vf", "vf-vf" },
+            new HashSet<string> { "ve0-ve0", "ve-vf", "vf-vf!" },
+            new HashSet<string> { "ve0-ve0", "fe-ve", "fe-fe" },
+            new HashSet<string> { "ve1-ve1", "ve-vf", "vf-vf" },
+            new HashSet<string> { "ve1-ve1", "fe-ve", "fe-fe" },
+            new HashSet<string> { "ve1-ve1", "fe-ve", "fe-fe!" },
+            new HashSet<string> { "ve-vf", "fe-ve", "fe-vf" },
+            new HashSet<string> { "E-E", "E-F", "E-vf", "F-vf" },
+            new HashSet<string> { "E-E", "E-F", "E-vf", "vf-vf!" },
+            new HashSet<string> { "E-E", "E-V", "E-vf", "V-vf" },
+            new HashSet<string> { "E-E", "E-V", "E-vf", "vf-vf" },
+            new HashSet<string> { "E-E", "E-V", "E-fe", "fe-fe" },
+            new HashSet<string> { "E-E", "E-ve", "E-vf", "ve-vf" },
+            new HashSet<string> { "E-E", "E-ve", "ve-vf", "vf-vf!" },
+            new HashSet<string> { "E-E", "E-vf", "E-fe", "fe-vf" },
+            new HashSet<string> { "E-E", "E-vf", "F-vf", "vf-vf" },
+            new HashSet<string> { "E-E", "E-vf", "V-vf", "vf-vf!" },
+            new HashSet<string> { "E-E", "E-vf", "fe-vf", "fe-fe" },
+            new HashSet<string> { "E-E", "E-fe", "F-fe", "fe-fe" },
+            new HashSet<string> { "E-E", "E-fe", "vf-vf", "fe-vf" },
+            new HashSet<string> { "E-F", "E-vf", "F-vf", "vf-vf!" },
+            new HashSet<string> { "E-V", "E-vf", "V-vf", "vf-vf" },
+            new HashSet<string> { "E-V", "E-fe", "fe-V", "fe-fe" },
+            new HashSet<string> { "E-ve", "E-vf", "ve-vf", "vf-vf" },
+            new HashSet<string> { "E-ve", "E-vf", "ve-vf", "vf-vf!" },
+            new HashSet<string> { "E-ve", "E-fe", "fe-ve", "fe-fe" },
+            new HashSet<string> { "E-vf", "E-fe", "vf-vf", "fe-vf" },
+            new HashSet<string> { "E-vf", "E-fe", "vf-vf!", "fe-vf" },
+            new HashSet<string> { "E-vf", "E-fe", "vf-vf!", "fe-fe" },
+            new HashSet<string> { "E-vf", "E-fe", "fe-vf", "fe-fe" },
+            new HashSet<string> { "E-vf", "F-vf", "vf-vf", "vf-vf!" },
+            new HashSet<string> { "E-vf", "V-vf", "vf-vf", "vf-vf!" },
+            new HashSet<string> { "E-vf", "vf-vf", "fe-vf", "fe-fe" },
+            new HashSet<string> { "E-vf", "vf-vf!", "fe-vf", "fe-fe" },
+            new HashSet<string> { "F-F!", "F-V", "F-ve", "V-ve" },
+            new HashSet<string> { "F-F!", "F-ve", "F-vf", "ve-vf" },
+            new HashSet<string> { "F-F!", "F-ve", "ve-vf", "vf-vf!" },
+            new HashSet<string> { "F-F!", "F-vf", "V-vf", "vf-vf!" },
+            new HashSet<string> { "F-V", "F-fe", "V-V", "fe-V" },
+            new HashSet<string> { "F-V", "F-fe", "fe-V", "fe-fe!" },
+            new HashSet<string> { "F-ve", "F-vf", "ve-vf", "vf-vf!" },
+            new HashSet<string> { "F-ve", "F-fe", "fe-ve", "fe-fe!" },
+            new HashSet<string> { "F-vf", "F-fe", "vf-vf!", "fe-vf" },
+            new HashSet<string> { "F-vf", "F-fe", "fe-vf", "fe-fe!" },
+            new HashSet<string> { "F-vf", "V-V", "V-vf", "vf-vf" },
+            new HashSet<string> { "F-vf", "V-vf", "vf-vf", "vf-vf!" },
+            new HashSet<string> { "F-vf", "vf-vf", "fe-vf", "fe-fe!" },
+            new HashSet<string> { "F-vf", "vf-vf!", "fe-vf", "fe-fe!" },
+            new HashSet<string> { "F-fe", "V-V", "fe-V", "fe-fe" },
+            new HashSet<string> { "F-fe", "fe-V", "fe-fe", "fe-fe!" },
+            new HashSet<string> { "F-fe", "vf-vf", "vf-vf!", "fe-vf" },
+            new HashSet<string> { "F-fe", "vf-vf!", "fe-vf", "fe-fe" },
+            new HashSet<string> { "F-fe", "vf-vf!", "fe-vf", "fe-fe!" },
+            new HashSet<string> { "V-V", "V-vf", "fe-V", "fe-vf" },
+            new HashSet<string> { "V-V", "V-vf", "fe-vf", "fe-fe" },
+            new HashSet<string> { "V-V", "fe-V", "vf-vf", "fe-vf" },
+            new HashSet<string> { "V-ve", "V-vf", "ve-vf", "vf-vf" },
+            new HashSet<string> { "V-ve", "fe-V", "fe-ve", "fe-fe" },
+            new HashSet<string> { "V-ve", "fe-V", "fe-ve", "fe-fe!" },
+            new HashSet<string> { "V-ve", "ve-vf", "vf-vf", "vf-vf!" },
+            new HashSet<string> { "V-ve", "fe-ve", "fe-fe", "fe-fe!" },
+            new HashSet<string> { "V-vf", "fe-V", "vf-vf", "fe-vf" },
+            new HashSet<string> { "V-vf", "fe-V", "vf-vf", "fe-fe!" },
+            new HashSet<string> { "V-vf", "fe-V", "fe-vf", "fe-fe" },
+            new HashSet<string> { "V-vf", "fe-V", "fe-vf", "fe-fe!" },
+            new HashSet<string> { "V-vf", "vf-vf", "fe-vf", "fe-fe" },
+            new HashSet<string> { "V-vf", "vf-vf", "fe-vf", "fe-fe!" },
+            new HashSet<string> { "V-vf", "vf-vf!", "fe-vf", "fe-fe" },
+            new HashSet<string> { "V-vf", "vf-vf!", "fe-vf", "fe-fe!" },
+            new HashSet<string> { "V-vf", "fe-vf", "fe-fe", "fe-fe!" },
+            new HashSet<string> { "fe-V", "vf-vf", "fe-vf", "fe-fe!" },
+            new HashSet<string> { "ve0-ve0", "ve-vf", "vf-vf", "vf-vf!" },
+            new HashSet<string> { "ve1-ve1", "ve-vf", "vf-vf", "vf-vf!" },
+            new HashSet<string> { "ve1-ve1", "fe-ve", "fe-fe", "fe-fe!" },
+            new HashSet<string> { "ve-vf", "fe-ve", "vf-vf", "fe-vf" },
+            new HashSet<string> { "ve-vf", "fe-ve", "vf-vf", "fe-fe!" },
+            new HashSet<string> { "ve-vf", "fe-ve", "vf-vf!", "fe-vf" },
+            new HashSet<string> { "ve-vf", "fe-ve", "vf-vf!", "fe-fe" },
+            new HashSet<string> { "ve-vf", "fe-ve", "vf-vf!", "fe-fe!" },
+            new HashSet<string> { "ve-vf", "fe-ve", "fe-vf", "fe-fe" },
+            new HashSet<string> { "ve-vf", "fe-ve", "fe-vf", "fe-fe!" },
+            new HashSet<string> { "E-E", "E-ve", "E-vf", "ve-vf", "vf-vf!" },
+            new HashSet<string> { "E-E", "E-vf", "E-fe", "vf-vf", "fe-vf" },
+            new HashSet<string> { "E-E", "E-vf", "E-fe", "vf-vf!", "fe-fe" },
+            new HashSet<string> { "E-E", "E-vf", "E-fe", "fe-vf", "fe-fe" },
+            new HashSet<string> { "E-ve", "E-vf", "ve-vf", "vf-vf", "vf-vf!" },
+            new HashSet<string> { "E-vf", "E-fe", "vf-vf", "vf-vf!", "fe-vf" },
+            new HashSet<string> { "E-vf", "E-fe", "vf-vf!", "fe-vf", "fe-fe" },
+            new HashSet<string> { "E-vf", "vf-vf", "vf-vf!", "fe-vf", "fe-fe" },
+            new HashSet<string> { "F-F!", "F-ve", "F-vf", "ve-vf", "vf-vf!" },
+            new HashSet<string> { "F-vf", "F-fe", "vf-vf", "vf-vf!", "fe-vf" },
+            new HashSet<string> { "F-vf", "F-fe", "vf-vf!", "fe-vf", "fe-fe!" },
+            new HashSet<string> { "F-vf", "vf-vf", "vf-vf!", "fe-vf", "fe-fe!" },
+            new HashSet<string> { "F-fe", "vf-vf", "vf-vf!", "fe-vf", "fe-fe" },
+            new HashSet<string> { "F-fe", "vf-vf!", "fe-vf", "fe-fe", "fe-fe!" },
+            new HashSet<string> { "V-V", "V-vf", "fe-V", "vf-vf", "fe-vf" },
+            new HashSet<string> { "V-V", "V-vf", "fe-V", "fe-vf", "fe-fe" },
+            new HashSet<string> { "V-V", "V-vf", "vf-vf", "fe-vf", "fe-fe" },
+            new HashSet<string> { "V-ve", "V-vf", "ve-vf", "vf-vf", "vf-vf!" },
+            new HashSet<string> { "V-ve", "fe-V", "fe-ve", "fe-fe", "fe-fe!" },
+            new HashSet<string> { "V-vf", "fe-V", "vf-vf", "fe-vf", "fe-fe!" },
+            new HashSet<string> { "V-vf", "fe-V", "fe-vf", "fe-fe", "fe-fe!" },
+            new HashSet<string> { "V-vf", "vf-vf", "vf-vf!", "fe-vf", "fe-fe" },
+            new HashSet<string> { "V-vf", "vf-vf", "vf-vf!", "fe-vf", "fe-fe!" },
+            new HashSet<string> { "V-vf", "vf-vf!", "fe-vf", "fe-fe", "fe-fe!" },
+            new HashSet<string> { "ve-vf", "fe-ve", "vf-vf", "fe-vf", "fe-fe!" },
+            new HashSet<string> { "ve-vf", "fe-ve", "vf-vf!", "fe-vf", "fe-fe" },
+            new HashSet<string> { "ve-vf", "fe-ve", "vf-vf!", "fe-vf", "fe-fe!" },
+            new HashSet<string> { "ve-vf", "fe-ve", "vf-vf!", "fe-fe", "fe-fe!" },
+            new HashSet<string> { "ve-vf", "fe-ve", "fe-vf", "fe-fe", "fe-fe!" },
+            new HashSet<string> { "ve-vf", "fe-ve", "vf-vf!", "fe-vf", "fe-fe", "fe-fe!" },
+        };
+
+        public static bool IsCompatibleSubset(IEnumerable<string> selected, string candidate)
+        {
+            var test = new HashSet<string>(selected) { candidate };
+            foreach (var op in OmniValidOperators)
+                if (test.IsSubsetOf(op)) return true;
+            return false;
+        }
+
+        public static bool IsValidSubset(IEnumerable<string> atoms)
+        {
+            var test = new HashSet<string>(atoms);
+            if (test.Count == 0) return true;
+            foreach (var op in OmniValidOperators)
+                if (test.IsSubsetOf(op)) return true;
+            return false;
+        }
+
+        public static bool IsCompleteOperator(IEnumerable<string> atoms)
+        {
+            var test = new HashSet<string>(atoms);
+            if (test.Count == 0) return false;
+            foreach (var op in OmniValidOperators)
+                if (test.SetEquals(op)) return true;
+            return false;
+        }
+
         private enum OperatorAtomFamily
         {
             Vertex,
@@ -115,7 +406,9 @@ namespace Polyhydra.Core
         /// </summary>
         public PolyMesh ApplyHalfedgeOperator(string operatorNotation, float t = 0.5f)
         {
+            if (string.IsNullOrWhiteSpace(operatorNotation)) return Duplicate();
             var atoms = ParseHalfedgeOperatorString(operatorNotation);
+            if (atoms.Count == 0) return Duplicate();
 
             var classesNeeded = new HashSet<string>();
             foreach (var (a, b) in atoms) { classesNeeded.Add(a); classesNeeded.Add(b); }
@@ -150,15 +443,17 @@ namespace Polyhydra.Core
 
         private static List<(string, string)> ParseHalfedgeOperatorString(string op)
         {
-            return op.Split(',').Select(atom =>
-            {
-                int dash = atom.IndexOf('-');
-                if (dash < 0)
-                    throw new ArgumentException($"Invalid atom '{atom.Trim()}' in operator '{op}': missing '-'");
-                var a = NormalizeClass(atom.Substring(0, dash).Trim());
-                var b = NormalizeClass(atom.Substring(dash + 1).Trim());
-                return (a, b);
-            }).ToList();
+            return op.Split(',')
+                .Where(atom => !string.IsNullOrWhiteSpace(atom))
+                .Select(atom =>
+                {
+                    int dash = atom.IndexOf('-');
+                    if (dash < 0)
+                        throw new ArgumentException($"Invalid atom '{atom.Trim()}' in operator '{op}': missing '-'");
+                    var a = NormalizeClass(atom.Substring(0, dash).Trim());
+                    var b = NormalizeClass(atom.Substring(dash + 1).Trim());
+                    return (a, b);
+                }).ToList();
         }
 
         // Normalise class names: move a leading '!' to a trailing '!'.
