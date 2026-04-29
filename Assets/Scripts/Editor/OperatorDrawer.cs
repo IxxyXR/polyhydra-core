@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Polyhydra.Core;
 using UnityEditor;
 using UnityEngine;
@@ -67,20 +68,35 @@ public class OperatorDrawer : PropertyDrawer
         var serializedObject = property.serializedObject;
         var stringPropPath   = stringProp.propertyPath;
 
+        float indentedX = position.x + EditorGUI.indentLevel * 15f;
+        float indentedW = position.width - EditorGUI.indentLevel * 15f;
+
+        // Preset dropdown
+        var presetKeys = new List<string>(PolyMesh.OmniPresets.Keys);
+        var presetLabels = new string[presetKeys.Count + 1];
+        presetLabels[0] = "— Presets —";
+        for (int i = 0; i < presetKeys.Count; i++) presetLabels[i + 1] = presetKeys[i];
+        int chosen = EditorGUI.Popup(new Rect(indentedX, y, indentedW, LineH), 0, presetLabels);
+        if (chosen > 0)
+        {
+            var preset = PolyMesh.OmniPresets[presetKeys[chosen - 1]];
+            WriteAtoms(serializedObject, stringPropPath, ParseAtomString(preset));
+        }
+        y += LineH + Spacing;
+
         EditorGUI.LabelField(new Rect(position.x, y, position.width, LineH), "Atoms");
         y += LineH + Spacing;
 
         int removeIndex = -1;
 
-        float indentedX = position.x + EditorGUI.indentLevel * 15f;
-        float indentedW = position.width - EditorGUI.indentLevel * 15f;
         float removeW   = 22f;
         float popupW    = indentedW - removeW - 2f;
 
         for (int i = 0; i < atoms.Count; i++)
         {
             string atom      = atoms[i];
-            bool   isInvalid = !IsAtomCompatibleWithOthers(atom, atoms, i);
+            var    others    = atoms.Where((_, idx) => idx != i);
+            bool   isInvalid = !PolyMesh.IsCompatibleSubset(others, atom);
 
             var buttonStyle = new GUIStyle(EditorStyles.popup);
             if (isInvalid) buttonStyle.normal.textColor = Color.red;
@@ -117,7 +133,8 @@ public class OperatorDrawer : PropertyDrawer
         }
         else if (PolyMesh.IsCompleteOperator(atoms))
         {
-            statusMsg   = "Valid";
+            string presetName = FindPresetName(atoms);
+            statusMsg   = presetName != null ? $"Valid — {presetName}" : "Valid";
             statusColor = Color.green;
         }
         else if (PolyMesh.IsValidSubset(atoms))
@@ -169,15 +186,13 @@ public class OperatorDrawer : PropertyDrawer
         so.ApplyModifiedProperties();
     }
 
-    private static bool IsAtomCompatibleWithOthers(string atom, List<string> atoms, int excludeIndex)
+    private static string FindPresetName(List<string> atoms)
     {
-        if (!PolyMesh.OmniAtomCompatibility.TryGetValue(atom, out var compat)) return true;
-        for (int i = 0; i < atoms.Count; i++)
-        {
-            if (i == excludeIndex) continue;
-            if (!compat.Contains(atoms[i])) return false;
-        }
-        return true;
+        var test = new HashSet<string>(atoms);
+        foreach (var kv in PolyMesh.OmniPresets)
+            if (test.SetEquals(new HashSet<string>(ParseAtomString(kv.Value))))
+                return kv.Key;
+        return null;
     }
 
     private static List<string> ParseAtomString(string s)
@@ -210,6 +225,7 @@ public class OperatorDrawer : PropertyDrawer
         {
             var stringProp = property.FindPropertyRelative("StringParameter");
             int atomCount = ParseAtomString(stringProp.stringValue).Count;
+            total += LineH + Spacing;                      // preset dropdown
             total += LineH + Spacing;                      // "Atoms" label
             total += (atomCount + 1) * (LineH + Spacing); // one row per atom + Add button
             total += LineH + Spacing;                      // validity status
