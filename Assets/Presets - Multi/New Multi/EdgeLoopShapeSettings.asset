@@ -9,25 +9,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2c2880ed5b584425b92968f04cae7e21, type: 3}
-  m_Name: Pentagon
-  m_EditorClassIdentifier: 
+  m_Script: {fileID: 11500000, guid: 6948123532ccf4ac7981dd67d31928d1, type: 3}
+  m_Name: EdgeLoopShapeSettings
+  m_EditorClassIdentifier: Assembly-CSharp::EdgeLoopShapeSettings
   Operators:
-  - Active: 1
-    OpType: 81
-    StringParameter: 
-    Parameter1: 0.61
-    Parameter2: 0
-    Iterations: 1
-    Parameter1Randomize: 0
-    Parameter2Randomize: 0
-    FilterType: 0
-    FilterParam: 0
-    FilterFlip: 0
   - Active: 0
-    OpType: 31
-    StringParameter: 
-    Parameter1: 0.54
+    OpType: 9999
+    StringParameter: ve0-ve0,ve1-ve1
+    Parameter1: 0.5
     Parameter2: 0
     Iterations: 1
     Parameter1Randomize: 0
@@ -40,10 +29,14 @@ MonoBehaviour:
   PlanarizeIterations: 0
   FaceInset: 0
   ColorMethod: 1
-  type: 0
-  method: 0
-  A: 10
-  B: 0
-  C: 0
-  Layers: 0
-  LayerHeight: 0.25
+  SourceSettings: {fileID: 11400000, guid: 8b607043daf2a403083b5a830b1d15e3, type: 2}
+  IncludeSource: 0
+  LoopMode: 0
+  MinContinuationDot: 0.27
+  PreferClockwise: 1
+  MinLoopEdges: 3
+  Mode: 0
+  Sides: 4
+  Radius: 0.05
+  UpHint: {x: 0, y: 1, z: 1.58}
+  CapEnds: 0

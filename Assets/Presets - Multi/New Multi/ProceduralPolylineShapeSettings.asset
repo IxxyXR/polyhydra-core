@@ -1,0 +1,58 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 89fcede79d7454abc82b86d28de0cc8a, type: 3}
+  m_Name: ProceduralPolylineShapeSettings
+  m_EditorClassIdentifier: Assembly-CSharp::ProceduralPolylineShapeSettings
+  Operators:
+  - Active: 1
+    OpType: 9999
+    StringParameter: fe-fe!,fe-V,V-ve,fe-ve
+    Parameter1: 0.42
+    Parameter2: 0
+    Iterations: 1
+    Parameter1Randomize: 0
+    Parameter2Randomize: 0
+    FilterType: 0
+    FilterParam: 0
+    FilterFlip: 0
+  FastConicalize: 1
+  CanonicalizeIterations: 0
+  PlanarizeIterations: 0
+  FaceInset: 0
+  ColorMethod: 1
+  CurveType: 1
+  Resolution: 48
+  P: 2
+  Q: 3
+  MajorRadius: 2
+  MinorRadius: 0.75
+  HelixRadius: 1
+  HelixPitch: 0.3
+  Turns: 4
+  FreqX: 3
+  FreqY: 2
+  FreqZ: 1
+  PhaseX: 0
+  PhaseY: 0
+  PhaseZ: 0
+  AmpX: 1
+  AmpY: 1
+  AmpZ: 1
+  OuterRadius: 3
+  InnerRadius: 1
+  TraceDistance: 1
+  EpiLoops: 1
+  Mode: 0
+  Sides: 4
+  Radius: 0.26
+  UpHint: {x: 0, y: 1, z: 0}
+  CapEnds: 0

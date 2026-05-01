@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2687836db85c449638cad65d6f16bde1, type: 3}
+  m_Name: FaceSubstitutionShapeSettings
+  m_EditorClassIdentifier: Assembly-CSharp::FaceSubstitutionShapeSettings
+  Operators: []
+  FastConicalize: 1
+  CanonicalizeIterations: 0
+  PlanarizeIterations: 0
+  FaceInset: 0
+  ColorMethod: 1
+  HostSettings: {fileID: 11400000, guid: a0b5d603129cd4389a50636ff8d73fec, type: 2}
+  SourceSettings: {fileID: 11400000, guid: 8b607043daf2a403083b5a830b1d15e3, type: 2}
+  ScaleToFace: 1
+  AlignToNormal: 1
+  IncludeHost: 0

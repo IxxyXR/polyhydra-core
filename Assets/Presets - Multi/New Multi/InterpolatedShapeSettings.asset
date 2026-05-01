@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 56bac4c9337654a4687da964d9503cb1, type: 3}
+  m_Name: InterpolatedShapeSettings
+  m_EditorClassIdentifier: Assembly-CSharp::InterpolatedShapeSettings
+  Operators: []
+  FastConicalize: 1
+  CanonicalizeIterations: 0
+  PlanarizeIterations: 0
+  FaceInset: 0
+  ColorMethod: 1
+  ShapeA: {fileID: 11400000, guid: 8b607043daf2a403083b5a830b1d15e3, type: 2}
+  ShapeB: {fileID: 11400000, guid: b15a474fb550846eab937eee79d16fb2, type: 2}
+  Count: 3

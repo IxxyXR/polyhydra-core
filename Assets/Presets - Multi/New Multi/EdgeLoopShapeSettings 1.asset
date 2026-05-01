@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6948123532ccf4ac7981dd67d31928d1, type: 3}
+  m_Name: EdgeLoopShapeSettings 1
+  m_EditorClassIdentifier: Assembly-CSharp::EdgeLoopShapeSettings
+  Operators: []
+  FastConicalize: 1
+  CanonicalizeIterations: 0
+  PlanarizeIterations: 0
+  FaceInset: 0
+  ColorMethod: 1
+  SourceSettings: {fileID: 11400000, guid: 8b607043daf2a403083b5a830b1d15e3, type: 2}
+  IncludeSource: 0
+  LoopMode: 1
+  MinContinuationDot: 0.27
+  PreferClockwise: 1
+  MinLoopEdges: 3
+  Mode: 0
+  Sides: 4
+  Radius: 0.1
+  UpHint: {x: 0, y: 1, z: 0}
+  CapEnds: 0
