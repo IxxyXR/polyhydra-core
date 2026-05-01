@@ -87,6 +87,36 @@ namespace Polyhydra.Core
             "vf-vf", "vf-vf!",
         };
 
+        public static readonly Dictionary<string, string> OmniPresets = new Dictionary<string, string>
+        {
+            // Rank 1
+            { "Ambo",           "E-E" },
+            { "Dual",           "F-F!" },
+            { "Seed",           "V-V" },
+            { "Zip",            "fe-fe,fe-fe!" },
+            { "Truncate",       "ve0-ve0,ve1-ve1" },
+            { "Expand",         "vf-vf,vf-vf!" },
+            // Rank 2
+            { "Join",           "F-V" },
+            { "Subdivide",      "E-E,E-V" },
+            { "Needle",         "F-F!,F-V" },
+            { "Kis",            "F-V,V-V" },
+            { "Chamfer",        "V-vf,vf-vf" },
+            { "Loft",           "V-V,V-vf,vf-vf" },
+            { "Join-Lace",      "fe-V,fe-fe" },
+            { "Lace",           "V-V,fe-V,fe-fe" },
+            { "Opposite-Lace",  "fe-V,fe-fe,fe-fe!" },
+            // Rank 3
+            { "Ortho",          "E-F,E-V" },
+            { "Meta",           "E-F,E-V,F-V" },
+            { "Quinto",         "E-V,E-fe,fe-fe" },
+            { "Join-Stake",     "F-fe,fe-V" },
+            { "Stake",          "F-fe,V-V,fe-V" },
+            { "Opposite-Stake", "F-fe,fe-V,fe-fe!" },
+            { "Join-Kis-Kis",   "F-V,F-fe,fe-V" },
+            { "Medial",         "F-ve,V-ve,ve0-ve0" },
+        };
+
         public static readonly Dictionary<string, HashSet<string>> OmniAtomCompatibility =
             new Dictionary<string, HashSet<string>>()
         {
@@ -407,6 +437,11 @@ namespace Polyhydra.Core
         public PolyMesh ApplyHalfedgeOperator(string operatorNotation, float t = 0.5f)
         {
             if (string.IsNullOrWhiteSpace(operatorNotation)) return Duplicate();
+            var atomStrings = operatorNotation.Split(',')
+                .Where(a => !string.IsNullOrWhiteSpace(a))
+                .Select(a => a.Trim())
+                .ToList();
+            if (!IsCompleteOperator(atomStrings)) return Duplicate();
             var atoms = ParseHalfedgeOperatorString(operatorNotation);
             if (atoms.Count == 0) return Duplicate();
 
