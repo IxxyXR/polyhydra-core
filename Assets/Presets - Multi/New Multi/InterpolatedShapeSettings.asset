@@ -19,5 +19,14 @@ MonoBehaviour:
   FaceInset: 0
   ColorMethod: 1
   ShapeA: {fileID: 11400000, guid: 8b607043daf2a403083b5a830b1d15e3, type: 2}
-  ShapeB: {fileID: 11400000, guid: b15a474fb550846eab937eee79d16fb2, type: 2}
+  ShapeB: {fileID: 11400000, guid: a3dac4611ec574d19a4b3cfcd709043f, type: 2}
+  OutputMode: 1
   Count: 3
+  Blend: 0.291
+  Spacing: 1.57
+  AutoAlign: 1
+  NormalizeScale: 1
+  Mode: 1
+  TopologySource: 0
+  MatchMode: 2
+  SampleCount: 64

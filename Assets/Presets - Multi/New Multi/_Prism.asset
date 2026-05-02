@@ -9,14 +9,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 72244f7b9655445f885818f872d7244f, type: 3}
-  m_Name: FractalShapeSettings
-  m_EditorClassIdentifier: Assembly-CSharp::FractalShapeSettings
+  m_Script: {fileID: 11500000, guid: bcdd704e9dd94c86b0d2f7d8638f92e9, type: 3}
+  m_Name: _Prism
+  m_EditorClassIdentifier: Assembly-CSharp::RadialSolidsSettings
   Operators:
   - Active: 0
-    OpType: 9999
-    StringParameter: fe-V,fe-fe
-    Parameter1: 0.5
+    OpType: 18
+    StringParameter: 
+    Parameter1: 0
     Parameter2: 0
     Iterations: 1
     Parameter1Randomize: 0
@@ -28,7 +28,9 @@ MonoBehaviour:
   CanonicalizeIterations: 0
   PlanarizeIterations: 0
   FaceInset: 0
-  ColorMethod: 1
-  ShapeSettings: {fileID: 11400000, guid: 3292044f6e6509e4481fff1ce99bec87, type: 2}
-  Depth: 2
-  InitialRotation: 0
+  ColorMethod: 0
+  type: 0
+  Sides: 6
+  SetHeight: 1
+  Height: 0.2
+  CapHeight: 1

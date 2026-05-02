@@ -9,14 +9,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0338af08deffa43e1bc2f5c119b82978, type: 3}
-  m_Name: FaceNormalShapeSettings
-  m_EditorClassIdentifier: Assembly-CSharp::FaceNormalShapeSettings
+  m_Script: {fileID: 11500000, guid: 63be2e6bb0184595ac92a61275f5a8f6, type: 3}
+  m_Name: _Rhombicuboctahedron 1
+  m_EditorClassIdentifier: Assembly-CSharp::WythoffSettings
   Operators:
   - Active: 1
-    OpType: 16
+    OpType: 20
     StringParameter: 
-    Parameter1: 0.6
+    Parameter1: 0
     Parameter2: 0
     Iterations: 1
     Parameter1Randomize: 0
@@ -29,12 +29,5 @@ MonoBehaviour:
   PlanarizeIterations: 0
   FaceInset: 0
   ColorMethod: 1
-  SourceSettings: {fileID: 11400000, guid: b15a474fb550846eab937eee79d16fb2, type: 2}
-  IncludeSource: 1
-  Length: 0.32
-  Bidirectional: 1
-  OnlySides: 0
-  Mode: 0
+  WythoffType: 34
   Sides: 5
-  Radius: 0.33
-  CapEnds: 1

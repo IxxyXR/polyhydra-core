@@ -12,14 +12,26 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2687836db85c449638cad65d6f16bde1, type: 3}
   m_Name: FaceSubstitutionShapeSettings
   m_EditorClassIdentifier: Assembly-CSharp::FaceSubstitutionShapeSettings
-  Operators: []
+  Operators:
+  - Active: 0
+    OpType: 24
+    StringParameter: 
+    Parameter1: 0
+    Parameter2: 0
+    Iterations: 1
+    Parameter1Randomize: 0
+    Parameter2Randomize: 0
+    FilterType: 0
+    FilterParam: 0
+    FilterFlip: 0
   FastConicalize: 1
   CanonicalizeIterations: 0
   PlanarizeIterations: 0
   FaceInset: 0
-  ColorMethod: 1
-  HostSettings: {fileID: 11400000, guid: a0b5d603129cd4389a50636ff8d73fec, type: 2}
-  SourceSettings: {fileID: 11400000, guid: 8b607043daf2a403083b5a830b1d15e3, type: 2}
+  ColorMethod: 0
+  HostSettings: {fileID: 11400000, guid: 3292044f6e6509e4481fff1ce99bec87, type: 2}
+  SourceSettings: {fileID: 11400000, guid: ffffa4fbdce274b47bb7d32038ffd1fc, type: 2}
   ScaleToFace: 1
   AlignToNormal: 1
-  IncludeHost: 0
+  InitialRotation: 0
+  IncludeHost: 1

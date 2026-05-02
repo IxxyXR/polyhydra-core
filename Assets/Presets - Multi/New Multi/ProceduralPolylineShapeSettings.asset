@@ -15,8 +15,8 @@ MonoBehaviour:
   Operators:
   - Active: 1
     OpType: 9999
-    StringParameter: fe-fe!,fe-V,V-ve,fe-ve
-    Parameter1: 0.42
+    StringParameter: V-vf,vf-vf
+    Parameter1: 0.54
     Parameter2: 0
     Iterations: 1
     Parameter1Randomize: 0
@@ -29,7 +29,7 @@ MonoBehaviour:
   PlanarizeIterations: 0
   FaceInset: 0
   ColorMethod: 1
-  CurveType: 1
+  CurveType: 2
   Resolution: 48
   P: 2
   Q: 3
@@ -47,12 +47,12 @@ MonoBehaviour:
   AmpX: 1
   AmpY: 1
   AmpZ: 1
-  OuterRadius: 3
-  InnerRadius: 1
-  TraceDistance: 1
+  OuterRadius: 1.5
+  InnerRadius: 0.5
+  TraceDistance: 1.42
   EpiLoops: 1
   Mode: 0
   Sides: 4
-  Radius: 0.26
+  Radius: 0.36
   UpHint: {x: 0, y: 1, z: 0}
   CapEnds: 0

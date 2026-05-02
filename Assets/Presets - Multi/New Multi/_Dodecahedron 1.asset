@@ -10,13 +10,24 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 63be2e6bb0184595ac92a61275f5a8f6, type: 3}
-  m_Name: Rhombicuboctahedron
+  m_Name: _Dodecahedron 1
   m_EditorClassIdentifier: Assembly-CSharp::WythoffSettings
-  Operators: []
+  Operators:
+  - Active: 0
+    OpType: 9999
+    StringParameter: fe-V,fe-fe,fe-fe!,fe-ve,V-ve
+    Parameter1: 0.66
+    Parameter2: 0.2
+    Iterations: 1
+    Parameter1Randomize: 0
+    Parameter2Randomize: 0
+    FilterType: 0
+    FilterParam: 0
+    FilterFlip: 0
   FastConicalize: 1
   CanonicalizeIterations: 0
   PlanarizeIterations: 0
   FaceInset: 0
   ColorMethod: 1
-  WythoffType: 15
+  WythoffType: 13
   Sides: 5

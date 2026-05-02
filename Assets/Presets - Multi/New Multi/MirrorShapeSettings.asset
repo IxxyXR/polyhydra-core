@@ -12,13 +12,29 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0b5be264dacd3481b9890889c2e303f7, type: 3}
   m_Name: MirrorShapeSettings
   m_EditorClassIdentifier: Assembly-CSharp::MirrorShapeSettings
-  Operators: []
+  Operators:
+  - Active: 1
+    OpType: 9999
+    StringParameter: E-ve,E-F,F-ve
+    Parameter1: 0.57
+    Parameter2: 0
+    Iterations: 1
+    Parameter1Randomize: 0
+    Parameter2Randomize: 0
+    FilterType: 0
+    FilterParam: 0
+    FilterFlip: 0
   FastConicalize: 1
   CanonicalizeIterations: 0
   PlanarizeIterations: 0
   FaceInset: 0
   ColorMethod: 1
-  ShapeSettings: {fileID: 11400000, guid: 8b607043daf2a403083b5a830b1d15e3, type: 2}
-  MirrorX: 0
-  MirrorY: 0
+  ShapeSettings: {fileID: 11400000, guid: b15a474fb550846eab937eee79d16fb2, type: 2}
+  MirrorX: 1
+  MirrorY: 1
   MirrorZ: 1
+  MirrorCopyTransform:
+    Translation: {x: 1, y: 1, z: 1}
+    Rotation: {x: -13.28, y: 45, z: 0}
+    Scale: 1
+    NonUniformScale: {x: 1.89, y: 1, z: 1}
