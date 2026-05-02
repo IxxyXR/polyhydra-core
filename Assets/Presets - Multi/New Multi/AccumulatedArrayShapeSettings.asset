@@ -13,10 +13,21 @@ MonoBehaviour:
   m_Name: AccumulatedArrayShapeSettings
   m_EditorClassIdentifier: Assembly-CSharp::AccumulatedArrayShapeSettings
   Operators:
-  - Active: 0
-    OpType: 23
-    StringParameter: V-vf,vf-vf
+  - Active: 1
+    OpType: 9999
+    StringParameter: V-vf,E-vf
     Parameter1: 0.5
+    Parameter2: 0.5
+    Iterations: 1
+    Parameter1Randomize: 0
+    Parameter2Randomize: 0
+    FilterType: 0
+    FilterParam: 0
+    FilterFlip: 0
+  - Active: 1
+    OpType: 53
+    StringParameter: 
+    Parameter1: 3.16
     Parameter2: 0
     Iterations: 1
     Parameter1Randomize: 0
@@ -29,24 +40,24 @@ MonoBehaviour:
   PlanarizeIterations: 0
   FaceInset: 0
   ColorMethod: 1
-  ShapeSettings: {fileID: 11400000, guid: 8b607043daf2a403083b5a830b1d15e3, type: 2}
-  Count: 6
+  ShapeSettings: {fileID: 11400000, guid: 26b3d54f9b2dc73439484e8d2e7008b9, type: 2}
+  Count: 9
   Transform:
-    Translation: {x: 0.75, y: 0, z: 0}
-    Rotation: {x: 10, y: 0, z: 0}
-    Scale: 0.7
+    Translation: {x: 0.44, y: 0, z: 0}
+    Rotation: {x: 0, y: -8.7, z: 0}
+    Scale: 0.8
     NonUniformScale: {x: 1, y: 1, z: 1}
   UseSecondAxis: 1
-  Count2: 6
+  Count2: 9
   Transform2:
-    Translation: {x: 0, y: 0.75, z: 0}
-    Rotation: {x: 0, y: 10, z: 0}
-    Scale: 0.7
+    Translation: {x: 0, y: 0.47, z: 0}
+    Rotation: {x: 0, y: 0, z: -62.02}
+    Scale: 0.8
     NonUniformScale: {x: 1, y: 1, z: 1}
   UseThirdAxis: 1
-  Count3: 6
+  Count3: 9
   Transform3:
-    Translation: {x: 0, y: 0, z: 0.75}
-    Rotation: {x: 0, y: 0, z: 10}
+    Translation: {x: 0, y: 0, z: 0.76}
+    Rotation: {x: 21.02, y: 0, z: 2.89}
     Scale: 0.7
     NonUniformScale: {x: 1, y: 1, z: 1}

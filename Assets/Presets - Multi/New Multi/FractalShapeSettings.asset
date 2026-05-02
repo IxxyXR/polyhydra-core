@@ -13,10 +13,10 @@ MonoBehaviour:
   m_Name: FractalShapeSettings
   m_EditorClassIdentifier: Assembly-CSharp::FractalShapeSettings
   Operators:
-  - Active: 0
+  - Active: 1
     OpType: 9999
-    StringParameter: fe-V,fe-fe
-    Parameter1: 0.5
+    StringParameter: E-E,E-V,E-fe,fe-fe
+    Parameter1: 0.44
     Parameter2: 0
     Iterations: 1
     Parameter1Randomize: 0
@@ -29,6 +29,6 @@ MonoBehaviour:
   PlanarizeIterations: 0
   FaceInset: 0
   ColorMethod: 1
-  ShapeSettings: {fileID: 11400000, guid: 3292044f6e6509e4481fff1ce99bec87, type: 2}
-  Depth: 2
-  InitialRotation: 0
+  ShapeSettings: {fileID: 11400000, guid: 26b3d54f9b2dc73439484e8d2e7008b9, type: 2}
+  Depth: 5
+  InitialRotation: 60

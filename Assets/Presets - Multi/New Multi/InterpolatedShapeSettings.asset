@@ -22,7 +22,7 @@ MonoBehaviour:
   ShapeB: {fileID: 11400000, guid: a3dac4611ec574d19a4b3cfcd709043f, type: 2}
   OutputMode: 1
   Count: 3
-  Blend: 0.291
+  Blend: 0
   Spacing: 1.57
   AutoAlign: 1
   NormalizeScale: 1
