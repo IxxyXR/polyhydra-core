@@ -17,6 +17,11 @@ public class AccumulatedArrayShapeSettings : BaseSettings
     public int Count2 = 3;
     public PolyTransform Transform2;
 
+    [Header("Tertiary Axis")]
+    public bool UseThirdAxis = false;
+    public int Count3 = 3;
+    public PolyTransform Transform3;
+
     public override PolyMesh BuildBaseShape()
     {
         var finalPoly = new PolyMesh();
@@ -25,7 +30,9 @@ public class AccumulatedArrayShapeSettings : BaseSettings
 
         var mat1 = Transform.Matrix;
         var mat2 = Transform2.Matrix;
+        var mat3 = Transform3.Matrix;
         int count2 = UseSecondAxis ? Mathf.Max(1, Count2) : 1;
+        int count3 = UseThirdAxis ? Mathf.Max(1, Count3) : 1;
 
         var accum1 = Matrix4x4.identity;
         for (int i = 0; i < Mathf.Max(1, Count); i++)
@@ -33,7 +40,12 @@ public class AccumulatedArrayShapeSettings : BaseSettings
             var accum2 = Matrix4x4.identity;
             for (int j = 0; j < count2; j++)
             {
-                finalPoly.Append(sourcePoly.Duplicate(accum1 * accum2));
+                var accum3 = Matrix4x4.identity;
+                for (int k = 0; k < count3; k++)
+                {
+                    finalPoly.Append(sourcePoly.Duplicate(accum1 * accum2 * accum3));
+                    accum3 = mat3 * accum3;
+                }
                 accum2 = mat2 * accum2;
             }
             accum1 = mat1 * accum1;

@@ -12,6 +12,9 @@ public class MirrorShapeSettings : BaseSettings
     public bool MirrorY = false;
     public bool MirrorZ = false;
 
+    [Header("Mirror Copy Transform")]
+    public PolyTransform MirrorCopyTransform = new PolyTransform();
+
     public override PolyMesh BuildBaseShape()
     {
         var sourcePoly = ShapeSettings.BuildBaseShape();
@@ -26,8 +29,13 @@ public class MirrorShapeSettings : BaseSettings
         if (MirrorZ) AddMirrors(matrices, new Vector3(1, 1, -1));
 
         var finalPoly = new PolyMesh();
-        foreach (var mat in matrices)
-            finalPoly.Append(sourcePoly.Duplicate(mat));
+        var mirrorCopyMatrix = MirrorCopyTransform?.Matrix ?? Matrix4x4.identity;
+        for (int i = 0; i < matrices.Count; i++)
+        {
+            var mat = matrices[i];
+            var finalMatrix = mat * mirrorCopyMatrix;
+            finalPoly.Append(sourcePoly.Duplicate(finalMatrix));
+        }
 
         finalPoly = ApplyModifiers(finalPoly);
         return finalPoly;
