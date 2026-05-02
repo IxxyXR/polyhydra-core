@@ -15,7 +15,7 @@ MonoBehaviour:
   Operators:
   - Active: 1
     OpType: 9999
-    StringParameter: ve_c-ve_c,fe-ve,fe-fe
+    StringParameter: ve1-ve1,fe-ve,fe-fe
     Parameter1: 0.43
     Parameter2: 0
     Iterations: 1
