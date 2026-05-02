@@ -24,7 +24,7 @@ MonoBehaviour:
     FilterType: 0
     FilterParam: 0
     FilterFlip: 0
-  - Active: 0
+  - Active: 1
     OpType: 11
     StringParameter: 
     Parameter1: 0.95

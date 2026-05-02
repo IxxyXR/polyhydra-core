@@ -15,7 +15,7 @@ MonoBehaviour:
   Operators:
   - Active: 1
     OpType: 9999
-    StringParameter: E-ve,E-fe,ve_c-ve_c,fe-fe
+    StringParameter: E-ve,E-fe,ve1-ve1,fe-fe
     Parameter1: 0.5
     Parameter2: 0
     Iterations: 1
@@ -26,7 +26,7 @@ MonoBehaviour:
     FilterFlip: 0
   - Active: 0
     OpType: 11
-    StringParameter: 
+    StringParameter: E-ve,E-fe,ve1-ve1,fe-fe
     Parameter1: 0.9
     Parameter2: 0
     Iterations: 1
@@ -44,7 +44,7 @@ MonoBehaviour:
   Divisions: 3
   Offset: 1.31
   randomize: 0
-  SharedVertices: 0
+  SharedVertices: 1
   MinDistance: 0
   MaxDistance: 0.5
   ColorRatio: -0.67
