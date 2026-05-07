@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "com.coplaydev.unity-mcp": "https://github.com/CoplayDev/unity-mcp.git?path=/MCPForUnity#beta",
     "com.ixxy.unitysymmetry": "https://github.com/IxxyXR/unity-symmetry.git#upm",
     "com.syomus.proceduraltoolkit": "0.2.3",
     "com.unity.formats.fbx": "4.2.1",
