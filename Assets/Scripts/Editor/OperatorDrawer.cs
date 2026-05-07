@@ -71,17 +71,21 @@ public class OperatorDrawer : PropertyDrawer
         float indentedX = position.x + EditorGUI.indentLevel * 15f;
         float indentedW = position.width - EditorGUI.indentLevel * 15f;
 
-        // Preset dropdown
+        // Preset dropdown + random button
         var presetKeys = new List<string>(PolyMesh.OmniPresets.Keys);
         var presetLabels = new string[presetKeys.Count + 1];
         presetLabels[0] = "— Presets —";
         for (int i = 0; i < presetKeys.Count; i++) presetLabels[i + 1] = presetKeys[i];
-        int chosen = EditorGUI.Popup(new Rect(indentedX, y, indentedW, LineH), 0, presetLabels);
+        float randomButtonW = 70f;
+        float presetPopupW = indentedW - randomButtonW - 4f;
+        int chosen = EditorGUI.Popup(new Rect(indentedX, y, presetPopupW, LineH), 0, presetLabels);
         if (chosen > 0)
         {
             var preset = PolyMesh.OmniPresets[presetKeys[chosen - 1]];
             WriteAtoms(serializedObject, stringPropPath, ParseAtomString(preset));
         }
+        if (GUI.Button(new Rect(indentedX + presetPopupW + 4f, y, randomButtonW, LineH), "Random"))
+            WriteAtoms(serializedObject, stringPropPath, GetRandomLegacyOperatorAtoms());
         y += LineH + Spacing;
 
         EditorGUI.LabelField(new Rect(position.x, y, position.width, LineH), "Atoms");
@@ -184,6 +188,15 @@ public class OperatorDrawer : PropertyDrawer
         so.Update();
         so.FindProperty(path).stringValue = string.Join(",", atoms);
         so.ApplyModifiedProperties();
+    }
+
+    private static List<string> GetRandomLegacyOperatorAtoms()
+    {
+        if (PolyMesh.OmniValidOperators == null || PolyMesh.OmniValidOperators.Length == 0)
+            return new List<string>();
+
+        var index = UnityEngine.Random.Range(0, PolyMesh.OmniValidOperators.Length);
+        return PolyMesh.OmniValidOperators[index].OrderBy(atom => atom, StringComparer.Ordinal).ToList();
     }
 
     private static string FindPresetName(List<string> atoms)
