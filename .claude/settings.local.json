@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-Content \"C:/Users/andyb/AppData/Local/Unity/Editor/Editor.log\" -Tail 100)",
+      "Bash(Select-String -Pattern \"error CS|Error|error\")",
+      "Bash(Select-Object -Last 50)"
+    ]
+  }
+}
