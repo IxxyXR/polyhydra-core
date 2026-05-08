@@ -343,6 +343,13 @@ public class RuntimeSettingsGUI : MonoBehaviour
             changed |= DrawBool("Randomize Amount 2", ref op.Parameter2Randomize);
         }
 
+        if (config.usesAmount3)
+        {
+            float min = useSafeOperatorRanges ? config.amount3SafeMin : config.amount3Min;
+            float max = useSafeOperatorRanges ? config.amount3SafeMax : config.amount3Max;
+            changed |= DrawFloat("Amount 3", ref op.Parameter3, min, max);
+        }
+
         changed |= DrawInt("Iterations", ref op.Iterations, 1, 32);
 
         if (config.usesFilter)
@@ -879,6 +886,7 @@ public class RuntimeSettingsGUI : MonoBehaviour
             StringParameter = source.StringParameter,
             Parameter1 = source.Parameter1,
             Parameter2 = source.Parameter2,
+            Parameter3 = source.Parameter3,
             Iterations = source.Iterations,
             Parameter1Randomize = source.Parameter1Randomize,
             Parameter2Randomize = source.Parameter2Randomize,
