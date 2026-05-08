@@ -187,7 +187,7 @@ namespace Polyhydra.Core
                 Halfedge edge = Halfedge;
                 do
                 {
-                    Vector3 crossTmp = Vector3.Cross(edge.Vector - centroid, edge.Next.Vector - centroid);
+                    Vector3 crossTmp = Vector3.Cross(edge.Vertex.Position - centroid, edge.Next.Vertex.Position - centroid);
                     normal += crossTmp;
                     edge = edge.Next; // move on to next halfedge
                 } while (edge != Halfedge);
