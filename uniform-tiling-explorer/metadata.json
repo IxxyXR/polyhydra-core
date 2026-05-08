@@ -1,0 +1,6 @@
+{
+  "name": "Uniform Tiling Explorer",
+  "description": "An interactive visualization of the 11 uniform (Archimedean) tilings of the Euclidean plane, built with Three.js and half-edge mesh structures.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
