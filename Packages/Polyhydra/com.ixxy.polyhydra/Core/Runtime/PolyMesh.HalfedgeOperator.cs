@@ -434,8 +434,13 @@ namespace Polyhydra.Core
         /// "F-F!" (dual), or "ve0-ve0,ve1-ve1".
         /// <para><paramref name="t"/> controls midpoint placement (0.5 = exact midpoint).</para>
         /// </summary>
-        public PolyMesh ApplyHalfedgeOperator(string operatorNotation, float t = 0.5f)
+        public PolyMesh ApplyHalfedgeOperator(string operatorNotation, float tVe = 0.5f, float tVf = 0.5f, float tFe = 0.5f)
         {
+            const float Eps = 1e-4f;
+            if (Mathf.Abs(tVe - tVf) < Eps) tVf += Eps;
+            if (Mathf.Abs(tVe - tFe) < Eps) tFe += Eps;
+            if (Mathf.Abs(tVf - tFe) < Eps) tFe += Eps;
+
             if (string.IsNullOrWhiteSpace(operatorNotation)) return Duplicate();
             var atomStrings = operatorNotation.Split(',')
                 .Where(a => !string.IsNullOrWhiteSpace(a))
@@ -463,7 +468,7 @@ namespace Polyhydra.Core
                 var ptsSingle = new Dictionary<string, OVertex>();
                 var ptsArray  = new Dictionary<string, OVertex[]>();
 
-                BuildFacePoints(face, halfedges, n, classesNeeded, cache, t, ptsSingle, ptsArray);
+                BuildFacePoints(face, halfedges, n, classesNeeded, cache, tVe, tVf, tFe, ptsSingle, ptsArray);
 
                 foreach (var (classA, classB) in atoms)
                     AddAtomConnections(classA, classB, sourceEdgeKeys, ptsSingle, ptsArray, n, edges, edgeSeen);
@@ -517,7 +522,7 @@ namespace Polyhydra.Core
         private void BuildFacePoints(
             Face face, List<Halfedge> halfedges, int n,
             HashSet<string> classesNeeded,
-            OperatorVertexCache cache, float t,
+            OperatorVertexCache cache, float tVe, float tVf, float tFe,
             Dictionary<string, OVertex> ptsSingle,
             Dictionary<string, OVertex[]> ptsArray)
         {
@@ -575,9 +580,9 @@ namespace Polyhydra.Core
                     // (which traverses this edge in the opposite direction) resolves to
                     // the same OVertex objects rather than swapping the two ve points.
                     ve[2*i]   = cache.GetOrCreate($"ve_{h.Prev.Vertex.Name}_{MakeKey(h.PairedName)}", "ve",
-                        Vector3.Lerp(h.Prev.Vertex.Position, E[i].Position, t), eNorm);
+                        Vector3.Lerp(h.Prev.Vertex.Position, E[i].Position, tVe), eNorm);
                     ve[2*i+1] = cache.GetOrCreate($"ve_{h.Vertex.Name}_{MakeKey(h.PairedName)}", "ve",
-                        Vector3.Lerp(h.Vertex.Position, E[i].Position, t), eNorm);
+                        Vector3.Lerp(h.Vertex.Position, E[i].Position, tVe), eNorm);
                 }
                 ptsArray["ve"]   = ve;
                 ptsArray["ve0"] = ve;
@@ -597,8 +602,8 @@ namespace Polyhydra.Core
                     vf[i] = cache.GetOrCreate(
                         $"vf_{face.Name}_{vert.Name}",
                         "vf",
-                        Vector3.Lerp(vert.Position, F.Position, t),
-                        Vector3.Lerp(vert.Normal, fn, t).normalized);
+                        Vector3.Lerp(vert.Position, F.Position, tVf),
+                        Vector3.Lerp(vert.Normal, fn, tVf).normalized);
                 }
                 ptsArray["vf"] = vf;
             }
@@ -615,8 +620,8 @@ namespace Polyhydra.Core
                     fe[i] = cache.GetOrCreate(
                         $"fe_{face.Name}_{MakeKey(halfedges[i].PairedName)}",
                         "fe",
-                        Vector3.Lerp(F.Position, E[i].Position, t),
-                        Vector3.Lerp(E[i].Normal, fn, t).normalized);
+                        Vector3.Lerp(F.Position, E[i].Position, tFe),
+                        Vector3.Lerp(E[i].Normal, fn, tFe).normalized);
                 ptsArray["fe"] = fe;
             }
 
@@ -655,8 +660,8 @@ namespace Polyhydra.Core
                     feAdj[i] = cache.GetOrCreate(
                         $"fe_{adjFaceName}_{MakeKey(halfedges[i].PairedName)}",
                         "fe!",
-                        Vector3.Lerp(FAdjacent[i].Position, E[i].Position, t),
-                        Vector3.Lerp(E[i].Normal, FAdjacent[i].Normal, t).normalized);
+                        Vector3.Lerp(FAdjacent[i].Position, E[i].Position, tFe),
+                        Vector3.Lerp(E[i].Normal, FAdjacent[i].Normal, tFe).normalized);
                 }
                 ptsArray["fe!"] = feAdj;
             }
@@ -676,13 +681,13 @@ namespace Polyhydra.Core
                     vfAdj[2*i]   = cache.GetOrCreate(
                         $"vf_{adjFaceName}_{vOrigin.Name}",
                         "vf!",
-                        Vector3.Lerp(vOrigin.Position, FAdjacent[i].Position, t),
-                        Vector3.Lerp(vOrigin.Normal,   FAdjacent[i].Normal,   t).normalized);
+                        Vector3.Lerp(vOrigin.Position, FAdjacent[i].Position, tVf),
+                        Vector3.Lerp(vOrigin.Normal,   FAdjacent[i].Normal,   tVf).normalized);
                     vfAdj[2*i+1] = cache.GetOrCreate(
                         $"vf_{adjFaceName}_{vDest.Name}",
                         "vf!",
-                        Vector3.Lerp(vDest.Position, FAdjacent[i].Position, t),
-                        Vector3.Lerp(vDest.Normal,   FAdjacent[i].Normal,   t).normalized);
+                        Vector3.Lerp(vDest.Position, FAdjacent[i].Position, tVf),
+                        Vector3.Lerp(vDest.Normal,   FAdjacent[i].Normal,   tVf).normalized);
                 }
                 ptsArray["vf!"] = vfAdj;
             }

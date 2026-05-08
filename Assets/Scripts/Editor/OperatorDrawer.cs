@@ -14,6 +14,7 @@ public class OperatorDrawer : PropertyDrawer
         "StringParameter",
         "Parameter1", "Parameter1Randomize",
         "Parameter2", "Parameter2Randomize",
+        "Parameter3",
         "Iterations",
         "FilterType", "FilterParam", "FilterFlip"
     };
@@ -23,6 +24,41 @@ public class OperatorDrawer : PropertyDrawer
 
     private bool IsOmni(SerializedProperty property) =>
         property.FindPropertyRelative("OpType").intValue == (int)PolyMesh.Operation.Omni;
+
+    private struct OmniParamVisibility { public bool ShowP1, ShowP2, ShowP3; }
+
+    private static OmniParamVisibility GetOmniParamVisibility(string atomString)
+    {
+        var v = new OmniParamVisibility();
+        if (string.IsNullOrWhiteSpace(atomString)) return v;
+        foreach (var atom in atomString.Split(','))
+        {
+            int dash = atom.IndexOf('-');
+            if (dash < 0) continue;
+            var left  = atom.Substring(0, dash).Trim();
+            var right = atom.Substring(dash + 1).Trim();
+            foreach (var cls in new[] { left, right })
+            {
+                if (cls == "ve" || cls == "ve0" || cls == "ve1") v.ShowP1 = true;
+                if (cls == "vf" || cls == "vf!")                 v.ShowP2 = true;
+                if (cls == "fe" || cls == "fe!")                 v.ShowP3 = true;
+            }
+        }
+        return v;
+    }
+
+    private static bool ShouldDrawField(string fieldName, bool omni, OmniParamVisibility v)
+    {
+        if (!omni) return true;
+        switch (fieldName)
+        {
+            case "Parameter1": case "Parameter1Randomize": return v.ShowP1;
+            case "Parameter2": case "Parameter2Randomize": return v.ShowP2;
+            case "Parameter3":                             return v.ShowP3;
+            case "FilterType": case "FilterParam": case "FilterFlip": return false;
+            default: return true;
+        }
+    }
 
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
     {
@@ -39,11 +75,13 @@ public class OperatorDrawer : PropertyDrawer
         if (property.isExpanded)
         {
             bool omni = IsOmni(property);
+            var vis = omni ? GetOmniParamVisibility(property.FindPropertyRelative("StringParameter").stringValue) : default;
             float y = position.y + LineH + Spacing;
             EditorGUI.indentLevel++;
 
             foreach (var fieldName in AllFields)
             {
+                if (!ShouldDrawField(fieldName, omni, vis)) continue;
                 var prop = property.FindPropertyRelative(fieldName);
                 float h = EditorGUI.GetPropertyHeight(prop, true);
                 EditorGUI.PropertyField(new Rect(position.x, y, position.width, h), prop, true);
@@ -226,10 +264,12 @@ public class OperatorDrawer : PropertyDrawer
             return LineH;
 
         bool omni = IsOmni(property);
+        var vis = omni ? GetOmniParamVisibility(property.FindPropertyRelative("StringParameter").stringValue) : default;
         float total = LineH + Spacing;
 
         foreach (var fieldName in AllFields)
         {
+            if (!ShouldDrawField(fieldName, omni, vis)) continue;
             var prop = property.FindPropertyRelative(fieldName);
             total += EditorGUI.GetPropertyHeight(prop, true) + Spacing;
         }

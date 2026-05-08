@@ -78,10 +78,12 @@ namespace Polyhydra.Core
 
         public float OriginalParamA => _OriginalParamA;
         public float OriginalParamB => _OriginalParamB;
+        public float OriginalParamC => _OriginalParamC;
         public string stringParam;
-        
+
         private float _OriginalParamA;
         private float _OriginalParamB;
+        private float _OriginalParamC;
 
 
         public float GetValueA(PolyMesh poly, int index) => funcA?.eval.Invoke(new FilterParams(poly, index)) ?? 0;
@@ -109,6 +111,17 @@ namespace Polyhydra.Core
             this.filter = filter;
         }
 
+        public OpParams(float a, float b, float c, string s=null, Filter filter=null)
+        {
+            _OriginalParamA = a;
+            _OriginalParamB = b;
+            _OriginalParamC = c;
+            funcA = new OpFunc(a);
+            funcB = new OpFunc(b);
+            stringParam = s;
+            this.filter = filter;
+        }
+
         public OpParams(OpFunc a, Filter filter=null)
         {
             funcA = a;
@@ -123,6 +136,16 @@ namespace Polyhydra.Core
             this.filter = filter;
         }
 
+        public OpParams(OpFunc a, float b, float c, string s=null, Filter filter=null)
+        {
+            _OriginalParamB = b;
+            _OriginalParamC = c;
+            funcA = a;
+            funcB = new OpFunc(b);
+            stringParam = s;
+            this.filter = filter;
+        }
+
         public OpParams(float a, OpFunc b, string s=null, Filter filter=null)
         {
             _OriginalParamA = a;
@@ -130,9 +153,28 @@ namespace Polyhydra.Core
             funcB = b;
             this.filter = filter;
         }
-        
+
+        public OpParams(float a, OpFunc b, float c, string s=null, Filter filter=null)
+        {
+            _OriginalParamA = a;
+            _OriginalParamC = c;
+            funcA = new OpFunc(a);
+            funcB = b;
+            stringParam = s;
+            this.filter = filter;
+        }
+
         public OpParams(OpFunc a, OpFunc b, string s=null, Filter filter=null)
         {
+            funcA = a;
+            funcB = b;
+            stringParam = s;
+            this.filter = filter;
+        }
+
+        public OpParams(OpFunc a, OpFunc b, float c, string s=null, Filter filter=null)
+        {
+            _OriginalParamC = c;
             funcA = a;
             funcB = b;
             stringParam = s;

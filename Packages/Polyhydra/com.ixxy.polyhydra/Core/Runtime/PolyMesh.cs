@@ -1763,7 +1763,7 @@ namespace Polyhydra.Core
                     polyMesh = polyMesh.Quinto(p);
                     break;
                 case Operation.Omni:
-                    polyMesh = polyMesh.ApplyHalfedgeOperator(p.stringParam, p.OriginalParamA);
+                    polyMesh = polyMesh.ApplyHalfedgeOperator(p.stringParam, p.OriginalParamA, p.OriginalParamB, p.OriginalParamC);
                     break;
                 case Operation.Lace:
                     polyMesh = polyMesh.Lace(p);

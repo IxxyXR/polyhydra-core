@@ -16,6 +16,12 @@ namespace Polyhydra.Core
         public float amount2Max = 20;
         public float amount2SafeMin = -10;
         public float amount2SafeMax = 0.999f;
+        public bool usesAmount3 = false;
+        public float amount3Default = 0.5f;
+        public float amount3Min = 0;
+        public float amount3Max = 1;
+        public float amount3SafeMin = 0;
+        public float amount3SafeMax = 1;
         public bool usesFilter = false;
         public bool usesColor = false;
         public string colorDefault;
@@ -45,6 +51,18 @@ namespace Polyhydra.Core
                     {
                         usesAmount = false,
                         matrix = new[,] { { 1, 0, 0 }, { 0, 1, 0 }, { 0, 0, 1 } }
+                    }
+                },
+                {
+                    PolyMesh.Operation.Omni, new OpConfig
+                    {
+                        usesAmount = true,
+                        amountDefault = 0.5f, amountMin = 0, amountMax = 1, amountSafeMin = 0, amountSafeMax = 1,
+                        usesAmount2 = true,
+                        amount2Default = 0.5f, amount2Min = 0, amount2Max = 1, amount2SafeMin = 0, amount2SafeMax = 1,
+                        usesAmount3 = true,
+                        amount3Default = 0.5f, amount3Min = 0, amount3Max = 1, amount3SafeMin = 0, amount3SafeMax = 1,
+                        matrix = new[,] { { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 } }
                     }
                 },
                 {

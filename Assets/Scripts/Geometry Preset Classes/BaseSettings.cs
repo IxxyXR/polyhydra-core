@@ -16,6 +16,7 @@ public abstract class BaseSettings : ScriptableObject
         public string StringParameter;
         public float Parameter1 = .3f;
         public float Parameter2 = 0;
+        public float Parameter3 = 0.5f;
         public int Iterations = 1;
         public bool Parameter1Randomize = false;
         public bool Parameter2Randomize = false;
@@ -99,24 +100,28 @@ public abstract class BaseSettings : ScriptableObject
                 (false, false) => new OpParams(
                     op.Parameter1,
                     op.Parameter2,
+                    op.Parameter3,
                     op.StringParameter,
                     filter: opFilter
                 ),
                 (true, false) => new OpParams(
                     opRandomValue1,
                     op.Parameter2,
+                    op.Parameter3,
                     op.StringParameter,
                     filter: opFilter
                 ),
                 (false, true) => new OpParams(
                     op.Parameter1,
                     opRandomValue2,
+                    op.Parameter3,
                     op.StringParameter,
                     filter: opFilter
                 ),
                 (true, true) => new OpParams(
                     opRandomValue1,
                     opRandomValue2,
+                    op.Parameter3,
                     op.StringParameter,
                     filter: opFilter
                 ),
@@ -127,6 +132,9 @@ public abstract class BaseSettings : ScriptableObject
                 poly = poly.AppyOperation(op.OpType, opParams);
             }
         }
+
+        var vef = poly.vef;
+        Debug.Log($"Faces: {vef.f} Edges: {vef.e} Vertices: {vef.v}");
 
         poly = ModifyPostOp(poly);
 
