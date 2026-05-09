@@ -28,6 +28,7 @@ import { UNIFORM_TILINGS } from './lib/tiling-geometries';
 import { PALETTES, PaletteKey } from './lib/palettes';
 import { exportObj, exportOff, exportSvg } from './lib/export';
 import { ColorMode } from './lib/coloring';
+import { createOmniOperatorDiagramSvg } from './lib/omni-diagram';
 import {
   createOperatorSpec,
   DEFAULT_OMNI_PARAMS,
@@ -209,6 +210,7 @@ export default function App() {
   const selectedPresetValue = !selectedOperatorNotation.trim()
     ? NO_PRESET_VALUE
     : (selectedMatchingPresetName ?? CUSTOM_PRESET_VALUE);
+  const selectedOperatorDiagramSvg = createOmniOperatorDiagramSvg(selectedOperatorNotation);
   const activeOperators = operators.filter((op) => {
     if (!op.enabled) return false;
     const atoms = Array.from(new Set(parseAtomList(resolveOperatorNotation(op.notation))));
@@ -783,6 +785,40 @@ export default function App() {
                                       </AnimatePresence>
 
                                       <div className="rounded-xl border border-neutral-800 bg-neutral-900/40 p-2">
+                                        {selectedOperatorDiagramSvg && (
+                                          <div className="mb-2 rounded-lg border border-neutral-800 bg-neutral-950/60 p-3">
+                                            <div className="mb-2 text-[10px] text-neutral-500 uppercase tracking-widest font-semibold">
+                                              Symbol
+                                            </div>
+                                            <div
+                                              className="mx-auto aspect-square w-28 text-white"
+                                              dangerouslySetInnerHTML={{ __html: selectedOperatorDiagramSvg }}
+                                            />
+                                            <div className="mt-3 flex flex-wrap items-center gap-2 text-[10px]">
+                                              <span
+                                                className={`rounded-full px-2 py-1 font-semibold uppercase tracking-widest ${
+                                                  selectedOperatorIsComplete
+                                                    ? 'bg-emerald-900/30 text-emerald-300 border border-emerald-800/40'
+                                                    : selectedOperatorIsValid
+                                                      ? 'bg-amber-900/30 text-amber-300 border border-amber-800/40'
+                                                      : 'bg-red-900/30 text-red-300 border border-red-800/40'
+                                                }`}
+                                              >
+                                                {selectedOperatorIsComplete ? 'Complete' : selectedOperatorIsValid ? 'Incomplete' : 'Invalid'}
+                                              </span>
+                                              {selectedMatchingPresetName && (
+                                                <span className="rounded-full border border-blue-800/40 bg-blue-900/20 px-2 py-1 font-semibold text-blue-300 uppercase tracking-widest">
+                                                  {selectedMatchingPresetName}
+                                                </span>
+                                              )}
+                                              {orderedSelectedAtoms.length > 0 && (
+                                                <span className="font-mono text-neutral-500">
+                                                  {orderedSelectedAtoms.length} atoms
+                                                </span>
+                                              )}
+                                            </div>
+                                          </div>
+                                        )}
                                         <div className="mb-2 flex items-center justify-between gap-2">
                                           <span className="text-[10px] text-neutral-500 uppercase tracking-widest font-semibold">
                                             Atom Grid
@@ -849,29 +885,6 @@ export default function App() {
                                         </div>
                                       </div>
 
-                                      <div className="flex flex-wrap items-center gap-2 text-[10px]">
-                                        <span
-                                          className={`rounded-full px-2 py-1 font-semibold uppercase tracking-widest ${
-                                            selectedOperatorIsComplete
-                                              ? 'bg-emerald-900/30 text-emerald-300 border border-emerald-800/40'
-                                              : selectedOperatorIsValid
-                                                ? 'bg-amber-900/30 text-amber-300 border border-amber-800/40'
-                                                : 'bg-red-900/30 text-red-300 border border-red-800/40'
-                                          }`}
-                                        >
-                                          {selectedOperatorIsComplete ? 'Complete' : selectedOperatorIsValid ? 'Incomplete' : 'Invalid'}
-                                        </span>
-                                        {selectedMatchingPresetName && (
-                                          <span className="rounded-full border border-blue-800/40 bg-blue-900/20 px-2 py-1 font-semibold text-blue-300 uppercase tracking-widest">
-                                            {selectedMatchingPresetName}
-                                          </span>
-                                        )}
-                                        {orderedSelectedAtoms.length > 0 && (
-                                          <span className="font-mono text-neutral-500">
-                                            {orderedSelectedAtoms.length} atoms
-                                          </span>
-                                        )}
-                                      </div>
                                       {unknownSelectedAtoms.length > 0 && (
                                         <p className="text-[10px] text-red-400 font-mono break-all">
                                           Unknown atoms: {unknownSelectedAtoms.join(', ')}
