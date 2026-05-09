@@ -1,15 +1,50 @@
 import * as THREE from 'three';
 import { applyOperator, createOperatorSpec, OperatorSpec } from './conway-operators';
 
+export interface GeneratedTilingMesh {
+  vertices: number[];
+  indices: number[];
+  faces: number[][];
+  faceValues?: number[];
+}
+
+export interface MultiGridSettings {
+  dimensions: number;
+  divisions: number;
+  offset: number;
+  randomize: boolean;
+  sharedVertices: boolean;
+  minDistance: number;
+  maxDistance: number;
+  colorRatio: number;
+  colorIntersect: number;
+  colorIndex: number;
+  randomSeed: number;
+}
+
+export interface TilingGenerationOptions {
+  multigrid?: MultiGridSettings;
+}
+
+export const MULTIGRID_DEFAULTS: MultiGridSettings = {
+  dimensions: 5,
+  divisions: 5,
+  offset: 0.2,
+  randomize: false,
+  sharedVertices: true,
+  minDistance: 0,
+  maxDistance: 1,
+  colorRatio: 1,
+  colorIntersect: 0,
+  colorIndex: 0,
+  randomSeed: 1,
+};
+
 export interface TilingDefinition {
   name: string;
   config: string;
   description: string;
-  generate: (rows: number, cols: number) => { 
-    vertices: number[]; 
-    indices: number[]; 
-    faces: number[][];
-  };
+  generate: (rows: number, cols: number, options?: TilingGenerationOptions) => GeneratedTilingMesh;
 }
 
 /**
@@ -133,6 +168,68 @@ class TilingMeshBuilder {
   }
 }
 
+const buildPolygonMesh = (
+  polygons: THREE.Vector2[][],
+  sharedVertices = true,
+  faceValues?: number[],
+): GeneratedTilingMesh => {
+  if (sharedVertices) {
+    const builder = new TilingMeshBuilder();
+    polygons.forEach((polygon) => {
+      builder.addFace(polygon.map((point) => [point.x, point.y] as [number, number]));
+    });
+    const mesh = builder.build();
+    return faceValues ? { ...mesh, faceValues: [...faceValues] } : mesh;
+  }
+
+  const vertices: number[] = [];
+  const faces: number[][] = [];
+  const indices: number[] = [];
+  const outputFaceValues: number[] = [];
+
+  polygons.forEach((polygon, polygonIndex) => {
+    if (polygon.length < 3) {
+      return;
+    }
+
+    const orientedPolygon = getPolygonSignedArea(polygon) < 0
+      ? [...polygon].reverse()
+      : polygon;
+    const baseIndex = vertices.length / 3;
+    const face: number[] = [];
+
+    orientedPolygon.forEach((point, pointIndex) => {
+      vertices.push(point.x, point.y, 0);
+      face.push(baseIndex + pointIndex);
+    });
+
+    for (let i = 1; i < face.length - 1; i++) {
+      indices.push(face[0], face[i], face[i + 1]);
+    }
+
+    faces.push(face);
+    if (faceValues) {
+      outputFaceValues.push(faceValues[polygonIndex]);
+    }
+  });
+
+  return faceValues
+    ? { vertices, indices, faces, faceValues: outputFaceValues }
+    : { vertices, indices, faces };
+};
+
+const getPolygonSignedArea = (polygon: THREE.Vector2[]): number => {
+  let area = 0;
+
+  for (let i = 0; i < polygon.length; i++) {
+    const current = polygon[i];
+    const next = polygon[(i + 1) % polygon.length];
+    area += current.x * next.y - next.x * current.y;
+  }
+
+  return area / 2;
+};
+
 /**
  * Legacy buildMesh wrapper using TilingMeshBuilder
  */
@@ -177,6 +274,14 @@ interface RepeatedTilePattern {
   tile: TileMesh2D;
   xOffset: THREE.Vector2;
   yOffset: THREE.Vector2;
+}
+
+interface MultiGridRhomb {
+  shape: THREE.Vector2[];
+  parallel1: number;
+  parallel2: number;
+  line1: number;
+  line2: number;
 }
 
 class TileMesh2D {
@@ -423,7 +528,7 @@ const buildRepeatedTile = (
   pattern: RepeatedTilePattern,
   rows: number,
   cols: number,
-) => {
+) : GeneratedTilingMesh => {
   const builder = new TilingMeshBuilder();
   const xCentering = pattern.xOffset.clone().multiplyScalar((cols - 1) / 2);
   const yCentering = pattern.yOffset.clone().multiplyScalar((rows - 1) / 2);
@@ -453,6 +558,199 @@ const triangulateFaces = (faces: number[][]): number[] => {
     }
   }
   return indices;
+};
+
+const seededRandom = (seed: number) => {
+  let state = (seed >>> 0) || 1;
+
+  return () => {
+    state = ((state * 1664525) + 1013904223) >>> 0;
+    return state / 4294967296;
+  };
+};
+
+const intersectLines = (
+  a: { start: THREE.Vector2; end: THREE.Vector2 },
+  b: { start: THREE.Vector2; end: THREE.Vector2 },
+): THREE.Vector2 | null => {
+  const tmp = (b.end.x - b.start.x) * (a.end.y - a.start.y)
+    - (b.end.y - b.start.y) * (a.end.x - a.start.x);
+
+  if (Math.abs(tmp) < 1e-12) {
+    return null;
+  }
+
+  const mu = ((a.start.x - b.start.x) * (a.end.y - a.start.y)
+    - (a.start.y - b.start.y) * (a.end.x - a.start.x)) / tmp;
+
+  return new THREE.Vector2(
+    b.start.x + (b.end.x - b.start.x) * mu,
+    b.start.y + (b.end.y - b.start.y) * mu,
+  );
+};
+
+const getMultigridIndicesFromPoint = (
+  point: THREE.Vector2,
+  angles: number[],
+  offset: number,
+): number[] => angles.map((angle) => {
+  const index = point.x * Math.sin(angle) + point.y * Math.cos(angle);
+  return Math.floor(index - offset + 1);
+});
+
+const getMultigridVertex = (indices: number[], angles: number[]): THREE.Vector2 => {
+  let x = 0;
+  let y = 0;
+
+  for (let i = 0; i < indices.length; i++) {
+    x += indices[i] * Math.cos(angles[i]);
+    y += indices[i] * Math.sin(angles[i]);
+  }
+
+  return new THREE.Vector2(x, y);
+};
+
+const generateMultigridRhombs = (settings: MultiGridSettings): MultiGridRhomb[] => {
+  const rhombs: MultiGridRhomb[] = [];
+  const angles: number[] = [];
+  const halfLines = settings.divisions;
+  const totalLines = (halfLines * 2) + 1;
+
+  if (settings.randomize) {
+    const nextRandom = seededRandom(settings.randomSeed);
+    let angle = 0;
+    while (angle < Math.PI) {
+      const step = 0.00001 + ((Math.PI / (settings.divisions / 2)) - 0.00001) * nextRandom();
+      angle += step;
+      angles.push(angle);
+    }
+  } else {
+    for (let i = 0; i < settings.dimensions; i++) {
+      angles.push(2 * (Math.PI / settings.dimensions) * i);
+    }
+  }
+
+  for (let i = 0; i < angles.length; i++) {
+    const angle1 = angles[i];
+    const p1 = new THREE.Vector2(totalLines * Math.cos(angle1), -totalLines * Math.sin(angle1));
+    const p2 = p1.clone().negate();
+
+    for (let parallel1 = 0; parallel1 < totalLines; parallel1++) {
+      const index1 = halfLines - parallel1;
+      const offset1 = new THREE.Vector2(
+        (index1 + settings.offset) * Math.sin(angle1),
+        (index1 + settings.offset) * Math.cos(angle1),
+      );
+      const l1 = { start: p1.clone().add(offset1), end: p2.clone().add(offset1) };
+
+      for (let k = i + 1; k < angles.length; k++) {
+        const angle2 = angles[k];
+        const p3 = new THREE.Vector2(totalLines * Math.cos(angle2), -totalLines * Math.sin(angle2));
+        const p4 = p3.clone().negate();
+
+        for (let parallel2 = 0; parallel2 < totalLines; parallel2++) {
+          const index2 = halfLines - parallel2;
+          const offset2 = new THREE.Vector2(
+            (index2 + settings.offset) * Math.sin(angle2),
+            (index2 + settings.offset) * Math.cos(angle2),
+          );
+          const l2 = { start: p3.clone().add(offset2), end: p4.clone().add(offset2) };
+          const intersect = intersectLines(l1, l2);
+
+          if (!intersect) {
+            continue;
+          }
+
+          const indices = getMultigridIndicesFromPoint(intersect, angles, settings.offset);
+          indices[i] = index1 + 1;
+          indices[k] = index2 + 1;
+          const v0 = getMultigridVertex(indices, angles);
+          indices[i] = index1;
+          indices[k] = index2 + 1;
+          const v1 = getMultigridVertex(indices, angles);
+          indices[i] = index1;
+          indices[k] = index2;
+          const v2 = getMultigridVertex(indices, angles);
+          indices[i] = index1 + 1;
+          indices[k] = index2;
+          const v3 = getMultigridVertex(indices, angles);
+
+          rhombs.push({
+            shape: [v0, v1, v2, v3],
+            parallel1: index1,
+            parallel2: index2,
+            line1: i,
+            line2: k,
+          });
+        }
+      }
+    }
+  }
+
+  return rhombs;
+};
+
+const generateMultigridMesh = (settings: MultiGridSettings): GeneratedTilingMesh => {
+  const size = new THREE.Vector2(1, 1);
+  const diameter = size.length();
+  const scale = diameter / 2 / settings.divisions;
+  let tf = new THREE.Vector2(size.x / 2, size.y / 2).multiplyScalar(scale);
+
+  if (settings.dimensions % 2 > 0) {
+    tf = rotateVector(tf, THREE.MathUtils.degToRad((Math.PI / settings.dimensions) * 0.5));
+  }
+
+  const polygons: THREE.Vector2[][] = [];
+  const faceValues: number[] = [];
+  const rhombs = generateMultigridRhombs(settings);
+  const sqrMaxDistance = settings.maxDistance * settings.maxDistance;
+  const sqrMinDistance = settings.minDistance * settings.minDistance;
+
+  for (const rhomb of rhombs) {
+    const shape = rhomb.shape.map((point) => new THREE.Vector2(point.x * tf.x, point.y * tf.y));
+
+    if (shape.some((point) => {
+      const distanceSqr = point.lengthSq();
+      return distanceSqr > sqrMaxDistance || distanceSqr < sqrMinDistance;
+    })) {
+      continue;
+    }
+
+    const w1 = shape[2].distanceTo(shape[0]);
+    const w2 = shape[3].distanceTo(shape[1]);
+    const shapeRatio = Math.min(w1, w2) / Math.max(w1, w2);
+    let intersectRatio = rhomb.line1 / settings.dimensions;
+    intersectRatio += rhomb.line2 / settings.dimensions;
+    intersectRatio *= 0.5;
+
+    let indexRatio = 1 - Math.abs(rhomb.parallel1 / settings.divisions / 2);
+    indexRatio *= 1 - Math.abs(rhomb.parallel2 / settings.divisions / 2);
+
+    let gradientPos = 1;
+
+    if (settings.colorRatio >= 0) {
+      gradientPos *= 1 - (shapeRatio * settings.colorRatio);
+    } else {
+      gradientPos *= 1 - ((1 - shapeRatio) * Math.abs(settings.colorRatio));
+    }
+
+    if (settings.colorIntersect >= 0) {
+      gradientPos *= 1 - (intersectRatio * settings.colorIntersect);
+    } else {
+      gradientPos *= 1 - ((1 - intersectRatio) * Math.abs(settings.colorIntersect));
+    }
+
+    if (settings.colorIndex >= 0) {
+      gradientPos *= 1 - (indexRatio * settings.colorIndex);
+    } else {
+      gradientPos *= 1 - ((1 - indexRatio) * Math.abs(settings.colorIndex));
+    }
+
+    polygons.push(shape);
+    faceValues.push(Number.isNaN(gradientPos) ? 0 : gradientPos);
+  }
+
+  return buildPolygonMesh(polygons, settings.sharedVertices, faceValues);
 };
 
 const buildPatternFromFormat = (format: string): RepeatedTilePattern => {
@@ -1301,4 +1599,14 @@ export const UNIFORM_TILINGS: Record<string, TilingDefinition> = {
 3 0 3 1
 5 0 3 2`),
   ),
+
+  'multigrid': {
+    name: 'Multigrid',
+    config: 'N-grid',
+    description: 'De Bruijn multigrid construction from intersecting line families.',
+    generate: (_rows, _cols, options) => generateMultigridMesh({
+      ...MULTIGRID_DEFAULTS,
+      ...options?.multigrid,
+    }),
+  },
 };

@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { UNIFORM_TILINGS } from '../lib/tiling-geometries';
+import { TilingGenerationOptions, UNIFORM_TILINGS } from '../lib/tiling-geometries';
 import { PaletteKey } from '../lib/palettes';
 
 import { applyOperator, Mesh, OperatorSpec } from '../lib/conway-operators';
@@ -18,6 +18,8 @@ interface TilingCanvasProps {
   operators: OperatorSpec[];
   palette: PaletteKey;
   colorMode: ColorMode;
+  edgeColor: string;
+  generationOptions?: TilingGenerationOptions;
 }
 
 export const TilingCanvas: React.FC<TilingCanvasProps> = ({
@@ -31,6 +33,8 @@ export const TilingCanvas: React.FC<TilingCanvasProps> = ({
   operators,
   palette,
   colorMode,
+  edgeColor,
+  generationOptions,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<{
@@ -117,7 +121,7 @@ export const TilingCanvas: React.FC<TilingCanvasProps> = ({
     const tiling = UNIFORM_TILINGS[tilingType];
     if (!tiling) return;
 
-    let { vertices, indices, faces } = tiling.generate(rows, cols);
+    let { vertices, indices, faces } = tiling.generate(rows, cols, generationOptions);
 
     if (operators.length > 0) {
       let mesh: Mesh = { vertices, faces };
@@ -139,6 +143,14 @@ export const TilingCanvas: React.FC<TilingCanvasProps> = ({
 
     let computedFaceColors = computeFaceColors({ vertices, faces }, palette, colorMode);
     const uniqueColorsUsed = new Set(computedFaceColors);
+    const uniqueEdges = new Set<string>();
+    faces.forEach((face) => {
+      for (let i = 0; i < face.length; i++) {
+        const a = face[i];
+        const b = face[(i + 1) % face.length];
+        uniqueEdges.add(a < b ? `${a},${b}` : `${b},${a}`);
+      }
+    });
     const updateStat = (ids: string[], value: string) => {
       ids.forEach((id) => {
         const element = document.getElementById(id);
@@ -146,9 +158,10 @@ export const TilingCanvas: React.FC<TilingCanvasProps> = ({
       });
     };
 
-    updateStat(['stat-colors', 'stat-colors-expanded'], uniqueColorsUsed.size.toString());
-    updateStat(['stat-vertices', 'stat-vertices-expanded'], (vertices.length / 3).toString());
-    updateStat(['stat-faces', 'stat-faces-expanded'], faces.length.toString());
+    updateStat(['stat-colors'], uniqueColorsUsed.size.toString());
+    updateStat(['stat-vertices'], (vertices.length / 3).toString());
+    updateStat(['stat-faces'], faces.length.toString());
+    updateStat(['stat-edges'], uniqueEdges.size.toString());
 
     if (showFaces) {
       // Create non-indexed geometry for per-face colors
@@ -180,9 +193,13 @@ export const TilingCanvas: React.FC<TilingCanvasProps> = ({
         wireframe: wireframe,
         transparent: true,
         opacity: 0.9,
-        shininess: 30
+        shininess: 30,
+        polygonOffset: true,
+        polygonOffsetFactor: 1,
+        polygonOffsetUnits: 1,
       });
       const mesh = new THREE.Mesh(coloredGeom, material);
+      mesh.renderOrder = 0;
       meshGroup.add(mesh);
     }
 
@@ -197,13 +214,13 @@ export const TilingCanvas: React.FC<TilingCanvasProps> = ({
       edgeGeom.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
       edgeGeom.setIndex(edgeIndices);
       const edgeMat = new THREE.LineBasicMaterial({ 
-        color: 0x3b82f6, // Blue-500 for better visibility
+        color: new THREE.Color(edgeColor),
         linewidth: 2, 
         transparent: true, 
         opacity: 0.8 
       });
       const edges = new THREE.LineSegments(edgeGeom, edgeMat);
-      edges.position.z = 0.01; // Avoid z-fighting
+      edges.renderOrder = 1;
       meshGroup.add(edges);
     }
 
@@ -259,7 +276,7 @@ export const TilingCanvas: React.FC<TilingCanvasProps> = ({
       containerRef.current?.removeEventListener('click', onClick);
     };
 
-  }, [tilingType, rows, cols, showEdges, showVertices, showFaces, wireframe, operators, palette, colorMode]);
+  }, [tilingType, rows, cols, showEdges, showVertices, showFaces, wireframe, operators, palette, colorMode, edgeColor, generationOptions]);
 
   return <div id="canvas-container" ref={containerRef} className="w-full h-full" />;
 };

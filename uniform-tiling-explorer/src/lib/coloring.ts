@@ -1,14 +1,33 @@
 import { Mesh } from './conway-operators';
 import { PALETTES, PaletteKey } from './palettes';
 
-export type ColorMode = 'role' | 'sides';
+export type ColorMode = 'role' | 'sides' | 'value';
 
 export function computeFaceColors(mesh: Mesh, palette: PaletteKey, colorMode: ColorMode = 'role'): string[] {
+  const paletteColors = PALETTES[palette].colors;
+
   if (colorMode === 'sides') {
-    const paletteColors = PALETTES[palette].colors;
     return mesh.faces.map((face) => {
       const colorIndex = Math.max(0, face.length - 3);
       return paletteColors[colorIndex % paletteColors.length];
+    });
+  }
+
+  if (colorMode === 'value' && mesh.faceValues && mesh.faceValues.length === mesh.faces.length) {
+    const minValue = Math.min(...mesh.faceValues);
+    const maxValue = Math.max(...mesh.faceValues);
+    const range = maxValue - minValue;
+
+    return mesh.faceValues.map((value) => {
+      const normalized = range < 1e-9 ? 0 : (value - minValue) / range;
+      const colorIndex = Math.max(
+        0,
+        Math.min(
+          paletteColors.length - 1,
+          Math.floor(normalized * paletteColors.length),
+        ),
+      );
+      return paletteColors[colorIndex];
     });
   }
 
@@ -57,6 +76,5 @@ export function computeFaceColors(mesh: Mesh, palette: PaletteKey, colorMode: Co
     colorIndices[i] = color;
   }
 
-  const PALETTE = PALETTES[palette].colors;
-  return Array.from(colorIndices).map(idx => PALETTE[idx % PALETTE.length]);
+  return Array.from(colorIndices).map(idx => paletteColors[idx % paletteColors.length]);
 }

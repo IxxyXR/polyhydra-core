@@ -247,7 +247,7 @@ export function createOmniOperatorDiagramSvg(notation: string): string | null {
   const uniquePoints = Array.from(new Map(points.map((point) => [pointKey(point), point])).values());
   const viewBoxSize = 1 + 2 * PADDING;
   let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-${PADDING} -${PADDING} ${viewBoxSize} ${viewBoxSize}" fill="none">`;
-  svg += `<rect x="0" y="0" width="1" height="1" fill="none" stroke="#4b5563" stroke-width="0.032" stroke-dasharray="0.035 0.025"/>`;
+  svg += `<rect x="0" y="0" width="1" height="1" fill="none" stroke="#374151" stroke-width="0.024" stroke-dasharray="0.03 0.025"/>`;
 
   for (const segment of segments) {
     const aOutside = isOutsidePoint(segment.a);

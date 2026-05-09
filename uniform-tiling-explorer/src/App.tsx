@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence, Reorder } from 'motion/react';
-import { 
+import {
   Settings, 
   Layers, 
   Grid2X2, 
@@ -24,7 +24,12 @@ import {
   Plus
 } from 'lucide-react';
 import { TilingCanvas } from './components/TilingCanvas';
-import { UNIFORM_TILINGS } from './lib/tiling-geometries';
+import {
+  MULTIGRID_DEFAULTS,
+  MultiGridSettings,
+  TilingGenerationOptions,
+  UNIFORM_TILINGS,
+} from './lib/tiling-geometries';
 import { PALETTES, PaletteKey } from './lib/palettes';
 import { exportObj, exportOff, exportSvg } from './lib/export';
 import { ColorMode } from './lib/coloring';
@@ -78,11 +83,12 @@ export default function App() {
   const [operators, setOperators] = useState<OperatorState[]>([]);
   const [palette, setPalette] = useState<PaletteKey>('vibrant');
   const [colorMode, setColorMode] = useState<ColorMode>('role');
+  const [edgeColor, setEdgeColor] = useState('#3b82f6');
+  const [multigridSettings, setMultigridSettings] = useState<MultiGridSettings>(MULTIGRID_DEFAULTS);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [tilingMenuOpen, setTilingMenuOpen] = useState(false);
   const [displayMenuOpen, setDisplayMenuOpen] = useState(false);
   const [paletteMenuOpen, setPaletteMenuOpen] = useState(false);
-  const [structureInfoOpen, setStructureInfoOpen] = useState(false);
   const [selectedOperatorId, setSelectedOperatorId] = useState<string | null>(null);
   const [rawEditorOpen, setRawEditorOpen] = useState(false);
   const [presetPickerOpen, setPresetPickerOpen] = useState(false);
@@ -119,9 +125,38 @@ export default function App() {
     if (urlPalette && PALETTES[urlPalette as PaletteKey]) setPalette(urlPalette as PaletteKey);
 
     const urlColorMode = params.get('colorMode');
-    if (urlColorMode === 'role' || urlColorMode === 'sides') {
+    if (urlColorMode === 'role' || urlColorMode === 'sides' || urlColorMode === 'value') {
       setColorMode(urlColorMode);
     }
+    const urlEdgeColor = params.get('edgeColor');
+    if (urlEdgeColor) {
+      setEdgeColor(urlEdgeColor);
+    }
+
+    const parseIntParam = (value: string | null, fallback: number) => {
+      const parsed = Number.parseInt(value ?? '', 10);
+      return Number.isFinite(parsed) ? parsed : fallback;
+    };
+    const parseFloatParam = (value: string | null, fallback: number) => {
+      const parsed = Number.parseFloat(value ?? '');
+      return Number.isFinite(parsed) ? parsed : fallback;
+    };
+
+    setMultigridSettings({
+      dimensions: parseIntParam(params.get('mgDim'), MULTIGRID_DEFAULTS.dimensions),
+      divisions: parseIntParam(params.get('mgDiv'), MULTIGRID_DEFAULTS.divisions),
+      offset: parseFloatParam(params.get('mgOff'), MULTIGRID_DEFAULTS.offset),
+      randomize: params.get('mgRand') === 'true',
+      sharedVertices: params.get('mgShared') === null
+        ? MULTIGRID_DEFAULTS.sharedVertices
+        : params.get('mgShared') === 'true',
+      minDistance: parseFloatParam(params.get('mgMin'), MULTIGRID_DEFAULTS.minDistance),
+      maxDistance: parseFloatParam(params.get('mgMax'), MULTIGRID_DEFAULTS.maxDistance),
+      colorRatio: parseFloatParam(params.get('mgRatio'), MULTIGRID_DEFAULTS.colorRatio),
+      colorIntersect: parseFloatParam(params.get('mgIntersect'), MULTIGRID_DEFAULTS.colorIntersect),
+      colorIndex: parseFloatParam(params.get('mgIndex'), MULTIGRID_DEFAULTS.colorIndex),
+      randomSeed: parseIntParam(params.get('mgSeed'), MULTIGRID_DEFAULTS.randomSeed),
+    });
 
     const urlOps = params.get('ops');
     if (urlOps) {
@@ -152,6 +187,18 @@ export default function App() {
     params.set('wireframe', wireframe.toString());
     params.set('palette', palette);
     params.set('colorMode', colorMode);
+    params.set('edgeColor', edgeColor);
+    params.set('mgDim', multigridSettings.dimensions.toString());
+    params.set('mgDiv', multigridSettings.divisions.toString());
+    params.set('mgOff', multigridSettings.offset.toString());
+    params.set('mgRand', multigridSettings.randomize.toString());
+    params.set('mgShared', multigridSettings.sharedVertices.toString());
+    params.set('mgMin', multigridSettings.minDistance.toString());
+    params.set('mgMax', multigridSettings.maxDistance.toString());
+    params.set('mgRatio', multigridSettings.colorRatio.toString());
+    params.set('mgIntersect', multigridSettings.colorIntersect.toString());
+    params.set('mgIndex', multigridSettings.colorIndex.toString());
+    params.set('mgSeed', multigridSettings.randomSeed.toString());
     if (operators.length > 0) {
       params.set('ops', operators.map((o) => {
         const serialized = serializeOperatorSpec(o);
@@ -161,7 +208,7 @@ export default function App() {
 
     const newRelativePathQuery = window.location.pathname + '?' + params.toString();
     window.history.replaceState(null, '', newRelativePathQuery);
-  }, [tilingType, rows, cols, showEdges, showVertices, showFaces, wireframe, operators, palette, colorMode]);
+  }, [tilingType, rows, cols, showEdges, showVertices, showFaces, wireframe, operators, palette, colorMode, edgeColor, multigridSettings]);
 
   const addOperator = (notation: string, overrides: Partial<OperatorSpec> = {}) => {
     if (!notation.trim()) return;
@@ -260,8 +307,36 @@ export default function App() {
     ));
   };
 
+  const updateMultigridSetting = <K extends keyof MultiGridSettings>(field: K, value: MultiGridSettings[K]) => {
+    setMultigridSettings((current) => {
+      if (field === 'minDistance') {
+        const minDistance = value as number;
+        return {
+          ...current,
+          minDistance,
+          maxDistance: Math.max(current.maxDistance, minDistance),
+        };
+      }
+
+      if (field === 'maxDistance') {
+        const maxDistance = value as number;
+        return {
+          ...current,
+          maxDistance,
+          minDistance: Math.min(current.minDistance, maxDistance),
+        };
+      }
+
+      return { ...current, [field]: value };
+    });
+  };
+
   const selectedTiling = UNIFORM_TILINGS[tilingType];
   const selectedPalette = PALETTES[palette];
+  const isMultigrid = tilingType === 'multigrid';
+  const generationOptions: TilingGenerationOptions = {
+    multigrid: multigridSettings,
+  };
 
   return (
     <div id="app-root" className="flex h-screen bg-neutral-950 text-neutral-100 font-sans overflow-hidden">
@@ -278,7 +353,7 @@ export default function App() {
             </div>
             <div>
               <h1 className="font-bold text-xl tracking-tight text-white">Tiling Explorer</h1>
-              <p className="text-xs text-neutral-400 font-mono uppercase tracking-widest">Half-Edge Powered</p>
+              <p className="text-xs text-neutral-400 font-mono uppercase tracking-widest">Three.js Powered</p>
             </div>
           </div>
 
@@ -320,6 +395,9 @@ export default function App() {
                             key={key}
                             onClick={() => {
                               setTilingType(key);
+                              if (key === 'multigrid') {
+                                setColorMode((current) => current === 'role' ? 'value' : current);
+                              }
                               setTilingMenuOpen(false);
                             }}
                             className={`w-full rounded-xl p-3 text-left transition-all ${
@@ -346,62 +424,259 @@ export default function App() {
             <section>
               <h2 className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-4 flex items-center gap-2">
                 <Settings className="w-3 h-3" />
-                Control Panel
+                Settings
               </h2>
               <div className="space-y-4 bg-neutral-800/20 p-4 rounded-2xl border border-neutral-800">
-                <div className="space-y-2">
-                  <div className="flex justify-between text-xs">
-                    <span className="text-neutral-400">Rows</span>
-                    <span className="text-blue-400 font-mono">{rows}</span>
-                  </div>
-                  <input 
-                    type="range" min="2" max="30" value={rows} 
-                    onChange={(e) => setRows(parseInt(e.target.value))}
-                    className="w-full accent-blue-600 h-1.5 bg-neutral-700 rounded-lg appearance-none cursor-pointer"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <div className="flex justify-between text-xs">
-                    <span className="text-neutral-400">Columns</span>
-                    <span className="text-blue-400 font-mono">{cols}</span>
-                  </div>
-                  <input 
-                    type="range" min="2" max="30" value={cols} 
-                    onChange={(e) => setCols(parseInt(e.target.value))}
-                    className="w-full accent-blue-600 h-1.5 bg-neutral-700 rounded-lg appearance-none cursor-pointer"
-                  />
-                </div>
-
-                <div className="pt-4 border-t border-neutral-800 space-y-3">
-                  <div className="rounded-xl border border-neutral-800 bg-neutral-900/40 overflow-hidden">
-                    <button
-                      onClick={() => setDisplayMenuOpen(!displayMenuOpen)}
-                      className="w-full p-3 text-left transition-colors hover:bg-neutral-800/40"
-                    >
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="min-w-0">
-                          <div className="text-[10px] text-neutral-500 uppercase tracking-widest font-semibold mb-1">
-                            Visibility
-                          </div>
-                          <div className="text-xs font-semibold text-white truncate">
-                            Faces, edges, vertices, wireframe
-                          </div>
-                        </div>
-                        <div className="flex h-8 w-8 items-center justify-center rounded-full border border-neutral-700 bg-neutral-900/70 text-neutral-400">
-                          <ChevronRight className={`w-4 h-4 transition-transform ${displayMenuOpen ? 'rotate-90 text-white' : ''}`} />
-                        </div>
+                {isMultigrid ? (
+                  <>
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-xs">
+                        <span className="text-neutral-400">Dimensions</span>
+                        <span className="text-blue-400 font-mono">{multigridSettings.dimensions}</span>
                       </div>
-                    </button>
+                      <input
+                        type="range"
+                        min="3"
+                        max="30"
+                        value={multigridSettings.dimensions}
+                        onChange={(e) => updateMultigridSetting('dimensions', parseInt(e.target.value, 10))}
+                        className="w-full accent-blue-600 h-1.5 bg-neutral-700 rounded-lg appearance-none cursor-pointer"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-xs">
+                        <span className="text-neutral-400">Divisions</span>
+                        <span className="text-blue-400 font-mono">{multigridSettings.divisions}</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="1"
+                        max="30"
+                        value={multigridSettings.divisions}
+                        onChange={(e) => updateMultigridSetting('divisions', parseInt(e.target.value, 10))}
+                        className="w-full accent-blue-600 h-1.5 bg-neutral-700 rounded-lg appearance-none cursor-pointer"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-xs">
+                        <span className="text-neutral-400">Offset</span>
+                        <span className="text-blue-400 font-mono">{multigridSettings.offset.toFixed(2)}</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="-2"
+                        max="2"
+                        step="0.01"
+                        value={multigridSettings.offset}
+                        onChange={(e) => updateMultigridSetting('offset', Number.parseFloat(e.target.value))}
+                        className="w-full accent-blue-600 h-1.5 bg-neutral-700 rounded-lg appearance-none cursor-pointer"
+                      />
+                    </div>
+                    <div className="rounded-xl border border-neutral-800 bg-neutral-900/40 p-3 space-y-3">
+                      <div className="text-[10px] text-neutral-500 uppercase tracking-widest font-semibold">Cropping</div>
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-xs">
+                          <span className="text-neutral-400">Min Distance</span>
+                          <span className="text-blue-400 font-mono">{multigridSettings.minDistance.toFixed(2)}</span>
+                        </div>
+                        <input
+                          type="range"
+                          min="0"
+                          max="2"
+                          step="0.01"
+                          value={multigridSettings.minDistance}
+                          onChange={(e) => updateMultigridSetting('minDistance', Number.parseFloat(e.target.value))}
+                          className="w-full accent-blue-600 h-1.5 bg-neutral-700 rounded-lg appearance-none cursor-pointer"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-xs">
+                          <span className="text-neutral-400">Max Distance</span>
+                          <span className="text-blue-400 font-mono">{multigridSettings.maxDistance.toFixed(2)}</span>
+                        </div>
+                        <input
+                          type="range"
+                          min="0"
+                          max="2"
+                          step="0.01"
+                          value={multigridSettings.maxDistance}
+                          onChange={(e) => updateMultigridSetting('maxDistance', Number.parseFloat(e.target.value))}
+                          className="w-full accent-blue-600 h-1.5 bg-neutral-700 rounded-lg appearance-none cursor-pointer"
+                        />
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-xs">
+                        <span className="text-neutral-400">Rows</span>
+                        <span className="text-blue-400 font-mono">{rows}</span>
+                      </div>
+                      <input 
+                        type="range" min="2" max="30" value={rows} 
+                        onChange={(e) => setRows(parseInt(e.target.value))}
+                        className="w-full accent-blue-600 h-1.5 bg-neutral-700 rounded-lg appearance-none cursor-pointer"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-xs">
+                        <span className="text-neutral-400">Columns</span>
+                        <span className="text-blue-400 font-mono">{cols}</span>
+                      </div>
+                      <input 
+                        type="range" min="2" max="30" value={cols} 
+                        onChange={(e) => setCols(parseInt(e.target.value))}
+                        className="w-full accent-blue-600 h-1.5 bg-neutral-700 rounded-lg appearance-none cursor-pointer"
+                      />
+                    </div>
+                  </>
+                )}
+              </div>
+            </section>
 
-                    <AnimatePresence initial={false}>
-                      {displayMenuOpen && (
-                        <motion.div
-                          initial={{ height: 0, opacity: 0 }}
-                          animate={{ height: 'auto', opacity: 1 }}
-                          exit={{ height: 0, opacity: 0 }}
-                          className="border-t border-neutral-800"
-                        >
-                          <div className="p-3 space-y-3">
+            <section>
+              <div className="rounded-2xl border border-neutral-800 bg-neutral-800/20 overflow-hidden">
+                <button
+                  onClick={() => setDisplayMenuOpen(!displayMenuOpen)}
+                  className="w-full p-3 text-left transition-colors hover:bg-neutral-800/40"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-neutral-500">
+                        <Eye className="w-3 h-3" />
+                        Appearance
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="flex -space-x-1">
+                          {selectedPalette.colors.slice(0, 5).map((c, i) => (
+                            <div
+                              key={i}
+                              className="h-3 w-3 rounded-full border border-neutral-900"
+                              style={{ backgroundColor: c }}
+                            />
+                          ))}
+                        </div>
+                        <div
+                          className="h-2 w-6 rounded-full border border-neutral-700"
+                          style={{ backgroundColor: edgeColor }}
+                          title="Edge colour"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full border border-neutral-700 bg-neutral-900/70 text-neutral-400">
+                      <ChevronRight className={`w-4 h-4 transition-transform ${displayMenuOpen ? 'rotate-90 text-white' : ''}`} />
+                    </div>
+                  </div>
+                </button>
+
+                <AnimatePresence initial={false}>
+                  {displayMenuOpen && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      className="border-t border-neutral-800"
+                    >
+                      <div className="p-3 space-y-3">
+                        <div className="space-y-3">
+                          <div className="rounded-xl border border-neutral-800 bg-neutral-900/40 overflow-hidden">
+                            <button
+                              onClick={() => setPaletteMenuOpen(!paletteMenuOpen)}
+                              className="w-full p-3 text-left transition-colors hover:bg-neutral-800/40"
+                            >
+                              <div className="flex items-center justify-between gap-3">
+                                <div className="min-w-0">
+                                  <div className="text-[10px] text-neutral-500 uppercase tracking-widest font-semibold mb-1">
+                                    Face Palette
+                                  </div>
+                                  <div className="text-xs font-semibold text-white truncate">{selectedPalette.name}</div>
+                                  <div className="flex -space-x-1 mt-2">
+                                    {selectedPalette.colors.slice(0, 5).map((c, i) => (
+                                      <div
+                                        key={i}
+                                        className="w-3 h-3 rounded-full border border-neutral-900"
+                                        style={{ backgroundColor: c }}
+                                      />
+                                    ))}
+                                  </div>
+                                </div>
+                                <div className="flex h-8 w-8 items-center justify-center rounded-full border border-neutral-700 bg-neutral-900/70 text-neutral-400">
+                                  <ChevronRight className={`w-4 h-4 transition-transform ${paletteMenuOpen ? 'rotate-90 text-white' : ''}`} />
+                                </div>
+                              </div>
+                            </button>
+
+                            <AnimatePresence initial={false}>
+                              {paletteMenuOpen && (
+                                <motion.div
+                                  initial={{ height: 0, opacity: 0 }}
+                                  animate={{ height: 'auto', opacity: 1 }}
+                                  exit={{ height: 0, opacity: 0 }}
+                                  className="border-t border-neutral-800"
+                                >
+                                  <div className="p-2 grid grid-cols-2 gap-2">
+                                    {Object.entries(PALETTES).map(([key, p]) => (
+                                      <button
+                                        key={key}
+                                        onClick={() => {
+                                          setPalette(key as PaletteKey);
+                                          setPaletteMenuOpen(false);
+                                        }}
+                                        className={`flex items-center gap-2 p-2 rounded-lg text-[10px] font-medium transition-all border ${
+                                          palette === key
+                                            ? 'bg-neutral-800 border-neutral-700 text-white'
+                                            : 'bg-neutral-900/40 border-neutral-800/50 text-neutral-500 hover:bg-neutral-800/60'
+                                        }`}
+                                      >
+                                        <div className="flex -space-x-1">
+                                          {p.colors.slice(0, 3).map((c, i) => (
+                                            <div key={i} className="w-2 h-2 rounded-full border border-neutral-900" style={{ backgroundColor: c }} />
+                                          ))}
+                                        </div>
+                                        {p.name}
+                                      </button>
+                                    ))}
+                                  </div>
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
+                          </div>
+                          <div className="grid grid-cols-2 gap-2">
+                            <button
+                              onClick={() => setColorMode('role')}
+                              className={`rounded-lg border px-3 py-2 text-[10px] font-semibold uppercase tracking-widest transition-colors ${
+                                colorMode === 'role'
+                                  ? 'border-blue-700/60 bg-blue-950/20 text-blue-300'
+                                  : 'border-neutral-800 bg-neutral-900/40 text-neutral-500 hover:bg-neutral-800/60'
+                              }`}
+                            >
+                              By Role
+                            </button>
+                            <button
+                              onClick={() => setColorMode('sides')}
+                              className={`rounded-lg border px-3 py-2 text-[10px] font-semibold uppercase tracking-widest transition-colors ${
+                                colorMode === 'sides'
+                                  ? 'border-blue-700/60 bg-blue-950/20 text-blue-300'
+                                  : 'border-neutral-800 bg-neutral-900/40 text-neutral-500 hover:bg-neutral-800/60'
+                              }`}
+                            >
+                              By Sides
+                            </button>
+                          </div>
+                          <div className="flex items-center justify-between gap-3 rounded-lg border border-neutral-800 bg-neutral-900/40 px-3 py-2">
+                            <span className="text-[10px] font-semibold uppercase tracking-widest text-neutral-500">Edge Colour</span>
+                            <label className="flex items-center gap-2">
+                              <span className="font-mono text-[10px] text-neutral-400">{edgeColor}</span>
+                              <input
+                                type="color"
+                                value={edgeColor}
+                                onChange={(e) => setEdgeColor(e.target.value)}
+                                className="h-8 w-10 cursor-pointer rounded border border-neutral-700 bg-transparent p-0"
+                              />
+                            </label>
+                          </div>
+                          <div className="pt-3 border-t border-neutral-800 space-y-3">
                             <label className="flex items-center justify-between cursor-pointer group">
                               <span className="text-sm text-neutral-300 group-hover:text-white transition-colors">Show Faces</span>
                               <input type="checkbox" checked={showFaces} onChange={(e) => setShowFaces(e.target.checked)} className="w-4 h-4 rounded border-neutral-700 text-blue-600 bg-neutral-800 focus:ring-blue-600" />
@@ -419,102 +694,23 @@ export default function App() {
                               <input type="checkbox" checked={wireframe} onChange={(e) => setWireframe(e.target.checked)} className="w-4 h-4 rounded border-neutral-700 text-blue-600 bg-neutral-800 focus:ring-blue-600" />
                             </label>
                           </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-
-                  <div className="pt-4 border-t border-neutral-800">
-                    <div className="rounded-2xl border border-neutral-800 bg-neutral-900/30 p-3">
-                      <h3 className="text-[10px] font-semibold text-neutral-500 uppercase tracking-widest mb-3">Colour</h3>
-                      <div className="rounded-xl border border-neutral-800 bg-neutral-900/40 overflow-hidden">
-                        <button
-                          onClick={() => setPaletteMenuOpen(!paletteMenuOpen)}
-                          className="w-full p-3 text-left transition-colors hover:bg-neutral-800/40"
-                        >
-                          <div className="flex items-center justify-between gap-3">
-                            <div className="min-w-0">
-                              <div className="text-xs font-semibold text-white truncate">{selectedPalette.name}</div>
-                              <div className="flex -space-x-1 mt-2">
-                                {selectedPalette.colors.slice(0, 5).map((c, i) => (
-                                  <div
-                                    key={i}
-                                    className="w-3 h-3 rounded-full border border-neutral-900"
-                                    style={{ backgroundColor: c }}
-                                  />
-                                ))}
-                              </div>
-                            </div>
-                            <div className="flex h-8 w-8 items-center justify-center rounded-full border border-neutral-700 bg-neutral-900/70 text-neutral-400">
-                              <ChevronRight className={`w-4 h-4 transition-transform ${paletteMenuOpen ? 'rotate-90 text-white' : ''}`} />
-                            </div>
-                          </div>
-                        </button>
-
-                        <AnimatePresence initial={false}>
-                          {paletteMenuOpen && (
-                            <motion.div
-                              initial={{ height: 0, opacity: 0 }}
-                              animate={{ height: 'auto', opacity: 1 }}
-                              exit={{ height: 0, opacity: 0 }}
-                              className="border-t border-neutral-800"
-                            >
-                              <div className="p-2 grid grid-cols-2 gap-2">
-                                {Object.entries(PALETTES).map(([key, p]) => (
-                                  <button
-                                    key={key}
-                                    onClick={() => {
-                                      setPalette(key as PaletteKey);
-                                      setPaletteMenuOpen(false);
-                                    }}
-                                    className={`flex items-center gap-2 p-2 rounded-lg text-[10px] font-medium transition-all border ${
-                                      palette === key
-                                        ? 'bg-neutral-800 border-neutral-700 text-white'
-                                        : 'bg-neutral-900/40 border-neutral-800/50 text-neutral-500 hover:bg-neutral-800/60'
-                                    }`}
-                                  >
-                                    <div className="flex -space-x-1">
-                                      {p.colors.slice(0, 3).map((c, i) => (
-                                        <div key={i} className="w-2 h-2 rounded-full border border-neutral-900" style={{ backgroundColor: c }} />
-                                      ))}
-                                    </div>
-                                    {p.name}
-                                  </button>
-                                ))}
-                              </div>
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
+                        </div>
                       </div>
-                      <div className="mt-3 grid grid-cols-2 gap-2">
-                        <button
-                          onClick={() => setColorMode('role')}
-                          className={`rounded-lg border px-3 py-2 text-[10px] font-semibold uppercase tracking-widest transition-colors ${
-                            colorMode === 'role'
-                              ? 'border-blue-700/60 bg-blue-950/20 text-blue-300'
-                              : 'border-neutral-800 bg-neutral-900/40 text-neutral-500 hover:bg-neutral-800/60'
-                          }`}
-                        >
-                          By Role
-                        </button>
-                        <button
-                          onClick={() => setColorMode('sides')}
-                          className={`rounded-lg border px-3 py-2 text-[10px] font-semibold uppercase tracking-widest transition-colors ${
-                            colorMode === 'sides'
-                              ? 'border-blue-700/60 bg-blue-950/20 text-blue-300'
-                              : 'border-neutral-800 bg-neutral-900/40 text-neutral-500 hover:bg-neutral-800/60'
-                          }`}
-                        >
-                          By Sides
-                        </button>
-                      </div>
-                    </div>
-                  </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            </section>
 
-                  <div className="pt-2 border-t border-neutral-800">
-                    <div className="flex items-center justify-between mb-3">
-                      <h3 className="text-[10px] font-semibold text-neutral-500 uppercase tracking-widest">Omni Operators</h3>
-                      <div className="flex items-center gap-2">
+            <section>
+              <h2 className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-4 flex items-center gap-2">
+                <Layers className="w-3 h-3" />
+                Operators
+              </h2>
+              <div className="space-y-3 bg-neutral-800/20 p-4 rounded-2xl border border-neutral-800">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-[10px] font-semibold text-neutral-500 uppercase tracking-widest">Omni Operators</h3>
+                  <div className="flex items-center gap-2">
                         <button
                           onClick={addBlankOperator}
                           className="flex items-center gap-1 text-[10px] text-blue-400 hover:text-blue-300 transition-colors uppercase font-bold"
@@ -533,21 +729,21 @@ export default function App() {
                             Clear Stack
                           </button>
                         )}
-                      </div>
-                    </div>
+                  </div>
+                </div>
 
-                    {operators.length > 0 && (
-                      <Reorder.Group
-                        axis="y"
-                        values={operators}
-                        onReorder={(nextOperators) => {
-                          setOperators(nextOperators);
-                          if (selectedOperatorId && !nextOperators.some((op) => op.id === selectedOperatorId)) {
-                            setSelectedOperatorId(nextOperators[0]?.id ?? null);
-                          }
-                        }}
-                        className="space-y-1 mb-4"
-                      >
+                {operators.length > 0 && (
+                  <Reorder.Group
+                    axis="y"
+                    values={operators}
+                    onReorder={(nextOperators) => {
+                      setOperators(nextOperators);
+                      if (selectedOperatorId && !nextOperators.some((op) => op.id === selectedOperatorId)) {
+                        setSelectedOperatorId(nextOperators[0]?.id ?? null);
+                      }
+                    }}
+                    className="space-y-1 mb-4"
+                  >
                         {operators.map((op, idx) => (
                           <Reorder.Item
                             key={op.id}
@@ -900,64 +1096,6 @@ export default function App() {
                       </Reorder.Group>
                     )}
                   </div>
-                </div>
-              </div>
-            </section>
-
-            <section>
-              <h2 className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-4 flex items-center gap-2">
-                <Info className="w-3 h-3" />
-                Structure Info
-              </h2>
-              <div className="rounded-2xl border border-neutral-800 bg-neutral-800/20 overflow-hidden">
-                <button
-                  onClick={() => setStructureInfoOpen(!structureInfoOpen)}
-                  className="w-full p-4 text-left transition-colors hover:bg-neutral-800/40"
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="min-w-0">
-                      <div className="text-xs font-semibold text-white truncate">Topology Summary</div>
-                      <div className="mt-2 flex flex-wrap gap-2 text-[10px] font-mono text-neutral-500">
-                        <span>V <span id="stat-vertices">-</span></span>
-                        <span>F <span id="stat-faces">-</span></span>
-                        <span className="text-blue-400">C <span id="stat-colors">-</span></span>
-                      </div>
-                    </div>
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full border border-neutral-700 bg-neutral-900/70 text-neutral-400">
-                      <ChevronRight className={`w-4 h-4 transition-transform ${structureInfoOpen ? 'rotate-90 text-white' : ''}`} />
-                    </div>
-                  </div>
-                </button>
-
-                <AnimatePresence initial={false}>
-                  {structureInfoOpen && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      className="border-t border-neutral-800"
-                    >
-                      <div className="p-4 space-y-2">
-                        <div className="flex justify-between text-xs">
-                          <span className="text-neutral-400">Vertices</span>
-                          <span className="text-white font-mono" id="stat-vertices-expanded">-</span>
-                        </div>
-                        <div className="flex justify-between text-xs">
-                          <span className="text-neutral-400">Faces</span>
-                          <span className="text-white font-mono" id="stat-faces-expanded">-</span>
-                        </div>
-                        <div className="flex justify-between text-xs">
-                          <span className="text-neutral-400">Colors Used</span>
-                          <span className="text-blue-400 font-mono" id="stat-colors-expanded">-</span>
-                        </div>
-                        <p className="text-[10px] text-neutral-500 pt-2 border-t border-neutral-800">
-                          Topology verified via Half-Edge data structure.
-                        </p>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
             </section>
 
             <section>
@@ -967,19 +1105,19 @@ export default function App() {
               </h2>
               <div className="grid grid-cols-3 gap-2">
                 <button
-                  onClick={() => exportSvg(tilingType, rows, cols, activeOperators, palette, colorMode)}
+                  onClick={() => exportSvg(tilingType, rows, cols, activeOperators, palette, colorMode, edgeColor, generationOptions)}
                   className="px-3 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all border bg-neutral-800/40 border-neutral-700/50 text-neutral-400 hover:bg-neutral-800 hover:text-neutral-200"
                 >
                   SVG
                 </button>
                 <button
-                  onClick={() => exportObj(tilingType, rows, cols, activeOperators)}
+                  onClick={() => exportObj(tilingType, rows, cols, activeOperators, generationOptions)}
                   className="px-3 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all border bg-neutral-800/40 border-neutral-700/50 text-neutral-400 hover:bg-neutral-800 hover:text-neutral-200"
                 >
                   OBJ
                 </button>
                 <button
-                  onClick={() => exportOff(tilingType, rows, cols, activeOperators, palette, colorMode)}
+                  onClick={() => exportOff(tilingType, rows, cols, activeOperators, palette, colorMode, generationOptions)}
                   className="px-3 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all border bg-neutral-800/40 border-neutral-700/50 text-neutral-400 hover:bg-neutral-800 hover:text-neutral-200"
                 >
                   OFF
@@ -995,6 +1133,12 @@ export default function App() {
             <p className="text-[10px] leading-relaxed uppercase tracking-tight">
               Interactive 2D tiling visualization using half-edge topological data structures.
             </p>
+          </div>
+          <div className="mt-4 flex flex-wrap gap-3 font-mono text-[10px] text-neutral-500">
+            <span title="Vertices">V <span id="stat-vertices">-</span></span>
+            <span title="Faces">F <span id="stat-faces">-</span></span>
+            <span title="Edges">E <span id="stat-edges">-</span></span>
+            <span title="Colours Used" className="text-blue-400">C <span id="stat-colors">-</span></span>
           </div>
         </div>
       </motion.aside>
@@ -1022,6 +1166,8 @@ export default function App() {
             operators={activeOperators}
             palette={palette}
             colorMode={colorMode}
+            edgeColor={edgeColor}
+            generationOptions={generationOptions}
           />
         </div>
 

@@ -3,6 +3,7 @@ import { Vector3 } from 'three';
 export interface Mesh {
   vertices: number[];
   faces: number[][];
+  faceValues?: number[];
 }
 
 export interface OperatorSpec {

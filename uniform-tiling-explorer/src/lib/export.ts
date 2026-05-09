@@ -1,13 +1,19 @@
-import { UNIFORM_TILINGS } from './tiling-geometries';
+import { TilingGenerationOptions, UNIFORM_TILINGS } from './tiling-geometries';
 import { applyOperator, Mesh, OperatorSpec } from './conway-operators';
 import { PaletteKey } from './palettes';
 import { ColorMode, computeFaceColors } from './coloring';
 
-function generateFinalMesh(tilingType: string, rows: number, cols: number, operators: OperatorSpec[]): Mesh | null {
+function generateFinalMesh(
+  tilingType: string,
+  rows: number,
+  cols: number,
+  operators: OperatorSpec[],
+  generationOptions?: TilingGenerationOptions,
+): Mesh | null {
   const tiling = UNIFORM_TILINGS[tilingType];
   if (!tiling) return null;
 
-  let { vertices, faces } = tiling.generate(rows, cols);
+  let { vertices, faces } = tiling.generate(rows, cols, generationOptions);
 
   let mesh: Mesh = { vertices, faces };
   
@@ -20,8 +26,14 @@ function generateFinalMesh(tilingType: string, rows: number, cols: number, opera
   return mesh;
 }
 
-export function exportObj(tilingType: string, rows: number, cols: number, operators: OperatorSpec[]) {
-  const mesh = generateFinalMesh(tilingType, rows, cols, operators);
+export function exportObj(
+  tilingType: string,
+  rows: number,
+  cols: number,
+  operators: OperatorSpec[],
+  generationOptions?: TilingGenerationOptions,
+) {
+  const mesh = generateFinalMesh(tilingType, rows, cols, operators, generationOptions);
   if (!mesh) return;
 
   let obj = "# Generated Tiling\n";
@@ -44,8 +56,9 @@ export function exportOff(
   operators: OperatorSpec[],
   paletteKey: PaletteKey,
   colorMode: ColorMode,
+  generationOptions?: TilingGenerationOptions,
 ) {
-  const mesh = generateFinalMesh(tilingType, rows, cols, operators);
+  const mesh = generateFinalMesh(tilingType, rows, cols, operators, generationOptions);
   if (!mesh) return;
 
   const faceColors = computeFaceColors(mesh, paletteKey, colorMode);
@@ -85,8 +98,10 @@ export function exportSvg(
   operators: OperatorSpec[],
   paletteKey: PaletteKey,
   colorMode: ColorMode,
+  edgeColor: string,
+  generationOptions?: TilingGenerationOptions,
 ) {
-  const mesh = generateFinalMesh(tilingType, rows, cols, operators);
+  const mesh = generateFinalMesh(tilingType, rows, cols, operators, generationOptions);
   if (!mesh) return;
 
   const faceColors = computeFaceColors(mesh, paletteKey, colorMode);
@@ -112,7 +127,7 @@ export function exportSvg(
   // Y-axis in SVG goes down, but math goes up, so we negate Y.
   let svg = `<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n`;
   svg += `<svg width="${width * 50}" height="${height * 50}" viewBox="${viewBox}" xmlns="http://www.w3.org/2000/svg">\n`;
-  svg += `<g stroke="#222" stroke-width="0.05" stroke-linejoin="round">\n`;
+  svg += `<g stroke="${edgeColor}" stroke-width="0.05" stroke-linejoin="round">\n`;
 
   for (let fIdx = 0; fIdx < mesh.faces.length; fIdx++) {
     const face = mesh.faces[fIdx];
