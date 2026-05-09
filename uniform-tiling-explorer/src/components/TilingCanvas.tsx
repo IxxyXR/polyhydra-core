@@ -5,7 +5,7 @@ import { UNIFORM_TILINGS } from '../lib/tiling-geometries';
 import { PaletteKey } from '../lib/palettes';
 
 import { applyOperator, Mesh, OperatorSpec } from '../lib/conway-operators';
-import { computeFaceColors } from '../lib/coloring';
+import { ColorMode, computeFaceColors } from '../lib/coloring';
 
 interface TilingCanvasProps {
   tilingType: string;
@@ -17,6 +17,7 @@ interface TilingCanvasProps {
   wireframe: boolean;
   operators: OperatorSpec[];
   palette: PaletteKey;
+  colorMode: ColorMode;
 }
 
 export const TilingCanvas: React.FC<TilingCanvasProps> = ({
@@ -29,6 +30,7 @@ export const TilingCanvas: React.FC<TilingCanvasProps> = ({
   wireframe,
   operators,
   palette,
+  colorMode,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<{
@@ -135,7 +137,7 @@ export const TilingCanvas: React.FC<TilingCanvasProps> = ({
       });
     }
 
-    let computedFaceColors = computeFaceColors({ vertices, faces }, palette);
+    let computedFaceColors = computeFaceColors({ vertices, faces }, palette, colorMode);
     const uniqueColorsUsed = new Set(computedFaceColors);
     const updateStat = (ids: string[], value: string) => {
       ids.forEach((id) => {
@@ -257,7 +259,7 @@ export const TilingCanvas: React.FC<TilingCanvasProps> = ({
       containerRef.current?.removeEventListener('click', onClick);
     };
 
-  }, [tilingType, rows, cols, showEdges, showVertices, showFaces, wireframe, operators, palette]);
+  }, [tilingType, rows, cols, showEdges, showVertices, showFaces, wireframe, operators, palette, colorMode]);
 
   return <div id="canvas-container" ref={containerRef} className="w-full h-full" />;
 };

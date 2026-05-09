@@ -1,7 +1,7 @@
 import { UNIFORM_TILINGS } from './tiling-geometries';
 import { applyOperator, Mesh, OperatorSpec } from './conway-operators';
 import { PaletteKey } from './palettes';
-import { computeFaceColors } from './coloring';
+import { ColorMode, computeFaceColors } from './coloring';
 
 function generateFinalMesh(tilingType: string, rows: number, cols: number, operators: OperatorSpec[]): Mesh | null {
   const tiling = UNIFORM_TILINGS[tilingType];
@@ -37,11 +37,18 @@ export function exportObj(tilingType: string, rows: number, cols: number, operat
   downloadString(obj, 'tiling.obj', 'text/plain');
 }
 
-export function exportOff(tilingType: string, rows: number, cols: number, operators: OperatorSpec[], paletteKey: PaletteKey) {
+export function exportOff(
+  tilingType: string,
+  rows: number,
+  cols: number,
+  operators: OperatorSpec[],
+  paletteKey: PaletteKey,
+  colorMode: ColorMode,
+) {
   const mesh = generateFinalMesh(tilingType, rows, cols, operators);
   if (!mesh) return;
 
-  const faceColors = computeFaceColors(mesh, paletteKey);
+  const faceColors = computeFaceColors(mesh, paletteKey, colorMode);
 
   const numVertices = mesh.vertices.length / 3;
   const numFaces = mesh.faces.length;
@@ -71,11 +78,18 @@ function hexToRgb(hex: string) {
   } : { r: 255, g: 255, b: 255 };
 }
 
-export function exportSvg(tilingType: string, rows: number, cols: number, operators: OperatorSpec[], paletteKey: PaletteKey) {
+export function exportSvg(
+  tilingType: string,
+  rows: number,
+  cols: number,
+  operators: OperatorSpec[],
+  paletteKey: PaletteKey,
+  colorMode: ColorMode,
+) {
   const mesh = generateFinalMesh(tilingType, rows, cols, operators);
   if (!mesh) return;
 
-  const faceColors = computeFaceColors(mesh, paletteKey);
+  const faceColors = computeFaceColors(mesh, paletteKey, colorMode);
 
   // Find bounds
   let minX = Infinity, maxX = -Infinity;

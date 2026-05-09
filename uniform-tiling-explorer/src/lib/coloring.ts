@@ -1,7 +1,17 @@
 import { Mesh } from './conway-operators';
 import { PALETTES, PaletteKey } from './palettes';
 
-export function computeFaceColors(mesh: Mesh, palette: PaletteKey): string[] {
+export type ColorMode = 'role' | 'sides';
+
+export function computeFaceColors(mesh: Mesh, palette: PaletteKey, colorMode: ColorMode = 'role'): string[] {
+  if (colorMode === 'sides') {
+    const paletteColors = PALETTES[palette].colors;
+    return mesh.faces.map((face) => {
+      const colorIndex = Math.max(0, face.length - 3);
+      return paletteColors[colorIndex % paletteColors.length];
+    });
+  }
+
   const { faces } = mesh;
   const edgeMap = new Map<string, number[]>();
 

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { applyOperator, createOperatorSpec, OperatorSpec } from './conway-operators';
 
 export interface TilingDefinition {
   name: string;
@@ -171,6 +172,430 @@ const regPoly = (cx: number, cy: number, r: number, sides: number, startAngle: n
 };
 
 const gridOffset = (index: number, count: number) => index - Math.floor(count / 2);
+
+interface RepeatedTilePattern {
+  tile: TileMesh2D;
+  xOffset: THREE.Vector2;
+  yOffset: THREE.Vector2;
+}
+
+class TileMesh2D {
+  vertices: THREE.Vector2[];
+  faces: number[][];
+
+  constructor(vertices: THREE.Vector2[], faces: number[][]) {
+    this.vertices = vertices;
+    this.faces = faces;
+  }
+
+  static polygon(sides: number): TileMesh2D {
+    const vertices: THREE.Vector2[] = [];
+    const theta = (Math.PI * 2) / sides;
+
+    for (let i = sides - 1; i >= 0; i--) {
+      const angle = theta * i;
+      vertices.push(new THREE.Vector2(Math.cos(angle), Math.sin(angle)));
+    }
+
+    return new TileMesh2D(
+      vertices,
+      [Array.from({ length: sides }, (_, index) => index)],
+    );
+  }
+
+  rotate(angleDegrees: number): TileMesh2D {
+    const angle = THREE.MathUtils.degToRad(angleDegrees);
+    const cos = Math.cos(angle);
+    const sin = Math.sin(angle);
+
+    this.vertices = this.vertices.map((vertex) => (
+      new THREE.Vector2(
+        vertex.x * cos - vertex.y * sin,
+        vertex.x * sin + vertex.y * cos,
+      )
+    ));
+
+    return this;
+  }
+
+  scale(factor: number): TileMesh2D {
+    this.vertices = this.vertices.map((vertex) => vertex.clone().multiplyScalar(factor));
+    return this;
+  }
+
+  kis(): TileMesh2D {
+    const vertices = this.vertices.map((vertex) => vertex.clone());
+    const faces: number[][] = [];
+
+    for (let faceIndex = 0; faceIndex < this.faces.length; faceIndex++) {
+      const face = this.faces[faceIndex];
+      const centroidIndex = vertices.length;
+      vertices.push(this.getFaceCentroid(faceIndex));
+
+      for (let edgeIndex = 0; edgeIndex < face.length; edgeIndex++) {
+        const prevIndex = face[(edgeIndex - 1 + face.length) % face.length];
+        const vertexIndex = face[edgeIndex];
+        faces.push([prevIndex, vertexIndex, centroidIndex]);
+      }
+    }
+
+    return new TileMesh2D(vertices, faces);
+  }
+
+  extendFace(faceIndex: number, edgeIndex: number, sides: number): number {
+    if (!this.isBoundaryEdge(faceIndex, edgeIndex)) {
+      return -1;
+    }
+
+    const face = this.faces[faceIndex];
+    const normalizedEdgeIndex = mod(edgeIndex, face.length);
+    const vertexIndex = face[normalizedEdgeIndex];
+    const prevIndex = face[mod(normalizedEdgeIndex - 1, face.length)];
+    const vertex = this.vertices[vertexIndex];
+    const prevVertex = this.vertices[prevIndex];
+    const midpoint = vertex.clone().add(prevVertex).multiplyScalar(0.5);
+    const edgeVector = midpoint.clone().sub(this.getFaceCentroid(faceIndex)).normalize();
+    const sideAngle = ((sides - 2) * 180) / sides;
+    const opposite = vertex.distanceTo(prevVertex) / 2;
+    const adjacent = Math.tan(THREE.MathUtils.degToRad(sideAngle / 2)) * opposite;
+    const newCentroid = midpoint.clone().add(edgeVector.multiplyScalar(adjacent));
+    const faceRotationSign = Math.sign(this.getFaceSignedArea(faceIndex)) || 1;
+    const spoke = vertex.clone().sub(newCentroid);
+    const newFace = [vertexIndex, prevIndex];
+
+    for (let i = 2; i < sides; i++) {
+      const angle = THREE.MathUtils.degToRad((360 / sides) * i * faceRotationSign);
+      const rotated = rotateVector(spoke, angle);
+      this.vertices.push(newCentroid.clone().add(rotated));
+      newFace.push(this.vertices.length - 1);
+    }
+
+    this.faces.push(newFace);
+    return this.faces.length - 1;
+  }
+
+  addKite(faceIndexA: number, edgeIndexA: number, faceIndexB: number, edgeIndexB: number): void {
+    const edgeA = this.getFaceEdge(faceIndexA, edgeIndexA);
+    const edgeB = this.getFaceEdge(faceIndexB, edgeIndexB);
+    const pivot = this.vertices[edgeA.vertexIndex];
+    const angle = new THREE.Vector2().subVectors(this.vertices[edgeB.nextIndex], pivot)
+      .angleTo(new THREE.Vector2().subVectors(this.vertices[edgeB.vertexIndex], pivot));
+    const reflected = rotateVector(
+      this.vertices[edgeB.vertexIndex].clone().sub(pivot),
+      angle * 2,
+    );
+
+    this.vertices.push(pivot.clone().add(reflected));
+    this.faces.push([
+      edgeB.nextIndex,
+      edgeB.vertexIndex,
+      edgeA.vertexIndex,
+      this.vertices.length - 1,
+    ]);
+  }
+
+  addRhombus(faceIndex: number, edgeIndex: number, angleDegrees: number): void {
+    const edge = this.getFaceEdge(faceIndex, edgeIndex);
+    const pivot = this.vertices[edge.vertexIndex];
+    const angle = -THREE.MathUtils.degToRad(angleDegrees);
+    const newVert1 = pivot.clone().add(
+      rotateVector(this.vertices[edge.prevIndex].clone().sub(pivot), angle),
+    );
+
+    this.vertices.push(newVert1);
+    const angle2 = -THREE.MathUtils.degToRad((360 - (angleDegrees * 2)) / 2);
+    const pivot2 = newVert1;
+    const newVert2 = pivot2.clone().add(
+      rotateVector(this.vertices[edge.vertexIndex].clone().sub(pivot2), angle2),
+    );
+
+    this.vertices.push(newVert2);
+    this.faces.push([
+      edge.vertexIndex,
+      edge.prevIndex,
+      this.vertices.length - 1,
+      this.vertices.length - 2,
+    ]);
+  }
+
+  vertexDelta(a: number, b: number): THREE.Vector2 {
+    return this.vertices[a].clone().sub(this.vertices[b]);
+  }
+
+  private getFaceCentroid(faceIndex: number): THREE.Vector2 {
+    const face = this.faces[faceIndex];
+    const centroid = new THREE.Vector2();
+
+    for (const vertexIndex of face) {
+      centroid.add(this.vertices[vertexIndex]);
+    }
+
+    return centroid.multiplyScalar(1 / face.length);
+  }
+
+  private getFaceSignedArea(faceIndex: number): number {
+    const face = this.faces[faceIndex];
+    let area = 0;
+
+    for (let i = 0; i < face.length; i++) {
+      const current = this.vertices[face[i]];
+      const next = this.vertices[face[(i + 1) % face.length]];
+      area += current.x * next.y - next.x * current.y;
+    }
+
+    return area / 2;
+  }
+
+  private isBoundaryEdge(faceIndex: number, edgeIndex: number): boolean {
+    const face = this.faces[faceIndex];
+    const normalizedEdgeIndex = mod(edgeIndex, face.length);
+    const vertexIndex = face[normalizedEdgeIndex];
+    const prevIndex = face[mod(normalizedEdgeIndex - 1, face.length)];
+
+    for (let otherFaceIndex = 0; otherFaceIndex < this.faces.length; otherFaceIndex++) {
+      const otherFace = this.faces[otherFaceIndex];
+
+      for (let otherEdgeIndex = 0; otherEdgeIndex < otherFace.length; otherEdgeIndex++) {
+        if (otherFaceIndex === faceIndex && otherEdgeIndex === normalizedEdgeIndex) {
+          continue;
+        }
+
+        const otherVertexIndex = otherFace[otherEdgeIndex];
+        const otherPrevIndex = otherFace[mod(otherEdgeIndex - 1, otherFace.length)];
+        if (otherVertexIndex === prevIndex && otherPrevIndex === vertexIndex) {
+          return false;
+        }
+      }
+    }
+
+    return true;
+  }
+
+  private getFaceEdge(faceIndex: number, edgeIndex: number) {
+    const face = this.faces[faceIndex];
+    const normalizedEdgeIndex = mod(edgeIndex, face.length);
+    return {
+      vertexIndex: face[normalizedEdgeIndex],
+      prevIndex: face[mod(normalizedEdgeIndex - 1, face.length)],
+      nextIndex: face[mod(normalizedEdgeIndex + 1, face.length)],
+    };
+  }
+}
+
+const mod = (value: number, divisor: number) => ((value % divisor) + divisor) % divisor;
+
+const rotateVector = (vector: THREE.Vector2, angle: number): THREE.Vector2 => {
+  const cos = Math.cos(angle);
+  const sin = Math.sin(angle);
+  return new THREE.Vector2(
+    vector.x * cos - vector.y * sin,
+    vector.x * sin + vector.y * cos,
+  );
+};
+
+const normalizePattern = (pattern: RepeatedTilePattern): RepeatedTilePattern => {
+  const firstFace = pattern.tile.faces[0];
+  const edgeLength = pattern.tile.vertices[firstFace[0]].distanceTo(
+    pattern.tile.vertices[firstFace[firstFace.length - 1]],
+  );
+  const scale = edgeLength === 0 ? 1 : 1 / edgeLength;
+
+  pattern.tile.scale(scale);
+  pattern.xOffset.multiplyScalar(scale);
+  pattern.yOffset.multiplyScalar(scale);
+
+  return pattern;
+};
+
+const createPattern = (
+  tile: TileMesh2D,
+  xOffsetA: number,
+  xOffsetB: number,
+  yOffsetA: number,
+  yOffsetB: number,
+): RepeatedTilePattern => normalizePattern({
+  tile,
+  xOffset: tile.vertexDelta(xOffsetA, xOffsetB),
+  yOffset: tile.vertexDelta(yOffsetA, yOffsetB),
+});
+
+const buildRepeatedTile = (
+  pattern: RepeatedTilePattern,
+  rows: number,
+  cols: number,
+) => {
+  const builder = new TilingMeshBuilder();
+  const xCentering = pattern.xOffset.clone().multiplyScalar((cols - 1) / 2);
+  const yCentering = pattern.yOffset.clone().multiplyScalar((rows - 1) / 2);
+
+  for (let row = 0; row < rows; row++) {
+    for (let col = 0; col < cols; col++) {
+      const tileOffset = pattern.xOffset.clone().multiplyScalar(col).sub(xCentering)
+        .add(pattern.yOffset.clone().multiplyScalar(row).sub(yCentering));
+
+      for (const face of pattern.tile.faces) {
+        builder.addFace(face.map((vertexIndex) => {
+          const vertex = pattern.tile.vertices[vertexIndex].clone().add(tileOffset);
+          return [vertex.x, vertex.y] as [number, number];
+        }));
+      }
+    }
+  }
+
+  return builder.build();
+};
+
+const triangulateFaces = (faces: number[][]): number[] => {
+  const indices: number[] = [];
+  for (const face of faces) {
+    for (let i = 1; i < face.length - 1; i++) {
+      indices.push(face[0], face[i], face[i + 1]);
+    }
+  }
+  return indices;
+};
+
+const buildPatternFromFormat = (format: string): RepeatedTilePattern => {
+  const lines = format.split(/\r?\n/);
+  const headerParts = lines[0].trim().split(/\s+/);
+  const initialSides = Number.parseInt(headerParts[0], 10);
+  const angle = headerParts.length > 1 ? Number.parseFloat(headerParts[1]) : 0;
+  const tile = TileMesh2D.polygon(initialSides).rotate(angle);
+  const xOffsetIndices = lines[1].trim().split(/\s+/).map((part) => Number.parseInt(part, 10));
+  const yOffsetIndices = lines[2].trim().split(/\s+/).map((part) => Number.parseInt(part, 10));
+
+  for (const line of lines.slice(3)) {
+    const trimmed = line.trim();
+    if (!trimmed) {
+      continue;
+    }
+
+    const parts = trimmed.split(/\s+/);
+    const parentFaceIndex = Number.parseInt(parts[0], 10);
+    const parentEdgeIndex = parts.length > 1 ? Number.parseInt(parts[1], 10) : 0;
+    const sides = parts.length > 2 ? Number.parseInt(parts[2], 10) : 4;
+
+    if (tile.extendFace(parentFaceIndex, parentEdgeIndex, sides) < 0) {
+      throw new Error(`Failed to extend face ${parentFaceIndex} edge ${parentEdgeIndex} for format line "${trimmed}"`);
+    }
+  }
+
+  return createPattern(
+    tile,
+    xOffsetIndices[0],
+    xOffsetIndices[1],
+    yOffsetIndices[0],
+    yOffsetIndices[1],
+  );
+};
+
+const createRepeatedTiling = (
+  name: string,
+  config: string,
+  description: string,
+  pattern: RepeatedTilePattern,
+): TilingDefinition => ({
+  name,
+  config,
+  description,
+  generate: (rows, cols) => buildRepeatedTile(pattern, rows, cols),
+});
+
+const createDerivedTiling = (
+  name: string,
+  config: string,
+  description: string,
+  baseKey: string,
+  operators: OperatorSpec[],
+): TilingDefinition => ({
+  name,
+  config,
+  description,
+  generate: (rows, cols) => {
+    const base = UNIFORM_TILINGS[baseKey].generate(rows, cols);
+    const derived = operators.reduce(
+      (mesh, operator) => applyOperator(mesh, operator),
+      { vertices: base.vertices, faces: base.faces },
+    );
+
+    return {
+      vertices: derived.vertices,
+      faces: derived.faces,
+      indices: triangulateFaces(derived.faces),
+    };
+  },
+});
+
+const buildDissectedRhombitrihexagonalPattern = (): RepeatedTilePattern => {
+  let tile = TileMesh2D.polygon(6).kis();
+  tile.extendFace(4, 1, 4);
+  tile.extendFace(5, 1, 4);
+  tile.extendFace(0, 1, 4);
+  tile.extendFace(6, 0, 3);
+  tile.extendFace(7, 0, 3);
+  return createPattern(tile, 10, 1, 7, 1);
+};
+
+const buildDissectedTruncatedTrihexagonalPattern = (): RepeatedTilePattern => {
+  const tile = TileMesh2D.polygon(12).rotate(15);
+  tile.extendFace(0, 0, 3);
+  tile.extendFace(0, 1, 4);
+  tile.extendFace(0, 2, 3);
+  tile.extendFace(0, 3, 4);
+  tile.extendFace(0, 4, 3);
+  tile.extendFace(0, 5, 4);
+  tile.extendFace(0, 6, 3);
+  tile.extendFace(0, 8, 3);
+  tile.extendFace(0, 10, 3);
+  tile.extendFace(2, 0, 3);
+  tile.extendFace(2, 2, 3);
+  tile.extendFace(4, 0, 3);
+  tile.extendFace(4, 2, 3);
+  tile.extendFace(6, 0, 3);
+  tile.extendFace(6, 2, 3);
+  return createPattern(tile, 20, 10, 17, 8);
+};
+
+const buildDemiregularSquarePattern = (): RepeatedTilePattern => {
+  const tile = TileMesh2D.polygon(12).rotate(15);
+  tile.extendFace(0, 1, 3);
+  tile.extendFace(0, 0, 3);
+  tile.extendFace(1, 2, 4);
+  tile.extendFace(3, 0, 3);
+  tile.extendFace(3, 3, 3);
+  return createPattern(tile, 5, 10, 2, 7);
+};
+
+const buildDissectedRhombiHexagonalPattern = (): RepeatedTilePattern => {
+  const tile = TileMesh2D.polygon(6);
+  tile.extendFace(0, 5, 3);
+  tile.extendFace(0, 0, 3);
+  return createPattern(tile, 2, 5, 1, 3);
+};
+
+const buildTrihexSquarePattern = (): RepeatedTilePattern => {
+  const tile = TileMesh2D.polygon(6);
+  tile.extendFace(0, 5, 3);
+  tile.extendFace(0, 0, 3);
+  tile.extendFace(0, 1, 4);
+  tile.extendFace(2, 0, 4);
+  return createPattern(tile, 2, 5, 9, 3);
+};
+
+const buildDurer1Pattern = (): RepeatedTilePattern => {
+  const tile = TileMesh2D.polygon(5).rotate(54);
+  tile.extendFace(0, 5, 5);
+  tile.addKite(0, 3, 1, 1);
+  return createPattern(tile, 0, 8, 1, 6);
+};
+
+const buildDurer2Pattern = (): RepeatedTilePattern => {
+  const tile = TileMesh2D.polygon(5).rotate(54);
+  tile.extendFace(0, 5, 5);
+  tile.addKite(0, 3, 1, 1);
+  tile.addRhombus(0, 2, 72);
+  return createPattern(tile, 0, 8, 2, 6);
+};
 
 export const UNIFORM_TILINGS: Record<string, TilingDefinition> = {
   '3.3.3.3.3.3': {
@@ -476,6 +901,404 @@ export const UNIFORM_TILINGS: Record<string, TilingDefinition> = {
       builder.fillTriangles();
       return builder.build();
     }
-  }
+  },
 
+  'tetrakis-square': createDerivedTiling(
+    'Tetrakis Square',
+    '3.3.4',
+    'Catalan tiling dual to the truncated square tiling.',
+    '4.4.4.4',
+    [createOperatorSpec('kis')],
+  ),
+
+  'cairo-pentagonal': createDerivedTiling(
+    'Cairo Pentagonal',
+    '5.5.5.5',
+    'Catalan tiling dual to the snub square tiling.',
+    '3.3.4.3.4',
+    [createOperatorSpec('dual')],
+  ),
+
+  'rhombille': createDerivedTiling(
+    'Rhombille',
+    '4.4.4',
+    'Catalan tiling dual to the trihexagonal tiling.',
+    '3.6.3.6',
+    [createOperatorSpec('dual')],
+  ),
+
+  'triakis-triangular': createDerivedTiling(
+    'Triakis Triangular',
+    '3.3.3.3.3.3',
+    'Catalan tiling dual to the truncated hexagonal tiling.',
+    '3.12.12',
+    [createOperatorSpec('dual')],
+  ),
+
+  'deltoidal-trihexagonal': createDerivedTiling(
+    'Deltoidal Trihexagonal',
+    '4.4.4.4.4.4',
+    'Catalan tiling dual to the rhombitrihexagonal tiling.',
+    '3.4.6.4',
+    [createOperatorSpec('dual')],
+  ),
+
+  'kisrhombille': createDerivedTiling(
+    'Kisrhombille',
+    '3.3.3.3.3.3',
+    'Catalan tiling dual to the truncated trihexagonal tiling.',
+    '4.6.12',
+    [createOperatorSpec('dual')],
+  ),
+
+  'floret-pentagonal': createDerivedTiling(
+    'Floret Pentagonal',
+    '5.5.5.5',
+    'Catalan tiling dual to the snub hexagonal tiling.',
+    '3.3.3.3.6',
+    [createOperatorSpec('dual')],
+  ),
+
+  'prismatic-pentagonal': createDerivedTiling(
+    'Prismatic Pentagonal',
+    '5.5.5.5',
+    'Catalan tiling dual to the elongated triangular tiling.',
+    '3.3.3.4.4',
+    [createOperatorSpec('dual')],
+  ),
+
+  'durer-1': createRepeatedTiling(
+    'Durer I',
+    '5.5.6',
+    'Durer periodic tiling built from pentagons and kites.',
+    buildDurer1Pattern(),
+  ),
+
+  'durer-2': createRepeatedTiling(
+    'Durer II',
+    '5.5.6.4',
+    'Durer periodic tiling built from pentagons, kites, and rhombi.',
+    buildDurer2Pattern(),
+  ),
+
+  'dissected-rhombitrihexagonal': createRepeatedTiling(
+    'Dissected Rhombitrihexagonal',
+    '3.3.3.3.3.3;3.3.4.3.4',
+    '2-uniform tiling with vertex types 3.3.3.3.3.3 and 3.3.4.3.4.',
+    buildDissectedRhombitrihexagonalPattern(),
+  ),
+
+  'dissected-truncated-hexagonal-1': createRepeatedTiling(
+    'Dissected Truncated Hexagonal I',
+    '3.4.6.4;3.3.4.3.4',
+    '2-uniform tiling with vertex types 3.4.6.4 and 3.3.4.3.4.',
+    buildPatternFromFormat(`6 0 0
+12 17
+15 10
+0 0 4 1
+0 1 4 1
+0 2 4 1
+0 3 4 1
+0 4 4 1
+0 5 4 1
+
+1 0 3 5
+2 0 3 4
+3 0 3 5
+4 0 3 4
+5 0 3 5
+6 0 3 4
+
+5 3 3 0
+6 3 3 0`),
+  ),
+
+  'dissected-truncated-hexagonal-2': createRepeatedTiling(
+    'Dissected Truncated Hexagonal II',
+    '3.4.6.4;3.3.3.4.4',
+    '2-uniform tiling with vertex types 3.4.6.4 and 3.3.3.4.4.',
+    buildPatternFromFormat(`6 0 1
+10 17
+9 14
+
+0 0 4 4
+0 1 4 5
+0 2 4 4
+0 3 4 5
+0 4 4 4
+0 5 4 5
+
+1 0 3 1
+2 0 3 1
+3 0 3 1
+4 0 3 1
+5 0 3 1
+6 0 3 1
+
+12 2 3 0
+11 2 3 0`),
+  ),
+
+  'hexagonal-truncated-triangular': createRepeatedTiling(
+    'Hexagonal Truncated Triangular',
+    '3.4.6.4;3.4.4.6',
+    '2-uniform tiling with vertex types 3.4.6.4 and 3.4.4.6.',
+    buildPatternFromFormat(`6 30 1
+11 32
+27 14
+0 0 4 0
+0 1 4 0
+0 2 4 0
+0 3 4 0
+0 4 4 0
+0 5 4 0
+1 0 3 1
+2 0 3 1
+3 0 3 1
+4 0 3 1
+5 0 3 1
+6 0 3 1
+1 3 4 4
+2 3 4 4
+12 2 6 0
+6 3 4 1
+7 2 6 0`),
+  ),
+
+  'demiregular-hexagonal': createRepeatedTiling(
+    'Demiregular Hexagonal',
+    '4.6.12;3.4.6.4',
+    '2-uniform tiling with vertex types 4.6.12 and 3.4.6.4.',
+    buildPatternFromFormat(`12 15 1
+4 26
+3 21
+0 8 4 0
+0 10 4 0
+0 0 4 0
+0 2 4 0
+0 9 6 4
+0 11 6 4
+0 1 6 4
+1 3 3 1
+2 3 3 5
+6 3 4 0
+5 3 4 0`),
+  ),
+
+  'dissected-truncated-trihexagonal': createRepeatedTiling(
+    'Dissected Truncated Trihexagonal',
+    '3.3.3.3.3.3;3.3.4.12',
+    '2-uniform tiling with vertex types 3.3.3.3.3.3 and 3.3.4.12.',
+    buildDissectedTruncatedTrihexagonalPattern(),
+  ),
+
+  'demiregular-square': createRepeatedTiling(
+    'Demiregular Square',
+    '3.12.12;3.4.3.12',
+    '2-uniform tiling with vertex types 3.12.12 and 3.4.3.12.',
+    buildDemiregularSquarePattern(),
+  ),
+
+  'dissected-hexagonal-1': createRepeatedTiling(
+    'Dissected Hexagonal I',
+    '3.3.3.3.3.3;3.3.6.6',
+    '2-uniform tiling with vertex types 3.3.3.3.3.3 and 3.3.6.6.',
+    buildPatternFromFormat(`6 0 1
+11 10
+11 12
+0 5 6 0
+0 0 3 0
+0 2 3 0
+0 4 3 0
+1 0 3 1
+1 2 3 1
+1 4 3 1`),
+  ),
+
+  'dissected-hexagonal-2': createRepeatedTiling(
+    'Dissected Hexagonal II',
+    '3.3.3.3.3.3;3.3.3.3.6 A',
+    '2-uniform tiling with vertex types 3.3.3.3.3.3 and 3.3.3.3.6, variant A.',
+    buildPatternFromFormat(`6 0 1
+1 12
+1 10
+0 3 3 0
+0 4 3 0
+0 5 3 0
+0 0 3 0
+1 0 3 4
+2 0 3 4
+3 0 3 4
+5 0 3 5
+6 0 3 5
+7 0 3 5`),
+  ),
+
+  'dissected-hexagonal-3': createRepeatedTiling(
+    'Dissected Hexagonal III',
+    '3.3.3.3.3.3;3.3.3.3.6 B',
+    '2-uniform tiling with vertex types 3.3.3.3.3.3 and 3.3.3.3.6, variant B.',
+    buildPatternFromFormat(`6 0 1
+13 11
+7 15
+0 0 3 0
+0 1 3 0
+0 2 3 0
+0 3 3 0
+0 4 3 0
+0 5 3 0
+1 0 3 1
+2 0 3 1
+3 0 3 1
+4 0 3 1
+5 0 3 1
+6 0 3 1
+7 0 3 4
+8 0 3 4
+9 0 3 4
+10 0 3 4
+11 0 3 4
+12 0 3 4
+7 2 3 0
+12 2 3 0`),
+  ),
+
+  'alternating-trihexagonal': createRepeatedTiling(
+    'Alternating Trihexagonal',
+    '3.3.6.6;3.3.3.3.6',
+    '2-uniform tiling with vertex types 3.3.6.6 and 3.3.3.3.6.',
+    buildPatternFromFormat(`6 30 1
+2 4
+3 6
+0 1 3 0
+0 0 3 4
+1 2 3 4
+2 0 3 0`),
+  ),
+
+  'dissected-rhombihexagonal': createRepeatedTiling(
+    'Dissected Rhombihexagonal',
+    '3.6.3.6;3.3.6.6',
+    '2-uniform tiling with vertex types 3.6.3.6 and 3.3.6.6.',
+    buildDissectedRhombiHexagonalPattern(),
+  ),
+
+  'alternating-trihex-square': createRepeatedTiling(
+    'Alternating Trihex Square',
+    '3.4.4.6;3.6.3.6 A',
+    '2-uniform tiling with vertex types 3.4.4.6 and 3.6.3.6, variant A.',
+    buildPatternFromFormat(`6 0 0
+2 5
+3 8
+0 0 3 1
+0 5 3 1
+0 1 4 4
+1 0 4 5`),
+  ),
+
+  'trihex-square': createRepeatedTiling(
+    'Trihex Square',
+    '3.4.4.6;3.6.3.6 B',
+    '2-uniform tiling with vertex types 3.4.4.6 and 3.6.3.6, variant B.',
+    buildTrihexSquarePattern(),
+  ),
+
+  'alternating-tri-square': createRepeatedTiling(
+    'Alternating Tri-Square',
+    '3.3.3.4.4;3.3.4.3.4 A',
+    '2-uniform tiling with vertex types 3.3.3.4.4 and 3.3.4.3.4, variant A.',
+    buildPatternFromFormat(`4 45 1
+15 14
+19 8
+0 1 4 0
+0 2 3 0
+0 0 3 0
+1 0 3 1
+1 2 3 1
+1 3 3 1
+0 3 3 0
+4 0 3 5
+2 0 4 5
+3 0 3 4
+10 2 4 5
+11 3 4 4
+11 0 3 1
+12 0 3 1
+11 2 3 0
+12 2 3 0
+4 2 4 5`),
+  ),
+
+  'semi-snub-tri-square': createRepeatedTiling(
+    'Semi-Snub Tri-Square',
+    '3.3.3.4.4;3.3.4.3.4 B',
+    '2-uniform tiling with vertex types 3.3.3.4.4 and 3.3.4.3.4, variant B.',
+    buildPatternFromFormat(`4 45 1
+3 6
+2 15
+0 1 4 0
+0 2 3 0
+0 0 3 0
+1 0 3 1
+1 2 3 1
+1 3 3 1
+6 0 4 4
+7 2 4 5
+8 0 3 4
+6 2 3 5
+10 0 3 0`),
+  ),
+
+  'tri-square-square-1': createRepeatedTiling(
+    'Tri-Square-Square I',
+    '4.4.4.4;3.3.3.4.4 A',
+    '2-uniform tiling with vertex types 4.4.4.4 and 3.3.3.4.4, variant A.',
+    buildPatternFromFormat(`4 45 1
+4 5
+6 5
+0 2 4 0
+0 0 3 5
+1 3 3 4`),
+  ),
+
+  'tri-square-square-2': createRepeatedTiling(
+    'Tri-Square-Square II',
+    '4.4.4.4;3.3.3.4.4 B',
+    '2-uniform tiling with vertex types 4.4.4.4 and 3.3.3.4.4, variant B.',
+    buildPatternFromFormat(`4 45 1
+4 5
+7 8
+0 2 4 0
+0 0 4 0
+1 3 3 5
+2 3 3 4`),
+  ),
+
+  'tri-tri-square-1': createRepeatedTiling(
+    'Tri-Tri-Square I',
+    '3.3.3.3.3.3;3.3.3.4.4 A',
+    '2-uniform tiling with vertex types 3.3.3.3.3.3 and 3.3.3.4.4, variant A.',
+    buildPatternFromFormat(`4 45 0
+4 6
+4 5
+0 2 3 1
+0 0 3 2
+1 2 3 2
+2 0 3 1`),
+  ),
+
+  'tri-tri-square-2': createRepeatedTiling(
+    'Tri-Tri-Square II',
+    '3.3.3.3.3.3;3.3.3.4.4 B',
+    '2-uniform tiling with vertex types 3.3.3.3.3.3 and 3.3.3.4.4, variant B.',
+    buildPatternFromFormat(`4 45 0
+5 7
+5 9
+0 2 3 1
+0 0 3 2
+1 2 3 2
+2 0 3 1
+3 0 3 1
+5 0 3 2`),
+  ),
 };
