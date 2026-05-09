@@ -33,7 +33,7 @@ export const MULTIGRID_DEFAULTS: MultiGridSettings = {
   randomize: false,
   sharedVertices: true,
   minDistance: 0,
-  maxDistance: 1,
+  maxDistance: 0.35,
   colorRatio: 1,
   colorIntersect: 0,
   colorIndex: 0,
@@ -228,6 +228,29 @@ const getPolygonSignedArea = (polygon: THREE.Vector2[]): number => {
   }
 
   return area / 2;
+};
+
+const getPolygonEdgeLength = (polygon: THREE.Vector2[]): number => {
+  if (polygon.length < 2) {
+    return 0;
+  }
+
+  return polygon[0].distanceTo(polygon[polygon.length - 1]);
+};
+
+const normalizePolygons = (polygons: THREE.Vector2[][]): THREE.Vector2[][] => {
+  const referencePolygon = polygons.find((polygon) => polygon.length >= 2);
+  if (!referencePolygon) {
+    return polygons;
+  }
+
+  const edgeLength = getPolygonEdgeLength(referencePolygon);
+  if (edgeLength === 0) {
+    return polygons;
+  }
+
+  const scale = 1 / edgeLength;
+  return polygons.map((polygon) => polygon.map((point) => point.clone().multiplyScalar(scale)));
 };
 
 /**
@@ -750,7 +773,8 @@ const generateMultigridMesh = (settings: MultiGridSettings): GeneratedTilingMesh
     faceValues.push(Number.isNaN(gradientPos) ? 0 : gradientPos);
   }
 
-  return buildPolygonMesh(polygons, settings.sharedVertices, faceValues);
+  const normalizedPolygons = normalizePolygons(polygons);
+  return buildPolygonMesh(normalizedPolygons, settings.sharedVertices, faceValues);
 };
 
 const buildPatternFromFormat = (format: string): RepeatedTilePattern => {

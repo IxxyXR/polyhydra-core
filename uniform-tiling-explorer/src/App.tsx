@@ -64,6 +64,59 @@ interface OperatorState extends OperatorSpec {
 const NO_PRESET_VALUE = '';
 const CUSTOM_PRESET_VALUE = '__custom__';
 
+const REGULAR_TILING_KEYS = new Set([
+  '3.3.3.3.3.3',
+  '4.4.4.4',
+  '6.6.6',
+]);
+
+const UNIFORM_TILING_KEYS = new Set([
+  '3.6.3.6',
+  '4.8.8',
+  '3.12.12',
+  '3.4.6.4',
+  '4.6.12',
+  '3.3.4.3.4',
+  '3.3.3.4.4',
+  '3.3.3.3.6',
+]);
+
+const TWO_UNIFORM_TILING_KEYS = new Set([
+  'dissected-rhombitrihexagonal',
+  'dissected-truncated-hexagonal-1',
+  'dissected-truncated-hexagonal-2',
+  'hexagonal-truncated-triangular',
+  'demiregular-hexagonal',
+  'dissected-truncated-trihexagonal',
+  'demiregular-square',
+  'dissected-hexagonal-1',
+  'dissected-hexagonal-2',
+  'dissected-hexagonal-3',
+  'alternating-trihexagonal',
+  'dissected-rhombihexagonal',
+  'alternating-trihex-square',
+  'trihex-square',
+  'alternating-tri-square',
+  'semi-snub-tri-square',
+  'tri-square-square-1',
+  'tri-square-square-2',
+  'tri-tri-square-1',
+  'tri-tri-square-2',
+]);
+
+const CATALAN_LAVES_TILING_KEYS = new Set([
+  'tetrakis-square',
+  'cairo-pentagonal',
+  'rhombille',
+  'triakis-triangular',
+  'deltoidal-trihexagonal',
+  'kisrhombille',
+  'floret-pentagonal',
+  'prismatic-pentagonal',
+]);
+
+const TILING_GROUP_ORDER = ['Regular', 'Uniform', '2-Uniform', 'Catalan/Laves', 'Other'] as const;
+
 function createOperator(notation: string, enabled = true, overrides: Partial<OperatorSpec> = {}): OperatorState {
   return {
     id: Math.random().toString(36).substring(7) + Date.now(),
@@ -337,6 +390,25 @@ export default function App() {
   const generationOptions: TilingGenerationOptions = {
     multigrid: multigridSettings,
   };
+  const tilingGroups = Object.entries(UNIFORM_TILINGS).reduce<Record<string, Array<[string, typeof selectedTiling]>>>((groups, [key, tiling]) => {
+    let group = 'Other';
+    if (REGULAR_TILING_KEYS.has(key)) {
+      group = 'Regular';
+    } else if (UNIFORM_TILING_KEYS.has(key)) {
+      group = 'Uniform';
+    } else if (TWO_UNIFORM_TILING_KEYS.has(key)) {
+      group = '2-Uniform';
+    } else if (CATALAN_LAVES_TILING_KEYS.has(key)) {
+      group = 'Catalan/Laves';
+    }
+
+    if (!groups[group]) {
+      groups[group] = [];
+    }
+
+    groups[group].push([key, tiling]);
+    return groups;
+  }, {});
 
   return (
     <div id="app-root" className="flex h-screen bg-neutral-950 text-neutral-100 font-sans overflow-hidden">
@@ -352,17 +424,13 @@ export default function App() {
               <Layers className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 className="font-bold text-xl tracking-tight text-white">Tiling Explorer</h1>
+              <h1 className="font-bold text-xl tracking-tight text-white">Polyhydra</h1>
               <p className="text-xs text-neutral-400 font-mono uppercase tracking-widest">Three.js Powered</p>
             </div>
           </div>
 
           <div className="space-y-6">
             <section>
-              <h2 className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-4 flex items-center gap-2">
-                <Grid2X2 className="w-3 h-3" />
-                Uniform Tilings
-              </h2>
               <div className="rounded-2xl border border-neutral-800 bg-neutral-800/20 overflow-hidden">
                 <button
                   onClick={() => setTilingMenuOpen(!tilingMenuOpen)}
@@ -389,31 +457,45 @@ export default function App() {
                       exit={{ height: 0, opacity: 0 }}
                       className="border-t border-neutral-800"
                     >
-                      <div className="max-h-72 overflow-y-auto p-2 space-y-1">
-                        {Object.entries(UNIFORM_TILINGS).map(([key, tiling]) => (
-                          <button
-                            key={key}
-                            onClick={() => {
-                              setTilingType(key);
-                              if (key === 'multigrid') {
-                                setColorMode((current) => current === 'role' ? 'value' : current);
-                              }
-                              setTilingMenuOpen(false);
-                            }}
-                            className={`w-full rounded-xl p-3 text-left transition-all ${
-                              tilingType === key
-                                ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20'
-                                : 'bg-neutral-900/40 text-neutral-300 hover:bg-neutral-800'
-                            }`}
-                          >
-                            <div className="flex items-center justify-between gap-3">
-                              <div className="min-w-0">
-                                <div className="font-medium text-sm truncate">{tiling.name}</div>
+                      <div className="max-h-72 overflow-y-auto p-2 space-y-3">
+                        {TILING_GROUP_ORDER.map((groupName) => {
+                          const entries = tilingGroups[groupName];
+                          if (!entries?.length) {
+                            return null;
+                          }
+
+                          return (
+                            <div key={groupName} className="space-y-1">
+                              <div className="px-2 pt-1 text-[10px] font-semibold uppercase tracking-widest text-neutral-500">
+                                {groupName}
                               </div>
-                              {tilingType === key && <ChevronRight className="w-4 h-4 shrink-0" />}
+                              {entries.map(([key, tiling]) => (
+                                <button
+                                  key={key}
+                                  onClick={() => {
+                                    setTilingType(key);
+                                    if (key === 'multigrid') {
+                                      setColorMode((current) => current === 'role' ? 'value' : current);
+                                    }
+                                    setTilingMenuOpen(false);
+                                  }}
+                                  className={`w-full rounded-xl p-3 text-left transition-all ${
+                                    tilingType === key
+                                      ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20'
+                                      : 'bg-neutral-900/40 text-neutral-300 hover:bg-neutral-800'
+                                  }`}
+                                >
+                                  <div className="flex items-center justify-between gap-3">
+                                    <div className="min-w-0">
+                                      <div className="font-medium text-sm truncate">{tiling.name}</div>
+                                    </div>
+                                    {tilingType === key && <ChevronRight className="w-4 h-4 shrink-0" />}
+                                  </div>
+                                </button>
+                              ))}
                             </div>
-                          </button>
-                        ))}
+                          );
+                        })}
                       </div>
                     </motion.div>
                   )}
