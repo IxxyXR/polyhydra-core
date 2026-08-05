@@ -21,6 +21,11 @@ namespace Polyhydra.Core
             return $"{guidTuple.Value.Item1}_{guidTuple.Value.Item2}";
         }
 
+        private static string MakePairKey((Guid, Guid)? guidTuple)
+        {
+            return $"{MakeKey(guidTuple)}-Pair";
+        }
+
         public PolyMesh Dual()
         {
             return _Dual(false);
@@ -1607,7 +1612,7 @@ namespace Polyhydra.Core
                     else
                     {
                         PrevThirdVertex = edges[j].Next.PointAlongEdge(1 - ratio);
-                        keyName = edges[j].Next.Name.ToString() + "-Pair";
+                        keyName = MakePairKey(edges[j].Next.Name);
                     }
 
                     if (newVerts.ContainsKey(keyName))
@@ -1631,7 +1636,7 @@ namespace Polyhydra.Core
                     else
                     {
                         PairOneThird = edges[j].PointAlongEdge(1 - ratio);
-                        keyName = edges[j].Name.ToString() + "-Pair";
+                        keyName = MakePairKey(edges[j].Name);
                     }
 
                     if (newVerts.ContainsKey(keyName))
@@ -2765,7 +2770,7 @@ namespace Polyhydra.Core
                 else
                 {
                     vertexPoints.Add(edge.PointAlongEdge(1 - ratio));
-                    newEdgeVertices[MakeKey(edge.Name) + "-Pair"] = vertexIndex++;
+                    newEdgeVertices[MakePairKey(edge.Name)] = vertexIndex++;
                 }
 
                 vertexRoles.Add(Roles.New);
@@ -2789,7 +2794,7 @@ namespace Polyhydra.Core
                     }
                     else
                     {
-                        edgePairName = edge.Name.ToString() + "-Pair";
+                        edgePairName = MakePairKey(edge.Name);
                     }
 
                     string edgeNextPairName;
@@ -2799,7 +2804,7 @@ namespace Polyhydra.Core
                     }
                     else
                     {
-                        edgeNextPairName = MakeKey(edge.Next.Name) + "-Pair";
+                        edgeNextPairName = MakePairKey(edge.Next.Name);
                     }
 
                     var quad = new[]
@@ -2872,7 +2877,7 @@ namespace Polyhydra.Core
                 else
                 {
                     vertexPoints.Add(edge.PointAlongEdge(1 - ratio));
-                    newEdgeVertices[MakeKey(edge.Name) + "-Pair"] = vertexIndex++;
+                    newEdgeVertices[MakePairKey(edge.Name)] = vertexIndex++;
                 }
 
                 vertexRoles.Add(Roles.New);
@@ -2910,7 +2915,7 @@ namespace Polyhydra.Core
                     }
                     else
                     {
-                        edgeNextPairName = edge.Next.Name.ToString() + "-Pair";
+                        edgeNextPairName = MakePairKey(edge.Next.Name);
                     }
 
                     var hexagon = new[]
