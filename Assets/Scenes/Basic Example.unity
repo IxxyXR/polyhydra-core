@@ -407,7 +407,6 @@ GameObject:
   - component: {fileID: 832160062}
   - component: {fileID: 832160061}
   - component: {fileID: 832160060}
-  - component: {fileID: 832160064}
   m_Layer: 0
   m_Name: Generator
   m_TagString: Untagged
@@ -427,7 +426,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9933a06dcdbc4fc3b2e7cdafa2b7aa0f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  settings: {fileID: 11400000, guid: afe40343a191a9d408412059c97a75d5, type: 2}
+  settings: {fileID: 11400000, guid: 4bc87dae81c44aa44b82a9f74453ebd0, type: 2}
   appearanceSettings: {fileID: 11400000, guid: 3dd3b74e652ceb140b9d7fba240525b8, type: 2}
   debugFaces: 0
   debugEdges: 0
@@ -497,21 +496,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &832160064
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 832160059}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cf39d4e2bd684af0af0d3b451221f2f8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  generator: {fileID: 832160060}
-  guiSkin: {fileID: 11400000, guid: 057d1ae38a38b4e4e93ef4a9c129db95, type: 2}
-  showGUI: 0
 --- !u!850595691 &1772668760
 LightingSettings:
   m_ObjectHideFlags: 0

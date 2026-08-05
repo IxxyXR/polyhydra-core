@@ -103,6 +103,70 @@ namespace Polyhydra.Core
             }
         }
 
+        public void GreedyColorFaceRoles()
+        {
+            int n = Faces.Count;
+            if (n == 0) return;
+
+            var allRoles = new[] { Roles.New, Roles.NewAlt, Roles.Existing, Roles.ExistingAlt };
+            var colors = new int[n];
+            for (int i = 0; i < n; i++) colors[i] = -1;
+
+            var faceIdx = new Dictionary<Face, int>(n);
+            for (int i = 0; i < n; i++) faceIdx[Faces[i]] = i;
+
+            // Build adjacency list
+            var adj = new List<int>[n];
+            for (int i = 0; i < n; i++) adj[i] = new List<int>();
+            for (int i = 0; i < n; i++)
+                foreach (var h in Faces[i].GetHalfedges())
+                    if (h.Pair?.Face != null && faceIdx.TryGetValue(h.Pair.Face, out int j) && i != j)
+                        adj[i].Add(j);
+
+            // BFS order so that when each face is processed, most of its neighbors are already
+            // colored — giving the greedy the maximum information to avoid conflicts.
+            var order = new List<int>(n);
+            var visited = new bool[n];
+            for (int start = 0; start < n; start++)
+            {
+                if (visited[start]) continue;
+                var queue = new Queue<int>();
+                queue.Enqueue(start);
+                visited[start] = true;
+                while (queue.Count > 0)
+                {
+                    int f = queue.Dequeue();
+                    order.Add(f);
+                    foreach (int nb in adj[f])
+                        if (!visited[nb]) { visited[nb] = true; queue.Enqueue(nb); }
+                }
+            }
+
+            // Prefer the provenance-derived role; only change it when an already-colored neighbor
+            // forces a conflict. Starting from the preferred color and stepping forward avoids bias.
+            var used = new bool[4];
+            foreach (int i in order)
+            {
+                Array.Clear(used, 0, 4);
+                foreach (int j in adj[i])
+                    if (colors[j] >= 0) used[colors[j]] = true;
+
+                int preferred = i < FaceRoles.Count ? Array.IndexOf(allRoles, FaceRoles[i]) : 0;
+                if (preferred < 0) preferred = 0;
+
+                int c = preferred;
+                for (int attempt = 0; attempt < 4; attempt++)
+                {
+                    if (!used[c]) break;
+                    c = (c + 1) % 4;
+                }
+                colors[i] = c;
+            }
+
+            for (int i = 0; i < n; i++)
+                FaceRoles[i] = allRoles[colors[i]];
+        }
+
         public void SetVertexRoles(Roles role)
         {
             // Replaced LINQ Enumerable.Repeat with for loop

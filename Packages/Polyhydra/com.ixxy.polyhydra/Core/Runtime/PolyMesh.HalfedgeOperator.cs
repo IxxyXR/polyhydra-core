@@ -40,6 +40,7 @@ namespace Polyhydra.Core
             public string PointClass;
             public Vector3 Position;
             public Vector3 Normal;
+            public readonly HashSet<string> SourceKeys = new HashSet<string>();
 
             public OVertex(string pointClass, Vector3 pos, Vector3 normal)
             {
@@ -400,9 +401,7 @@ namespace Polyhydra.Core
         private class ReconstructedFaceInfo
         {
             public List<OVertex> Vertices;
-            public List<string> BoundaryAtoms;
-            public List<OperatorAtomFamily> BoundaryFamilies;
-            public string Signature;
+            public Roles Role;
         }
 
         // -------------------------------------------------------------------------
@@ -547,6 +546,8 @@ namespace Polyhydra.Core
                 {
                     var vert = halfedges[i].Prev.Vertex;
                     V[i] = cache.GetOrCreate($"V_{vert.Name}", "V", vert.Position, vert.Normal);
+                    V[i].SourceKeys.Add("v:" + vert.Name);
+                    V[i].SourceKeys.Add("f:" + face.Name); // accumulates all incident faces
                 }
                 ptsArray["V"] = V;
             }
@@ -564,6 +565,7 @@ namespace Polyhydra.Core
             if (needF || needVf || needFe)
             {
                 F = cache.GetOrCreate($"F_{face.Name}", "F", face.Centroid, fn);
+                F.SourceKeys.Add("f:" + face.Name);
                 ptsSingle["F"] = F;
             }
 
@@ -581,8 +583,12 @@ namespace Polyhydra.Core
                     // the same OVertex objects rather than swapping the two ve points.
                     ve[2*i]   = cache.GetOrCreate($"ve_{h.Prev.Vertex.Name}_{MakeKey(h.PairedName)}", "ve",
                         Vector3.Lerp(h.Prev.Vertex.Position, E[i].Position, tVe), eNorm);
+                    ve[2*i].SourceKeys.Add("v:" + h.Prev.Vertex.Name);
+                    ve[2*i].SourceKeys.Add("e:" + MakeKey(h.PairedName));
                     ve[2*i+1] = cache.GetOrCreate($"ve_{h.Vertex.Name}_{MakeKey(h.PairedName)}", "ve",
                         Vector3.Lerp(h.Vertex.Position, E[i].Position, tVe), eNorm);
+                    ve[2*i+1].SourceKeys.Add("v:" + h.Vertex.Name);
+                    ve[2*i+1].SourceKeys.Add("e:" + MakeKey(h.PairedName));
                 }
                 ptsArray["ve"]   = ve;
                 ptsArray["ve0"] = ve;
@@ -604,6 +610,8 @@ namespace Polyhydra.Core
                         "vf",
                         Vector3.Lerp(vert.Position, F.Position, tVf),
                         Vector3.Lerp(vert.Normal, fn, tVf).normalized);
+                    vf[i].SourceKeys.Add("v:" + vert.Name);
+                    vf[i].SourceKeys.Add("f:" + face.Name);
                 }
                 ptsArray["vf"] = vf;
             }
@@ -617,11 +625,15 @@ namespace Polyhydra.Core
                 if (E == null) { E = ComputeEArray(face, halfedges, n, fn, cache); ptsArray["E"] = E; }
                 var fe = new OVertex[n];
                 for (int i = 0; i < n; i++)
+                {
                     fe[i] = cache.GetOrCreate(
                         $"fe_{face.Name}_{MakeKey(halfedges[i].PairedName)}",
                         "fe",
                         Vector3.Lerp(F.Position, E[i].Position, tFe),
                         Vector3.Lerp(E[i].Normal, fn, tFe).normalized);
+                    fe[i].SourceKeys.Add("e:" + MakeKey(halfedges[i].PairedName));
+                    fe[i].SourceKeys.Add("f:" + face.Name);
+                }
                 ptsArray["fe"] = fe;
             }
 
@@ -636,11 +648,13 @@ namespace Polyhydra.Core
                     if (pair == null)
                     {
                         FAdjacent[i] = cache.GetOrCreate($"F_{face.Name}", "F!", face.Centroid, fn);
+                        FAdjacent[i].SourceKeys.Add("f:" + face.Name);
                     }
                     else
                     {
                         var adj = pair.Face;
                         FAdjacent[i] = cache.GetOrCreate($"F_{adj.Name}", "F!", adj.Centroid, adj.Normal);
+                        FAdjacent[i].SourceKeys.Add("f:" + adj.Name);
                     }
                 }
                 ptsArray["F!"] = FAdjacent;
@@ -662,6 +676,8 @@ namespace Polyhydra.Core
                         "fe!",
                         Vector3.Lerp(FAdjacent[i].Position, E[i].Position, tFe),
                         Vector3.Lerp(E[i].Normal, FAdjacent[i].Normal, tFe).normalized);
+                    feAdj[i].SourceKeys.Add("e:" + MakeKey(halfedges[i].PairedName));
+                    feAdj[i].SourceKeys.Add("f:" + adjFaceName);
                 }
                 ptsArray["fe!"] = feAdj;
             }
@@ -683,11 +699,15 @@ namespace Polyhydra.Core
                         "vf!",
                         Vector3.Lerp(vOrigin.Position, FAdjacent[i].Position, tVf),
                         Vector3.Lerp(vOrigin.Normal,   FAdjacent[i].Normal,   tVf).normalized);
+                    vfAdj[2*i].SourceKeys.Add("v:" + vOrigin.Name);
+                    vfAdj[2*i].SourceKeys.Add("f:" + adjFaceName);
                     vfAdj[2*i+1] = cache.GetOrCreate(
                         $"vf_{adjFaceName}_{vDest.Name}",
                         "vf!",
                         Vector3.Lerp(vDest.Position, FAdjacent[i].Position, tVf),
                         Vector3.Lerp(vDest.Normal,   FAdjacent[i].Normal,   tVf).normalized);
+                    vfAdj[2*i+1].SourceKeys.Add("v:" + vDest.Name);
+                    vfAdj[2*i+1].SourceKeys.Add("f:" + adjFaceName);
                 }
                 ptsArray["vf!"] = vfAdj;
             }
@@ -703,6 +723,9 @@ namespace Polyhydra.Core
                 var pairNormal = h.Pair?.Face.Normal ?? fn;
                 var eNormal = ((fn + pairNormal) * 0.5f).normalized;
                 E[i] = cache.GetOrCreate($"E_{MakeKey(h.PairedName)}", "E", h.Midpoint, eNormal);
+                E[i].SourceKeys.Add("e:" + MakeKey(h.PairedName));
+                E[i].SourceKeys.Add("v:" + h.Prev.Vertex.Name);
+                E[i].SourceKeys.Add("v:" + h.Vertex.Name);
             }
             return E;
         }
@@ -996,16 +1019,11 @@ namespace Polyhydra.Core
                 if (visited[hStart] || heNext[hStart] < 0) continue;
 
                 var loop = new List<OVertex>();
-                var boundaryAtoms = new List<string>();
-                var boundaryFamilies = new List<OperatorAtomFamily>();
                 int h = hStart;
                 while (!visited[h])
                 {
                     visited[h] = true;
-                    var edge = edges[h / 2];
                     loop.Add(heOrigin[h]);
-                    boundaryAtoms.Add(edge.Atom);
-                    boundaryFamilies.Add(edge.Family);
                     h = heNext[h];
                     if (h < 0) break;
                 }
@@ -1029,21 +1047,13 @@ namespace Polyhydra.Core
 
                     float dot = Vector3.Dot(faceNormal, avgVertNormal);
                     if (dot < 0f)
-                    {
                         loop.Reverse();
-                        boundaryAtoms.Reverse();
-                        boundaryFamilies.Reverse();
-                        RotateLeft(boundaryAtoms);
-                        RotateLeft(boundaryFamilies);
-                    }
 
                     int faceIndex = faceInfos.Count;
                     faceInfos.Add(new ReconstructedFaceInfo
                     {
                         Vertices = loop,
-                        BoundaryAtoms = boundaryAtoms,
-                        BoundaryFamilies = boundaryFamilies,
-                        Signature = BuildAtomSignature(boundaryAtoms)
+                        Role = ComputeFaceRole(loop)
                     });
                     if (dot >= 0f)
                         positiveOrientationFaceIndices.Add(faceIndex);
@@ -1069,7 +1079,9 @@ namespace Polyhydra.Core
             var faceRoles   = AssignFaceRoles(faceInfos);
             var vertexRoles = Enumerable.Repeat(Roles.New, allVerts.Count).ToList();
 
-            return new PolyMesh(positions, faceIdxs, faceRoles, vertexRoles);
+            var result = new PolyMesh(positions, faceIdxs, faceRoles, vertexRoles);
+            result.GreedyColorFaceRoles();
+            return result;
         }
 
 
@@ -1119,178 +1131,41 @@ namespace Polyhydra.Core
 
         private static List<Roles> AssignFaceRoles(List<ReconstructedFaceInfo> faceInfos)
         {
-            var signatureRoleMap = BuildSignatureRoleMap(faceInfos);
-            return faceInfos.Select(faceInfo => signatureRoleMap[faceInfo.Signature]).ToList();
+            return faceInfos.Select(f => f.Role).ToList();
         }
 
-        private static Dictionary<string, Roles> BuildSignatureRoleMap(List<ReconstructedFaceInfo> faceInfos)
+        // Determine a face's role from the intersection of its vertices' source key sets.
+        // Each vertex carries keys encoding which original element(s) it's associated with:
+        //   "v:…" = original vertex,  "e:…" = original edge,  "f:…" = original face
+        // The common element across all vertices reveals the face's provenance.
+        private static Roles ComputeFaceRole(List<OVertex> loop)
         {
-            var availableRoles = new List<Roles>
+            if (loop.Count == 0) return Roles.New;
+
+            var common = new HashSet<string>(loop[0].SourceKeys);
+            for (int i = 1; i < loop.Count; i++)
+                common.IntersectWith(loop[i].SourceKeys);
+
+            if (common.Count == 0) return Roles.ExistingAlt;
+
+            // Priority: vertex > edge > face (more specific wins)
+            foreach (var key in common)
+                if (key.StartsWith("v:")) return Roles.New;
+
+            foreach (var key in common)
+                if (key.StartsWith("e:")) return Roles.NewAlt;
+
+            // All remaining keys are "f:…" — single face = intra-face, multiple = cross-face
+            string firstFaceKey = null;
+            foreach (var key in common)
             {
-                Roles.Existing,
-                Roles.New,
-                Roles.NewAlt,
-                Roles.ExistingAlt
-            };
-
-            var groupedSignatures = faceInfos
-                .GroupBy(faceInfo => faceInfo.Signature)
-                .Select(group => new
+                if (key.StartsWith("f:"))
                 {
-                    Signature = group.Key,
-                    Count = group.Count(),
-                    Families = group.First().BoundaryFamilies,
-                    PreferredRole = ClassifyFaceRole(group.First().BoundaryFamilies)
-                })
-                .OrderByDescending(group => group.Count)
-                .ThenBy(group => group.Signature, StringComparer.Ordinal)
-                .ToList();
-
-            var roleAssignments = new Dictionary<string, Roles>();
-            foreach (var group in groupedSignatures)
-            {
-                if (availableRoles.Contains(group.PreferredRole))
-                {
-                    roleAssignments[group.Signature] = group.PreferredRole;
-                    availableRoles.Remove(group.PreferredRole);
-                    continue;
-                }
-
-                if (availableRoles.Count > 0)
-                {
-                    roleAssignments[group.Signature] = availableRoles[0];
-                    availableRoles.RemoveAt(0);
-                    continue;
-                }
-
-                roleAssignments[group.Signature] = group.PreferredRole;
-            }
-
-            return roleAssignments;
-        }
-
-        private static string BuildAtomSignature(List<string> boundaryAtoms)
-        {
-            if (boundaryAtoms.Count == 0)
-                return string.Empty;
-
-            var forward = CanonicalizeCyclicSequence(boundaryAtoms);
-            var reversed = CanonicalizeCyclicSequence(boundaryAtoms.AsEnumerable().Reverse().ToList());
-            return string.CompareOrdinal(forward, reversed) <= 0 ? forward : reversed;
-        }
-
-        private static string CanonicalizeCyclicSequence(List<string> atoms)
-        {
-            var best = string.Empty;
-            bool initialized = false;
-            for (int start = 0; start < atoms.Count; start++)
-            {
-                var rotated = new string[atoms.Count];
-                for (int i = 0; i < atoms.Count; i++)
-                    rotated[i] = atoms[(start + i) % atoms.Count];
-
-                var candidate = string.Join("|", rotated);
-                if (!initialized || string.CompareOrdinal(candidate, best) < 0)
-                {
-                    best = candidate;
-                    initialized = true;
+                    if (firstFaceKey == null) firstFaceKey = key;
+                    else if (firstFaceKey != key) return Roles.ExistingAlt;
                 }
             }
-
-            return best;
-        }
-
-        private static Roles ClassifyFaceRole(List<OperatorAtomFamily> boundaryFamilies)
-        {
-            var counts = new Dictionary<OperatorAtomFamily, int>();
-            foreach (var family in boundaryFamilies)
-            {
-                if (!counts.ContainsKey(family))
-                    counts[family] = 0;
-                counts[family]++;
-            }
-
-            var dominantFamily = counts
-                .OrderByDescending(x => x.Value)
-                .ThenBy(x => (int)x.Key)
-                .First()
-                .Key;
-
-            int vertexScore = 0;
-            int edgeScore = 0;
-            int faceScore = 0;
-
-            foreach (var family in boundaryFamilies)
-            {
-                switch (family)
-                {
-                    case OperatorAtomFamily.Vertex:
-                        vertexScore += 2;
-                        break;
-
-                    case OperatorAtomFamily.Edge:
-                        edgeScore += 2;
-                        break;
-
-                    case OperatorAtomFamily.Face:
-                        faceScore += 2;
-                        break;
-
-                    case OperatorAtomFamily.VertexEdge:
-                        vertexScore++;
-                        edgeScore++;
-                        break;
-
-                    case OperatorAtomFamily.EdgeFace:
-                        edgeScore++;
-                        faceScore++;
-                        break;
-
-                    case OperatorAtomFamily.VertexFace:
-                        vertexScore++;
-                        faceScore++;
-                        break;
-                }
-            }
-
-            if (IsStrictlyLargest(faceScore, edgeScore, vertexScore))
-                return Roles.Existing;
-
-            if (IsStrictlyLargest(edgeScore, faceScore, vertexScore))
-                return Roles.NewAlt;
-
-            if (IsStrictlyLargest(vertexScore, faceScore, edgeScore))
-                return Roles.New;
-
-            return MapAtomFamilyToRole(dominantFamily);
-        }
-
-        private static bool IsStrictlyLargest(int candidate, int otherA, int otherB)
-        {
-            return candidate > otherA && candidate > otherB;
-        }
-
-        private static Roles MapAtomFamilyToRole(OperatorAtomFamily family)
-        {
-            switch (family)
-            {
-                case OperatorAtomFamily.Face:
-                    return Roles.Existing;
-
-                case OperatorAtomFamily.Edge:
-                    return Roles.NewAlt;
-
-                case OperatorAtomFamily.Vertex:
-                    return Roles.New;
-
-                case OperatorAtomFamily.VertexEdge:
-                    return Roles.New;
-
-                case OperatorAtomFamily.EdgeFace:
-                case OperatorAtomFamily.VertexFace:
-                default:
-                    return Roles.ExistingAlt;
-            }
+            return firstFaceKey != null ? Roles.Existing : Roles.ExistingAlt;
         }
 
         // Twin of halfedge h: swap the LSB (2i <-> 2i+1)
