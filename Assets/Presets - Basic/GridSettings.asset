@@ -13,21 +13,36 @@ MonoBehaviour:
   m_Name: GridSettings
   m_EditorClassIdentifier: 
   Operators:
-  - Active: 1
-    OpType: 40
-    Parameter1: 0.9
+  - Active: 0
+    OpType: 26
+    StringParameter: 
+    Parameter1: 0.3333333
     Parameter2: 0
+    Parameter3: 0.5
     Iterations: 1
     Parameter1Randomize: 0
     Parameter2Randomize: 0
     FilterType: 0
     FilterParam: 0
     FilterFlip: 0
-  FastConicalize: 1
+  - Active: 1
+    OpType: 9999
+    StringParameter: F-fe,fe-fe,fe-vf,vf-vf,vf-vf!
+    Parameter1: 0.5
+    Parameter2: 0.5
+    Parameter3: 0.5
+    Iterations: 1
+    Parameter1Randomize: 0
+    Parameter2Randomize: 0
+    FilterType: 0
+    FilterParam: 0
+    FilterFlip: 0
+  FastConicalize: 0
   CanonicalizeIterations: 0
   PlanarizeIterations: 0
-  FaceInset: -0.03
+  FaceInset: 0.005
+  ColorMethod: 0
   type: 1
   shape: 0
-  X: 2
-  Y: 2
+  X: 6
+  Y: 6

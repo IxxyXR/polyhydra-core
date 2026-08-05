@@ -14,9 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::WythoffSettings
   Operators:
   - Active: 1
-    OpType: 65
+    OpType: 8
     StringParameter: 
-    Parameter1: 0
+    Parameter1: 0.27
     Parameter2: 0
     Iterations: 1
     Parameter1Randomize: 0
@@ -29,5 +29,5 @@ MonoBehaviour:
   PlanarizeIterations: 0
   FaceInset: 0
   ColorMethod: 1
-  WythoffType: 11
+  WythoffType: 14
   Sides: 5

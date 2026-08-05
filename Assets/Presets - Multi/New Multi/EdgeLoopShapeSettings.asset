@@ -31,12 +31,12 @@ MonoBehaviour:
   ColorMethod: 1
   SourceSettings: {fileID: 11400000, guid: 8b607043daf2a403083b5a830b1d15e3, type: 2}
   IncludeSource: 0
-  LoopMode: 0
+  LoopMode: 1
   MinContinuationDot: 0.27
   PreferClockwise: 1
   MinLoopEdges: 3
   Mode: 0
   Sides: 4
   Radius: 0.05
-  UpHint: {x: 0, y: 1, z: 1.58}
+  UpHint: {x: 0, y: 1, z: 1}
   CapEnds: 0

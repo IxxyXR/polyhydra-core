@@ -9,16 +9,15 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b6de01b199e24c46884c96e53a3d71d5, type: 3}
-  m_Name: WatermanSettings
-  m_EditorClassIdentifier: 
+  m_Script: {fileID: 11500000, guid: 63be2e6bb0184595ac92a61275f5a8f6, type: 3}
+  m_Name: _Cube
+  m_EditorClassIdentifier: Assembly-CSharp::WythoffSettings
   Operators:
-  - Active: 0
-    OpType: 9999
-    StringParameter: F-vf,V-vf,vf-vf
-    Parameter1: 0.5
+  - Active: 1
+    OpType: 97
+    StringParameter: 
+    Parameter1: 0
     Parameter2: 0
-    Parameter3: 0.5
     Iterations: 1
     Parameter1Randomize: 0
     Parameter2Randomize: 0
@@ -30,6 +29,5 @@ MonoBehaviour:
   PlanarizeIterations: 0
   FaceInset: 0
   ColorMethod: 1
-  Root: 128
-  C: 5
-  MergeFaces: 1
+  WythoffType: 32
+  Sides: 5

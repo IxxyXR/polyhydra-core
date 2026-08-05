@@ -13,19 +13,10 @@ MonoBehaviour:
   m_Name: AntiprismPluginSettings
   m_EditorClassIdentifier: 
   Operators:
-  - Active: 0
-    OpType: 111
-    Parameter1: 6.31
-    Parameter2: 0.57
-    Iterations: 1
-    Parameter1Randomize: 0
-    Parameter2Randomize: 0
-    FilterType: 0
-    FilterParam: 0
-    FilterFlip: 0
-  - Active: 0
-    OpType: 4
-    Parameter1: 0.17
+  - Active: 1
+    OpType: 9999
+    StringParameter: E-vf,F-vf
+    Parameter1: 0.5
     Parameter2: 0
     Iterations: 1
     Parameter1Randomize: 0
@@ -36,7 +27,7 @@ MonoBehaviour:
   FastConicalize: 1
   CanonicalizeIterations: 0
   PlanarizeIterations: 0
-  FaceInset: 0.01
+  FaceInset: 0
   ColorMethod: 1
   polyhedronType: 9
   InputPreset: {fileID: 0}
@@ -58,41 +49,21 @@ MonoBehaviour:
   trapezohedronHeightA: 0.81
   trapezohedronHeightB: 0
   symmetroSym: 79
-  symmetroMult0: 5
-  symmetroMult1: 2
-  symmetroMult2: 0
+  symmetroMult0: 3
+  symmetroMult1: 0
+  symmetroMult2: 7
   johnsonNumber: 64
   uniformNumber: 6
   wenningerNumber: 65
   antiprismModifiers:
-  - Active: 0
-    Type: 2
-    CanonicalizeIterations: 3597
-    ConwayN: 3
-    ConwayM: 2
-    TruncateRatio: 0.28
-    TruncateOrder: 0
-    KisFaceSides: 0
-    NeedleHeight: 1.4
-    DualRadius: 1.06
-  - Active: 0
-    Type: 16
-    CanonicalizeIterations: 719
+  - Active: 1
+    Type: 17
+    CanonicalizeIterations: 0
     ConwayN: 0
     ConwayM: 0
-    TruncateRatio: 0.24
+    TruncateRatio: 0
     TruncateOrder: 0
     KisFaceSides: 0
     NeedleHeight: 0
     DualRadius: 0
-  - Active: 0
-    Type: 1
-    CanonicalizeIterations: 719
-    ConwayN: 3
-    ConwayM: 2
-    TruncateRatio: 0.24
-    TruncateOrder: 0
-    KisFaceSides: 0
-    NeedleHeight: 0
-    DualRadius: 1.35
   createZonohedronFromVertices: 0

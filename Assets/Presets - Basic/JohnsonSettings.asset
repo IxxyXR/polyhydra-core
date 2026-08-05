@@ -9,16 +9,16 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b6de01b199e24c46884c96e53a3d71d5, type: 3}
-  m_Name: WatermanSettings
+  m_Script: {fileID: 11500000, guid: 9588e9ee249546dab336334430004b2d, type: 3}
+  m_Name: JohnsonSettings
   m_EditorClassIdentifier: 
   Operators:
   - Active: 0
     OpType: 9999
-    StringParameter: F-vf,V-vf,vf-vf
-    Parameter1: 0.5
-    Parameter2: 0
-    Parameter3: 0.5
+    StringParameter: F-vf,fe-fe!,fe-vf,vf-vf!
+    Parameter1: 0.17
+    Parameter2: 0.31
+    Parameter3: 0.39
     Iterations: 1
     Parameter1Randomize: 0
     Parameter2Randomize: 0
@@ -30,6 +30,5 @@ MonoBehaviour:
   PlanarizeIterations: 0
   FaceInset: 0
   ColorMethod: 1
-  Root: 128
-  C: 5
-  MergeFaces: 1
+  SolidName: Pentagonal Rotunda
+  type: 6
