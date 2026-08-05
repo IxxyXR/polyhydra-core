@@ -42,30 +42,8 @@ namespace Polyhydra.Core {
 
         public Guid Name { get; private set; }
 
-        // Performance optimization: Cache frequently accessed computed properties
-        private Vector3? _cachedNormal;
-        private List<Vertex> _cachedNeighbours;
-        private List<Halfedge> _cachedHalfedges;
-        private List<Face> _cachedVertexFaces;
-
-        /// <summary>
-        /// Invalidate cached properties. Call this when vertex connectivity changes.
-        /// </summary>
-        public void InvalidateCache()
-        {
-            _cachedNormal = null;
-            _cachedNeighbours = null;
-            _cachedHalfedges = null;
-            _cachedVertexFaces = null;
-        }
-
         public Vector3 Normal {
             get {
-                if (_cachedNormal.HasValue)
-                {
-                    return _cachedNormal.Value;
-                }
-
                 Vector3 normal = new Vector3(0, 0, 0);
                 var fs = GetVertexFaces();
                 for (var i = 0; i < fs.Count; i++)
@@ -74,9 +52,7 @@ namespace Polyhydra.Core {
                     normal += new Vector3(f.Normal.x, f.Normal.y, f.Normal.z);
                 }
 
-                var result = new Vector3(normal.x, normal.y, normal.z).normalized;
-                _cachedNormal = result;
-                return result;
+                return new Vector3(normal.x, normal.y, normal.z).normalized;
             }
         }
 
@@ -84,17 +60,8 @@ namespace Polyhydra.Core {
         public List<Vertex> Neighbours
         {
             get {
-                if (_cachedNeighbours != null)
-                {
-                    return _cachedNeighbours;
-                }
-
                 var neighbours = new List<Vertex>();
-                if (Halfedge == null)
-                {
-                    _cachedNeighbours = neighbours;
-                    return neighbours;
-                }
+                if (Halfedge == null) return neighbours;
 
                 bool boundary = false;
                 var edge = Halfedge;
@@ -134,11 +101,9 @@ namespace Polyhydra.Core {
                     }
 
                     redges.AddRange(neighbours);
-                    _cachedNeighbours = redges;
                     return redges;
                 }
 
-                _cachedNeighbours = neighbours;
                 return neighbours;
             }
         }
@@ -148,17 +113,8 @@ namespace Polyhydra.Core {
         /// </summary>
         public List<Halfedge> Halfedges {
             get {
-                if (_cachedHalfedges != null)
-                {
-                    return _cachedHalfedges;
-                }
-
                 var edges = new List<Halfedge>();
-                if (Halfedge == null)
-                {
-                    _cachedHalfedges = edges;
-                    return edges;
-                }
+                if (Halfedge == null) return edges;
 
                 bool boundary = false;
                 var edge = Halfedge;
@@ -190,11 +146,9 @@ namespace Polyhydra.Core {
                     }
 
                     redges.AddRange(edges);
-                    _cachedHalfedges = redges;
                     return redges;
                 }
 
-                _cachedHalfedges = edges;
                 return edges;
             }
         }
@@ -209,17 +163,8 @@ namespace Polyhydra.Core {
         /// <returns>a list of incident faces, ordered counter-clockwise around the vertex</returns>
         public List<Face> GetVertexFaces()
         {
-            if (_cachedVertexFaces != null)
-            {
-                return _cachedVertexFaces;
-            }
-
             var adjacent = new List<Face>();
-            if (Halfedge == null)
-            {
-                _cachedVertexFaces = adjacent;
-                return adjacent;
-            }
+            if (Halfedge == null) return adjacent;
 
             bool boundary = false;
             Halfedge edge = Halfedge;
@@ -246,11 +191,9 @@ namespace Polyhydra.Core {
                 }
 
                 rAdjacent.AddRange(adjacent);
-                _cachedVertexFaces = rAdjacent;
                 return rAdjacent;
             }
 
-            _cachedVertexFaces = adjacent;
             return adjacent;
         }
 

@@ -844,22 +844,6 @@ namespace Polyhydra.Core
         }
 
         /// <summary>
-        /// Invalidates all cached properties in Faces and Vertices.
-        /// Call this after in-place modifications to vertex positions or connectivity.
-        /// </summary>
-        public void InvalidateAllCaches()
-        {
-            for (int i = 0; i < Faces.Count; i++)
-            {
-                Faces[i].InvalidateCache();
-            }
-            for (int i = 0; i < Vertices.Count; i++)
-            {
-                Vertices[i].InvalidateCache();
-            }
-        }
-
-        /// <summary>
         /// A string representation of the mesh.
         /// </summary>
         /// <returns>a string representation of the mesh</returns>
@@ -1018,8 +1002,8 @@ namespace Polyhydra.Core
                 }
             }
 
-            // Halfedge pairing now happens incrementally during face addition
-            // (see MeshFaceList._AddOrInsert for incremental pairing implementation)
+            // Pair halfedges after the complete mesh has been constructed.
+            Halfedges.MatchPairs();
             FaceRoles = newRoles;
             FaceTags = newTags;
         }

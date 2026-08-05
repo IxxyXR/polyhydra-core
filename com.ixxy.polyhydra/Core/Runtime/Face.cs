@@ -30,14 +30,6 @@ namespace Polyhydra.Core
         public Halfedge Halfedge { get; set; }
         public String Name { get; private set; }
 
-        // Performance optimization: Cache frequently accessed computed properties
-        private Vector3? _cachedNormal;
-        private Vector3? _cachedCentroid;
-        private List<Vertex> _cachedVertices;
-        private List<Halfedge> _cachedHalfedges;
-        private int? _cachedSides;
-        private bool? _cachedIsConvex;
-
         public Vector3 GetPolarPoint(float angle, float position)
         {
             // Returns a point that lies on the face
@@ -104,11 +96,6 @@ namespace Polyhydra.Core
         {
             get
             {
-                if (_cachedCentroid.HasValue)
-                {
-                    return _cachedCentroid.Value;
-                }
-
                 List<Vertex> vertices = GetVertices();
                 Vector3 avg = new Vector3();
                 var vcount = vertices.Count;
@@ -124,7 +111,6 @@ namespace Polyhydra.Core
                 avg.y /= vcount;
                 avg.z /= vcount;
 
-                _cachedCentroid = avg;
                 return avg;
             }
         }
@@ -177,11 +163,6 @@ namespace Polyhydra.Core
         {
             get
             {
-                if (_cachedNormal.HasValue)
-                {
-                    return _cachedNormal.Value;
-                }
-
                 Vector3 normal = new Vector3(0, 0, 0);
                 var centroid = Centroid;
                 Halfedge edge = Halfedge;
@@ -192,24 +173,13 @@ namespace Polyhydra.Core
                     edge = edge.Next; // move on to next halfedge
                 } while (edge != Halfedge);
 
-                var result = new Vector3(normal.x, normal.y, normal.z).normalized;
-                _cachedNormal = result;
-                return result;
+                return new Vector3(normal.x, normal.y, normal.z).normalized;
             }
         }
 
 
         public int Sides {
-            get
-            {
-                if (_cachedSides.HasValue)
-                {
-                    return _cachedSides.Value;
-                }
-                var result = GetVertices().Count;
-                _cachedSides = result;
-                return result;
-            }
+            get { return GetVertices().Count; }
         }
 
         public Vector3 Tangent => (Centroid - Halfedge.Vertex.Position).normalized;
@@ -279,11 +249,6 @@ namespace Polyhydra.Core
 
         public bool AreAllVertsVisibleFromCentroid()
         {
-            if (_cachedIsConvex.HasValue)
-            {
-                return _cachedIsConvex.Value;
-            }
-
             // Is every vertex reachable from the given point
             // Cycles through vertices and returns false if the
             // angle between vertex and center changes direction
@@ -291,11 +256,7 @@ namespace Polyhydra.Core
             var centroid = Centroid;
             var normal = Normal;
             var verts = GetHalfedges().Select(e => e.Vertex.Position).ToList();
-            if (verts.Count < 4)
-            {
-                _cachedIsConvex = true;
-                return true;
-            }
+            if (verts.Count < 4) return true;
 
             float lastSign = 0;
             int n = verts.Count;
@@ -303,15 +264,9 @@ namespace Polyhydra.Core
             {
                 float angle = Vector3.SignedAngle(verts[i % n] - centroid, verts[i - 1] - centroid, normal);
                 var sign = Mathf.Sign(angle);
-                if (lastSign != 0 && sign != lastSign)
-                {
-                    _cachedIsConvex = false;
-                    return false;
-                }
+                if (lastSign != 0 && sign != lastSign) return false;
                 lastSign = sign;
             }
-
-            _cachedIsConvex = true;
             return true;
         }
 
@@ -319,25 +274,7 @@ namespace Polyhydra.Core
 
         #region methods
 
-            /// <summary>
-            /// Invalidate cached properties. Call this when the face topology changes.
-            /// </summary>
-            public void InvalidateCache()
-            {
-                _cachedNormal = null;
-                _cachedCentroid = null;
-                _cachedVertices = null;
-                _cachedHalfedges = null;
-                _cachedSides = null;
-                _cachedIsConvex = null;
-            }
-
             public List<Vertex> GetVertices() {
-                if (_cachedVertices != null)
-                {
-                    return _cachedVertices;
-                }
-
                 List<Vertex> vertices = new List<Vertex>();
                 Halfedge edge = Halfedge;
                 do {
@@ -345,17 +282,11 @@ namespace Polyhydra.Core
                     edge = edge.Next; // move on to next halfedge
                 } while (edge != Halfedge);
 
-                _cachedVertices = vertices;
                 return vertices;
             }
 
             public List<Halfedge> GetHalfedges()
             {
-                if (_cachedHalfedges != null)
-                {
-                    return _cachedHalfedges;
-                }
-
                 List<Halfedge> halfedges = new List<Halfedge>();
                 Halfedge edge = Halfedge;
                 do {
@@ -363,7 +294,6 @@ namespace Polyhydra.Core
                     edge = edge.Next; // move on to next halfedge
                 } while (edge != Halfedge);
 
-                _cachedHalfedges = halfedges;
                 return halfedges;
             }
 
@@ -399,9 +329,6 @@ namespace Polyhydra.Core
                 e2.Next.Prev = he_new_pair;
                 e2.Next = he_new;
 
-                // Invalidate caches since topology changed
-                this.InvalidateCache();
-                f_new.InvalidateCache();
             }
 
             public IEnumerable<Halfedge> NakedEdges()

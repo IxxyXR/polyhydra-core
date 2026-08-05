@@ -110,13 +110,16 @@ namespace Polyhydra.Core
 
     public partial class PolyMesh
     {
+        private const string PlanarizeTopologyLogPrefix =
+            "[PH_CANON_OPEN_FALLBACK_20260805]";
+        private static readonly HashSet<string> PlanarizeTopologyDiagnostics = new HashSet<string>();
+
         public void SetVertexPositions(List<Vector3> newPositions)
         {
             for (var i = 0; i < Vertices.Count; i++)
             {
                 Vertices[i].Position = newPositions[i];
             }
-            InvalidateAllCaches();
         }
 
         private static double MAX_VERTEX_CHANGE = 1.0;
@@ -198,6 +201,33 @@ namespace Polyhydra.Core
         public static void Planarize(PolyMesh poly, int numIterations)
         {
             var dual = poly.Dual();
+
+            // Reciprocal planarization assumes a one-to-one mapping between
+            // source faces and dual vertices, and between source vertices and
+            // dual faces. Open meshes can violate the latter when low-valence
+            // boundary vertices do not produce dual faces. Use the
+            // boundary-safe planarizer in that case.
+            if (dual.Vertices.Count != poly.Faces.Count || dual.Faces.Count != poly.Vertices.Count)
+            {
+                var signature =
+                    $"{poly.Vertices.Count}:{poly.Faces.Count}:{poly.Halfedges.Count}:" +
+                    $"{dual.Vertices.Count}:{dual.Faces.Count}:{dual.Halfedges.Count}";
+
+                lock (PlanarizeTopologyDiagnostics)
+                {
+                    if (PlanarizeTopologyDiagnostics.Add(signature))
+                    {
+                        Debug.LogWarning(
+                            $"{PlanarizeTopologyLogPrefix} Reciprocal planarization cannot map this " +
+                            $"mesh through its dual; using least-squares planarization. " +
+                            $"source=(vertices={poly.Vertices.Count}, faces={poly.Faces.Count}); " +
+                            $"dual=(vertices={dual.Vertices.Count}, faces={dual.Faces.Count}).");
+                    }
+                }
+
+                PlanarizeLeastSquares(poly, 0.0, numIterations);
+                return;
+            }
 
             for (int i = 0; i < numIterations; i++)
             {
@@ -319,7 +349,6 @@ namespace Polyhydra.Core
                 current = poly.Vertices.Select(v => v.Position).ToArray();
             }
 
-            poly.InvalidateAllCaches();
             return iterations;
         }
 
@@ -389,6 +418,7 @@ namespace Polyhydra.Core
                         var newCenter = sum / edges.Count;
                         newCenter *= 1.0f / Mathf.Pow(newCenter.magnitude, 2);
                         poly.Vertices[j].Position = newCenter;
+
                         // }
                     }
                 }
