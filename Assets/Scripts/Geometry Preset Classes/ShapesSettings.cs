@@ -28,8 +28,13 @@ public class ShapesSettings : BaseSettings
             ShapeTypes.Arc => Axis.Z,
             ShapeTypes.Arch => Axis.Z,
             ShapeTypes.GothicArch => Axis.Z,
+            ShapeTypes.Ring => Axis.Y,
             _ => throw new ArgumentOutOfRangeException()
         };
+        if (type == ShapeTypes.Ring)
+        {
+            poly = poly.Rotate(Vector3.left, -90);
+        }
         if (Layers>0) poly = poly.LayeredExtrude(Layers, LayerHeight, axis);
         return poly;
     }

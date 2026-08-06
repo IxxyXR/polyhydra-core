@@ -15,6 +15,7 @@ namespace Polyhydra.Core
         Arc,
         Arch,
         GothicArch,
+        Ring,
     }
 
     public class Shapes
@@ -37,6 +38,7 @@ namespace Polyhydra.Core
                 ShapeTypes.Arc => Arc(Mathf.FloorToInt(a), 1, b, 360 * c),
                 ShapeTypes.Arch => Arch(Mathf.FloorToInt(a), 1, b, c),
                 ShapeTypes.GothicArch => GothicArch(sides: Mathf.FloorToInt(a), width: 1, thickness: b, height: c),
+                ShapeTypes.Ring => Arc(Mathf.FloorToInt(a), 1, b, 360, true),
                 _ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
             };
         }
@@ -208,7 +210,8 @@ namespace Polyhydra.Core
             return new PolyMesh(verts, faces);
         }
 
-        public static (List<Vector3> verts, List<List<int>> faces) _CalcArc(int sides, float radius, float thickness, float arcAngle)
+        public static (List<Vector3> verts, List<List<int>> faces) _CalcArc(
+            int sides, float radius, float thickness, float arcAngle, bool joined = false)
         {
             List<Vector3> verts = new();
             List<List<int>> faces = new();
@@ -220,21 +223,34 @@ namespace Polyhydra.Core
 
             for (int i = 0; i <= end; i += inc)
             {
+                bool closing = i == end && joined;
                 float angle = theta * i;
-                verts.Add(new Vector3(Mathf.Cos(angle) * radius, Mathf.Sin(angle) * radius, 0));
-                verts.Add(new Vector3(Mathf.Cos(angle) * radius * thickness, Mathf.Sin(angle) * radius * thickness, 0));
+                if (!closing)
+                {
+                    verts.Add(new Vector3(Mathf.Cos(angle) * radius, Mathf.Sin(angle) * radius, 0));
+                    verts.Add(new Vector3(Mathf.Cos(angle) * radius * thickness, Mathf.Sin(angle) * radius * thickness, 0));
+                }
                 int lastIndex = verts.Count - 1;
                 if (i == 0) continue;
-                var face = new List<int> { lastIndex - 1, lastIndex, lastIndex - 2, lastIndex - 3 };
+                List<int> face;
+                if (closing)
+                {
+                    face = new List<int> { 0, 1, lastIndex, lastIndex - 1 };
+                }
+                else
+                {
+                    face = new List<int> { lastIndex - 1, lastIndex, lastIndex - 2, lastIndex - 3 };
+                }
                 if (thickness > 1) face.Reverse();
                 faces.Add(face);
             }
+
             return (verts, faces);
         }
 
-        public static PolyMesh Arc(int sides, float radius, float thickness, float angle)
+        public static PolyMesh Arc(int sides, float radius, float thickness, float angle, bool joined = false)
         {
-            var (verts, faces) = _CalcArc(sides, radius, thickness, angle);
+            var (verts, faces) = _CalcArc(sides, radius, thickness, angle, joined);
             return new PolyMesh(verts, faces);
         }
 
