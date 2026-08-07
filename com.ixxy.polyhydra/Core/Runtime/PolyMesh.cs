@@ -1023,7 +1023,8 @@ namespace Polyhydra.Core
             Color[] colors = null,
             ColorMethods colorMethod = ColorMethods.ByRole,
             UVMethods uvMethod = UVMethods.FirstEdge,
-            bool largeMeshFormat = true)
+            bool largeMeshFormat = true,
+            bool useSmoothing = true)
         {
             Vector2 calcUV(Vector3 point, Vector3 xAxis, Vector3 yAxis)
             {
@@ -1042,6 +1043,10 @@ namespace Polyhydra.Core
             int faceCount = Faces.Count;
             int estimatedTriangles = faceCount * 3; // Most faces become 2-4 triangles
             int estimatedVertices = estimatedTriangles * 3; // 3 vertices per triangle
+            bool generateSmoothNormals = useSmoothing && HasSmoothEdges();
+            var cornerNormalCache = generateSmoothNormals
+                ? new Dictionary<Halfedge, Vector3>(Halfedges.Count)
+                : null;
 
             var meshTriangles = new List<int>(estimatedTriangles * 3);
             var meshVertices = new List<Vector3>(estimatedVertices);
@@ -1093,8 +1098,53 @@ namespace Polyhydra.Core
             {
                 var face = Faces[i];
                 var faceVerts = face.GetVertices(); // Cached - no allocation!
+                Vector3[] cornerNormals = null;
+                if (generateSmoothNormals)
+                {
+                    var corner = face.Halfedge;
+                    var faceUsesSmoothing = false;
+                    do
+                    {
+                        if (corner.IsEdgeSmooth)
+                        {
+                            faceUsesSmoothing = true;
+                            break;
+                        }
+
+                        corner = corner.Next;
+                    } while (corner != face.Halfedge);
+
+                    if (faceUsesSmoothing)
+                    {
+                        cornerNormals = new Vector3[faceVerts.Count];
+                        corner = face.Halfedge;
+                        for (var cornerIndex = 0; cornerIndex < cornerNormals.Length; cornerIndex++)
+                        {
+                            cornerNormals[cornerIndex] = GetCornerNormal(corner, cornerNormalCache);
+                            corner = corner.Next;
+                        }
+                    }
+                }
                 var faceNormal = face.Normal;
                 var faceCentroid = face.Centroid;
+
+                Vector3 getCornerNormal(int cornerIndex)
+                {
+                    return cornerNormals == null ? faceNormal : cornerNormals[cornerIndex];
+                }
+
+                Vector3 getCornerNormalAtPosition(Vector3 position)
+                {
+                    for (var cornerIndex = 0; cornerIndex < faceVerts.Count; cornerIndex++)
+                    {
+                        if (faceVerts[cornerIndex].Position == position)
+                        {
+                            return getCornerNormal(cornerIndex);
+                        }
+                    }
+
+                    return faceNormal;
+                }
 
                 Roles faceRole = FaceRoles[i];
 
@@ -1199,7 +1249,7 @@ namespace Polyhydra.Core
                             edgeUVs.Add(new Vector2(1, 1));
                             barycentricUVs.Add(new Vector3(0, 1, 0));
 
-                            meshNormals.Add(faceNormal);
+                            meshNormals.Add(getCornerNormal(edgeIndex));
                             meshColors.Add(color);
                             miscUVs1.Add(miscUV1);
                             miscUVs2.Add(miscUV2);
@@ -1210,7 +1260,7 @@ namespace Polyhydra.Core
                             edgeUVs.Add(new Vector2(1, 1));
                             barycentricUVs.Add(new Vector3(1, 0, 0));
 
-                            meshNormals.Add(faceNormal);
+                            meshNormals.Add(getCornerNormal((edgeIndex + 1) % face.Sides));
                             meshColors.Add(color);
                             miscUVs1.Add(miscUV1);
                             miscUVs2.Add(miscUV2);
@@ -1256,10 +1306,9 @@ namespace Polyhydra.Core
                             edgeUVs.Add(new Vector2(1, 1));
                             barycentricUVs.Add(new Vector3(1, 0, 0));
 
-                            // Replaced LINQ Enumerable.Repeat with explicit adds
-                            meshNormals.Add(faceNormal);
-                            meshNormals.Add(faceNormal);
-                            meshNormals.Add(faceNormal);
+                            meshNormals.Add(getCornerNormalAtPosition(getVec(t)));
+                            meshNormals.Add(getCornerNormalAtPosition(getVec(t + 1)));
+                            meshNormals.Add(getCornerNormalAtPosition(getVec(t + 2)));
                             meshColors.Add(color);
                             meshColors.Add(color);
                             meshColors.Add(color);
@@ -1296,9 +1345,9 @@ namespace Polyhydra.Core
                     edgeUVs.Add(edgeUV);
                     edgeUVs.Add(edgeUV);
                     edgeUVs.Add(edgeUV);
-                    meshNormals.Add(faceNormal);
-                    meshNormals.Add(faceNormal);
-                    meshNormals.Add(faceNormal);
+                    meshNormals.Add(getCornerNormal(0));
+                    meshNormals.Add(getCornerNormal(1));
+                    meshNormals.Add(getCornerNormal(2));
                     meshColors.Add(color);
                     meshColors.Add(color);
                     meshColors.Add(color);
