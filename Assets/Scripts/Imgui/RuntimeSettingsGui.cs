@@ -115,6 +115,7 @@ public class RuntimeSettingsGUI : MonoBehaviour
         else
             GUILayout.Label($"Runtime GUI not implemented for {settings.GetType().Name}");
 
+        changed |= FloatSlider("Auto Smooth Angle", ref settings.AutoSmoothAngle, 0f, 180f);
         changed |= DrawOperators(settings);
 
         GUILayout.EndScrollView();

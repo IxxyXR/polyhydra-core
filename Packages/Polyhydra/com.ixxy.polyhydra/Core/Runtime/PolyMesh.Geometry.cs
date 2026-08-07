@@ -1946,6 +1946,7 @@ namespace Polyhydra.Core
         {
             // Export to face/vertex and rebuild
             var poly = new PolyMesh(ListVerticesByPoints(), ListFacesByVertexIndices(), FaceRoles, VertexRoles, FaceTags);
+            CopySmoothingTo(poly);
             poly.DebugVerts = DebugVerts?.ToList();
             return poly;
         }
@@ -1964,7 +1965,9 @@ namespace Polyhydra.Core
                 verts = ListVerticesByPoints().Select(i => matrix.MultiplyPoint(i));
             }
 
-            return new PolyMesh(verts, ListFacesByVertexIndices(), FaceRoles, VertexRoles, FaceTags);
+            var poly = new PolyMesh(verts, ListFacesByVertexIndices(), FaceRoles, VertexRoles, FaceTags);
+            CopySmoothingTo(poly);
+            return poly;
         }
 
         public PolyMesh Duplicate(Vector3 transform, Quaternion rotation)

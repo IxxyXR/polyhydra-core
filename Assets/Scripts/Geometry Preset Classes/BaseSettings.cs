@@ -28,6 +28,9 @@ public abstract class BaseSettings : ScriptableObject
     public int CanonicalizeIterations = 0;
     public int PlanarizeIterations = 0;
     [Range(-1f, 1f)] public float FaceInset = 0;
+    [Range(0f, 180f)]
+    [Tooltip("Maximum dihedral angle to smooth across. Set to 0 to disable automatic smoothing.")]
+    public float AutoSmoothAngle = 0f;
     public ColorMethods ColorMethod = ColorMethods.ByRole;
 
     public event Action OnSettingsChanged;
@@ -58,7 +61,8 @@ public abstract class BaseSettings : ScriptableObject
         poly = ApplyModifiers(poly);
         var meshData = poly.BuildMeshData(
             colorMethod: GetColorMethod(appearanceSettings),
-            colors: CalculateColorList(appearanceSettings)
+            colors: CalculateColorList(appearanceSettings),
+            useSmoothing: AutoSmoothAngle > 0f
         );
         _Generator.poly = poly;
         return poly.BuildUnityMesh(meshData);
@@ -145,6 +149,7 @@ public abstract class BaseSettings : ScriptableObject
         }
 
         if (FaceInset != 0) poly = poly.FaceInset(new OpParams(FaceInset));
+        if (AutoSmoothAngle > 0f) poly.AutoSmooth(AutoSmoothAngle);
         return poly;
     }
 

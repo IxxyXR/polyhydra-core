@@ -33,6 +33,17 @@ namespace Polyhydra.Core {
         public Vertex Vertex { get; private set; }
         public Face Face { get; set; }
 
+        /// <summary>
+        /// Marks this halfedge as contributing smoothing to its undirected edge.
+        /// </summary>
+        public bool IsSmooth { get; set; }
+
+        /// <summary>
+        /// Whether normals should be blended across this undirected edge.
+        /// Either halfedge may mark the pair smooth. Boundary edges remain hard.
+        /// </summary>
+        public bool IsEdgeSmooth => Pair != null && (IsSmooth || Pair.IsSmooth);
+
         public (Guid, Guid)? Name {
             get
             {

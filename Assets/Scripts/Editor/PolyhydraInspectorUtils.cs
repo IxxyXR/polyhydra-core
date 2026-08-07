@@ -40,6 +40,7 @@ public static class PolySettingsCopier
             targetSettings.CanonicalizeIterations = copiedSettings.CanonicalizeIterations;
             targetSettings.PlanarizeIterations = copiedSettings.PlanarizeIterations;
             targetSettings.FaceInset = copiedSettings.FaceInset;
+            targetSettings.AutoSmoothAngle = copiedSettings.AutoSmoothAngle;
 
             EditorUtility.SetDirty(targetSettings);
             Debug.Log("Settings pasted to " + targetSettings.name);

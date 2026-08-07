@@ -36,7 +36,8 @@ public class CsgShapeSettings : BaseSettings
         var finalPoly = BuildBaseShape();
         var meshData = finalPoly.BuildMeshData(
             colorMethod: GetColorMethod(appearanceSettings),
-            colors: CalculateColorList(appearanceSettings)
+            colors: CalculateColorList(appearanceSettings),
+            useSmoothing: AutoSmoothAngle > 0f
         );
         return finalPoly.BuildUnityMesh(meshData);
     }
