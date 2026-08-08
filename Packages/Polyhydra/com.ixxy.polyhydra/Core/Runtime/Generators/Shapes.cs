@@ -16,6 +16,8 @@ namespace Polyhydra.Core
         Arch,
         GothicArch,
         Ring,
+        Triangle,
+        Sector,
     }
 
     public class Shapes
@@ -39,8 +41,61 @@ namespace Polyhydra.Core
                 ShapeTypes.Arch => Arch(Mathf.FloorToInt(a), 1, b, c),
                 ShapeTypes.GothicArch => GothicArch(sides: Mathf.FloorToInt(a), width: 1, thickness: b, height: c),
                 ShapeTypes.Ring => Arc(Mathf.FloorToInt(a), 1, b, 360, true),
+                ShapeTypes.Triangle => Triangle(a, b),
+                ShapeTypes.Sector => Sector(Mathf.FloorToInt(a), c),
                 _ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
             };
+        }
+
+        public static PolyMesh Triangle(float leftAngleTurns = .125f, float rightAngleTurns = .125f)
+        {
+            const float minimumAngleTurns = .001f;
+            const float maximumAngleSumTurns = .49f;
+            leftAngleTurns = Mathf.Clamp(leftAngleTurns, minimumAngleTurns, maximumAngleSumTurns);
+            rightAngleTurns = Mathf.Clamp(rightAngleTurns, minimumAngleTurns, maximumAngleSumTurns);
+            var angleSum = leftAngleTurns + rightAngleTurns;
+            if (angleSum > maximumAngleSumTurns)
+            {
+                var scale = maximumAngleSumTurns / angleSum;
+                leftAngleTurns *= scale;
+                rightAngleTurns *= scale;
+            }
+
+            var leftAngle = leftAngleTurns * Mathf.PI * 2f;
+            var rightAngle = rightAngleTurns * Mathf.PI * 2f;
+            var apexAngle = Mathf.PI - leftAngle - rightAngle;
+            var leftSideLength = Mathf.Sin(rightAngle) / Mathf.Sin(apexAngle);
+            var apex = new Vector3(
+                leftSideLength * Mathf.Cos(leftAngle),
+                0f,
+                leftSideLength * Mathf.Sin(leftAngle));
+            var centroid = (Vector3.zero + Vector3.right + apex) / 3f;
+            var vertices = new List<Vector3>
+            {
+                Vector3.zero - centroid,
+                Vector3.right - centroid,
+                apex - centroid
+            };
+            return new PolyMesh(vertices, new List<List<int>> { new() { 0, 2, 1 } });
+        }
+
+        public static PolyMesh Sector(int arcSegments, float turns = .5f)
+        {
+            arcSegments = Mathf.Max(2, arcSegments);
+            turns = Mathf.Clamp(turns, .0001f, 1f);
+            if (Mathf.Approximately(turns, 1f)) return Polygon(arcSegments);
+
+            var vertices = new List<Vector3> { Vector3.zero };
+            var angleRange = Mathf.PI * 2f * turns;
+            for (var segment = arcSegments; segment >= 0; segment--)
+            {
+                var angle = angleRange * segment / arcSegments;
+                vertices.Add(new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)));
+            }
+            return new PolyMesh(vertices, new List<List<int>>
+            {
+                Enumerable.Range(0, vertices.Count).ToList()
+            });
         }
 
         public static PolyMesh Polygon(int sides, bool flip = false, float angleOffset = 0,

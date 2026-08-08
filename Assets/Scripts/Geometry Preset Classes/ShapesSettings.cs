@@ -29,6 +29,8 @@ public class ShapesSettings : BaseSettings
             ShapeTypes.Arch => Axis.Z,
             ShapeTypes.GothicArch => Axis.Z,
             ShapeTypes.Ring => Axis.Y,
+            ShapeTypes.Triangle => Axis.Y,
+            ShapeTypes.Sector => Axis.Y,
             _ => throw new ArgumentOutOfRangeException()
         };
         if (type == ShapeTypes.Ring)

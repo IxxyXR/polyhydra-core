@@ -56,6 +56,42 @@ public class VariousGeometrySettings : BaseSettings
                     Mathf.Max(Mathf.FloorToInt(Z), 1)
                 );
                 break;
+            case VariousSolidTypes.Capsule:
+                poly = VariousSolids.Capsule(
+                    X,
+                    Mathf.Max(Mathf.FloorToInt(Y), 1),
+                    Z
+                );
+                break;
+            case VariousSolidTypes.ChamferedBox:
+                poly = VariousSolids.ChamferedBox(X, Y, Z / 100f);
+                break;
+            case VariousSolidTypes.HollowHemisphere:
+                poly = VariousSolids.HollowHemisphere(
+                    X,
+                    Mathf.Max(Mathf.FloorToInt(Y), 1),
+                    Z / 100f
+                );
+                break;
+            case VariousSolidTypes.ChamferedCylinder:
+                poly = VariousSolids.ChamferedCylinder(
+                    X,
+                    Mathf.Max(Mathf.FloorToInt(Y), 1),
+                    Z / 100f
+                );
+                break;
+            case VariousSolidTypes.PartialTorus:
+                // Match Shapes.Arc: Z is a normalized turn.
+                poly = VariousSolids.PartialTorus(
+                    X,
+                    Mathf.Max(Mathf.FloorToInt(Y), 3),
+                    25f,
+                    360f * Z
+                );
+                break;
+            case VariousSolidTypes.WireframeBox:
+                poly = VariousSolids.WireframeBox(Z / 100f);
+                break;
         }
         return poly;
     }

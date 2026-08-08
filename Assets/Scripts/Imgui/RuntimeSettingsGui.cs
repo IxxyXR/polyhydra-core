@@ -1,4 +1,5 @@
 ﻿using System;
+using Polyhydra.Core;
 using UnityEngine;
 
 public class RuntimeSettingsGUI : MonoBehaviour
@@ -156,9 +157,17 @@ public class RuntimeSettingsGUI : MonoBehaviour
         bool changed = false;
         changed |= EnumField("Type", ref s.type);
         changed |= EnumField("Method", ref s.method);
-        changed |= FloatSlider("A", ref s.A, 0f, 24f);
-        changed |= FloatSlider("B", ref s.B, 0f, 4f);
-        changed |= FloatSlider("C", ref s.C, 0f, 4f);
+        if (s.type == ShapeTypes.Triangle)
+        {
+            changed |= FloatSlider("A - Left Angle", ref s.A, .001f, .489f);
+            changed |= FloatSlider("B - Right Angle", ref s.B, .001f, .489f);
+        }
+        else
+        {
+            changed |= FloatSlider("A", ref s.A, 0f, 24f);
+            changed |= FloatSlider("B", ref s.B, 0f, 4f);
+            changed |= FloatSlider("C", ref s.C, 0f, 4f);
+        }
         changed |= IntSlider("Layers", ref s.Layers, 0, 16);
         changed |= FloatSlider("Layer Height", ref s.LayerHeight, 0f, 1f);
         return changed;
