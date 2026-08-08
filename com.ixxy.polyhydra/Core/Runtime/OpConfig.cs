@@ -201,6 +201,75 @@ namespace Polyhydra.Core
                     }
                 },
                 {
+                    PolyMesh.Operation.FilletEdges,
+                    new OpConfig
+                    {
+                        amountDefault = 0.15f,
+                        amountMin = 0.0001f, amountMax = 0.4999f,
+                        amountSafeMin = 0.01f, amountSafeMax = 0.45f,
+                        usesAmount2 = true,
+                        amount2Default = 3f,
+                        amount2Min = 1f, amount2Max = 16f,
+                        amount2SafeMin = 1f, amount2SafeMax = 8f,
+                    }
+                },
+                {
+                    PolyMesh.Operation.RevolveX,
+                    new OpConfig
+                    {
+                        usesFilter = true,
+                        amountDefault = 1f,
+                        amountMin = .0001f, amountMax = 1f,
+                        amountSafeMin = .01f, amountSafeMax = 1f,
+                        usesAmount2 = true,
+                        amount2Default = 24f,
+                        amount2Min = 1f, amount2Max = 128f,
+                        amount2SafeMin = 3f, amount2SafeMax = 64f,
+                    }
+                },
+                {
+                    PolyMesh.Operation.RevolveY,
+                    new OpConfig
+                    {
+                        usesFilter = true,
+                        amountDefault = 1f,
+                        amountMin = .0001f, amountMax = 1f,
+                        amountSafeMin = .01f, amountSafeMax = 1f,
+                        usesAmount2 = true,
+                        amount2Default = 24f,
+                        amount2Min = 1f, amount2Max = 128f,
+                        amount2SafeMin = 3f, amount2SafeMax = 64f,
+                    }
+                },
+                {
+                    PolyMesh.Operation.RevolveZ,
+                    new OpConfig
+                    {
+                        usesFilter = true,
+                        amountDefault = 1f,
+                        amountMin = .0001f, amountMax = 1f,
+                        amountSafeMin = .01f, amountSafeMax = 1f,
+                        usesAmount2 = true,
+                        amount2Default = 24f,
+                        amount2Min = 1f, amount2Max = 128f,
+                        amount2SafeMin = 3f, amount2SafeMax = 64f,
+                    }
+                },
+                {
+                    PolyMesh.Operation.PipeBoundary,
+                    new OpConfig
+                    {
+                        usesFilter = true,
+                        amountDefault = .25f,
+                        amountMin = .0001f, amountMax = 4f,
+                        amountSafeMin = .01f, amountSafeMax = 1f,
+                        usesAmount2 = true,
+                        amount2Default = 8f,
+                        amount2Min = 3f, amount2Max = 64f,
+                        amount2SafeMin = 3f, amount2SafeMax = 24f,
+                    }
+                },
+                {
                     PolyMesh.Operation.Quinto,
                     new OpConfig
                     {

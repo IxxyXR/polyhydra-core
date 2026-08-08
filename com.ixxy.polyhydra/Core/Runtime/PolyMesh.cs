@@ -1718,6 +1718,11 @@ namespace Polyhydra.Core
             // Generator Ops
 
             Sweep = 95,
+            FilletEdges = 119,
+            RevolveX = 120,
+            RevolveY = 121,
+            RevolveZ = 122,
+            PipeBoundary = 123,
         }
 
         public PolyMesh AppyOperation(Operation op, OpParams p)
@@ -1794,6 +1799,21 @@ namespace Polyhydra.Core
                     break;
                 case Operation.Chamfer:
                     polyMesh = polyMesh.Chamfer(p);
+                    break;
+                case Operation.FilletEdges:
+                    polyMesh = polyMesh.FilletEdges(p);
+                    break;
+                case Operation.RevolveX:
+                    polyMesh = polyMesh.Revolve(p, Axis.X);
+                    break;
+                case Operation.RevolveY:
+                    polyMesh = polyMesh.Revolve(p, Axis.Y);
+                    break;
+                case Operation.RevolveZ:
+                    polyMesh = polyMesh.Revolve(p, Axis.Z);
+                    break;
+                case Operation.PipeBoundary:
+                    polyMesh = polyMesh.PipeBoundary(p);
                     break;
                 case Operation.Quinto:
                     polyMesh = polyMesh.Quinto(p);
