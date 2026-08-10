@@ -41,42 +41,76 @@ namespace Polyhydra.Core
                 ShapeTypes.Arch => Arch(Mathf.FloorToInt(a), 1, b, c),
                 ShapeTypes.GothicArch => GothicArch(sides: Mathf.FloorToInt(a), width: 1, thickness: b, height: c),
                 ShapeTypes.Ring => Arc(Mathf.FloorToInt(a), 1, b, 360, true),
-                ShapeTypes.Triangle => Triangle(a, b),
+                ShapeTypes.Triangle => Triangle(Mathf.FloorToInt(a), b, c),
                 ShapeTypes.Sector => Sector(Mathf.FloorToInt(a), c),
                 _ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
             };
         }
 
-        public static PolyMesh Triangle(float leftAngleTurns = .125f, float rightAngleTurns = .125f)
+        public static PolyMesh Triangle(int frequency = 1, float leftAngleRadians = .7853982f,
+            float rightAngleRadians = .7853982f)
         {
-            const float minimumAngleTurns = .001f;
-            const float maximumAngleSumTurns = .49f;
-            leftAngleTurns = Mathf.Clamp(leftAngleTurns, minimumAngleTurns, maximumAngleSumTurns);
-            rightAngleTurns = Mathf.Clamp(rightAngleTurns, minimumAngleTurns, maximumAngleSumTurns);
-            var angleSum = leftAngleTurns + rightAngleTurns;
-            if (angleSum > maximumAngleSumTurns)
+            frequency = Mathf.Clamp(frequency, 1, 64);
+            const float minimumAngle = .01f;
+            var maximumAngleSum = Mathf.PI - minimumAngle;
+            leftAngleRadians = Mathf.Clamp(leftAngleRadians, minimumAngle, maximumAngleSum);
+            rightAngleRadians = Mathf.Clamp(rightAngleRadians, minimumAngle, maximumAngleSum);
+            var angleSum = leftAngleRadians + rightAngleRadians;
+            if (angleSum > maximumAngleSum)
             {
-                var scale = maximumAngleSumTurns / angleSum;
-                leftAngleTurns *= scale;
-                rightAngleTurns *= scale;
+                var scale = maximumAngleSum / angleSum;
+                leftAngleRadians *= scale;
+                rightAngleRadians *= scale;
             }
 
-            var leftAngle = leftAngleTurns * Mathf.PI * 2f;
-            var rightAngle = rightAngleTurns * Mathf.PI * 2f;
-            var apexAngle = Mathf.PI - leftAngle - rightAngle;
-            var leftSideLength = Mathf.Sin(rightAngle) / Mathf.Sin(apexAngle);
+            var apexAngle = Mathf.PI - leftAngleRadians - rightAngleRadians;
+            var leftSideLength = Mathf.Sin(rightAngleRadians) / Mathf.Sin(apexAngle);
             var apex = new Vector3(
-                leftSideLength * Mathf.Cos(leftAngle),
+                leftSideLength * Mathf.Cos(leftAngleRadians),
                 0f,
-                leftSideLength * Mathf.Sin(leftAngle));
+                leftSideLength * Mathf.Sin(leftAngleRadians));
             var centroid = (Vector3.zero + Vector3.right + apex) / 3f;
-            var vertices = new List<Vector3>
+            var corners = new[]
             {
                 Vector3.zero - centroid,
                 Vector3.right - centroid,
                 apex - centroid
             };
-            return new PolyMesh(vertices, new List<List<int>> { new() { 0, 2, 1 } });
+            var vertices = new List<Vector3>();
+            var indices = new Dictionary<(int alongBase, int towardApex), int>();
+            for (var towardApex = 0; towardApex <= frequency; towardApex++)
+            for (var alongBase = 0; alongBase <= frequency - towardApex; alongBase++)
+            {
+                var baseWeight = (float)alongBase / frequency;
+                var apexWeight = (float)towardApex / frequency;
+                indices[(alongBase, towardApex)] = vertices.Count;
+                vertices.Add(corners[0] +
+                             (corners[1] - corners[0]) * baseWeight +
+                             (corners[2] - corners[0]) * apexWeight);
+            }
+
+            var faces = new List<List<int>>();
+            for (var towardApex = 0; towardApex < frequency; towardApex++)
+            for (var alongBase = 0; alongBase < frequency - towardApex; alongBase++)
+            {
+                faces.Add(new List<int>
+                {
+                    indices[(alongBase, towardApex)],
+                    indices[(alongBase, towardApex + 1)],
+                    indices[(alongBase + 1, towardApex)]
+                });
+                if (alongBase < frequency - towardApex - 1)
+                {
+                    faces.Add(new List<int>
+                    {
+                        indices[(alongBase + 1, towardApex)],
+                        indices[(alongBase, towardApex + 1)],
+                        indices[(alongBase + 1, towardApex + 1)]
+                    });
+                }
+            }
+
+            return new PolyMesh(vertices, faces);
         }
 
         public static PolyMesh Sector(int arcSegments, float turns = .5f)

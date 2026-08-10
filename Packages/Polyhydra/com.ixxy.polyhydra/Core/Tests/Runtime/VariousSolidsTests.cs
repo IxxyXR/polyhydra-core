@@ -110,11 +110,10 @@ namespace Polyhydra.Core.Tests
         }
 
         [Test]
-        public void TriangleUsesTwoNormalizedBaseAnglesAndIgnoresC()
+        public void TriangleUsesBaseAnglesInRadians()
         {
-            var right = Shapes.Build(ShapeTypes.Triangle, .25f, .125f, 0f);
-            var isoscelesRight = Shapes.Build(ShapeTypes.Triangle, .125f, .125f, 0f);
-            var differentC = Shapes.Build(ShapeTypes.Triangle, .125f, .125f, 4f);
+            var right = Shapes.Build(ShapeTypes.Triangle, 1f, Mathf.PI * .5f, Mathf.PI * .25f);
+            var isoscelesRight = Shapes.Build(ShapeTypes.Triangle, 1f, Mathf.PI * .25f, Mathf.PI * .25f);
             var rightLeft = right.Vertices[2].Position - right.Vertices[0].Position;
             var isoscelesApex = isoscelesRight.Vertices[2].Position -
                                 isoscelesRight.Vertices[0].Position;
@@ -123,8 +122,20 @@ namespace Polyhydra.Core.Tests
             Assert.That(rightLeft.z, Is.EqualTo(1f).Within(.0001f));
             Assert.That(isoscelesApex.x, Is.EqualTo(.5f).Within(.0001f));
             Assert.That(isoscelesApex.z, Is.EqualTo(.5f).Within(.0001f));
-            Assert.That(differentC.Vertices.Select(vertex => vertex.Position),
-                Is.EqualTo(isoscelesRight.Vertices.Select(vertex => vertex.Position)));
+        }
+
+        [Test]
+        public void TriangleFrequencyCreatesABarycentricLattice()
+        {
+            const int frequency = 3;
+            var triangle = Shapes.Build(
+                ShapeTypes.Triangle, frequency, Mathf.PI * .25f, Mathf.PI * .25f);
+
+            Assert.That(triangle.IsValid, Is.True);
+            Assert.That(triangle.Vertices.Count, Is.EqualTo((frequency + 1) * (frequency + 2) / 2));
+            Assert.That(triangle.Faces.Count, Is.EqualTo(frequency * frequency));
+            Assert.That(triangle.Faces.All(face => face.Sides == 3), Is.True);
+            Assert.That(triangle.Halfedges.Count(edge => edge.Pair == null), Is.EqualTo(3 * frequency));
         }
 
         [Test]

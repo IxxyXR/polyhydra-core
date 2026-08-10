@@ -159,8 +159,9 @@ public class RuntimeSettingsGUI : MonoBehaviour
         changed |= EnumField("Method", ref s.method);
         if (s.type == ShapeTypes.Triangle)
         {
-            changed |= FloatSlider("A - Left Angle", ref s.A, .001f, .489f);
-            changed |= FloatSlider("B - Right Angle", ref s.B, .001f, .489f);
+            changed |= FloatSlider("A - Frequency", ref s.A, 1f, 24f);
+            changed |= FloatSlider("B - Left Angle (radians)", ref s.B, .01f, Mathf.PI - .01f);
+            changed |= FloatSlider("C - Right Angle (radians)", ref s.C, .01f, Mathf.PI - .01f);
         }
         else
         {
