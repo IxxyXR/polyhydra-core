@@ -1330,6 +1330,124 @@ namespace Polyhydra.Core
             return poly;
         }
 
+        public PolyMesh ChamferEdges(IEnumerable<Halfedge> edgesToChamfer, OpParams o)
+        {
+            var edgeIds = new HashSet<(Guid, Guid)?>(edgesToChamfer.Select(e => e.PairedName));
+            var newFaceTags = new List<HashSet<string>>();
+
+            var faceIndices = new List<int[]>();
+            var vertexPoints = new List<Vector3>();
+            var existingVertices = new Dictionary<Vector3, int>();
+            var newVertices = new Dictionary<(Guid, Guid)?, int>();
+            var edgeFaceFlags = new Dictionary<(Guid, Guid)?, bool>();
+
+            var faceRoles = new List<Roles>();
+            var vertexRoles = new List<Roles>();
+
+            for (var i = 0; i < Vertices.Count; i++)
+            {
+                vertexPoints.Add(Vertices[i].Position);
+                vertexRoles.Add(Roles.Existing);
+                existingVertices[vertexPoints[i]] = i;
+            }
+
+            int vertexIndex = existingVertices.Count;
+
+            for (var faceIndex = 0; faceIndex < Faces.Count; faceIndex++)
+            {
+                float ratio = o.GetValueA(this, faceIndex);
+                var prevFaceTagSet = FaceTags[faceIndex];
+                var face = Faces[faceIndex];
+
+                var edge = face.Halfedge;
+                var centroid = face.Centroid;
+
+                var newInsetFace = new int[face.Sides];
+
+                for (int i = 0; i < face.Sides; i++)
+                {
+                    bool isAffected = edgeIds.Contains(edge.PairedName) || edgeIds.Contains(edge.Next.PairedName);
+                    if (isAffected)
+                    {
+                        var vertex = edge.Vertex.Position;
+                        var newVertex = Vector3.LerpUnclamped(vertex, centroid, ratio);
+                        vertexPoints.Add(newVertex);
+                        vertexRoles.Add(Roles.New);
+                        newInsetFace[i] = vertexIndex;
+                        newVertices[edge.Name] = vertexIndex++;
+                    }
+                    else
+                    {
+                        newInsetFace[i] = existingVertices[edge.Vertex.Position];
+                    }
+                    edge = edge.Next;
+                }
+
+                faceIndices.Add(newInsetFace);
+                faceRoles.Add(Roles.Existing);
+                newFaceTags.Add(new HashSet<string>(prevFaceTagSet));
+            }
+
+            foreach (var edge in Halfedges)
+            {
+                if (!edgeIds.Contains(edge.PairedName)) continue;
+                var newFaceTagSet = new HashSet<string>();
+                if (!edgeFaceFlags.ContainsKey(edge.PairedName))
+                {
+                    edgeFaceFlags[edge.PairedName] = true;
+                    if (edge.Pair != null)
+                    {
+                        var edgeFace = new[]
+                        {
+                            existingVertices[edge.Vertex.Position],
+                            newVertices[edge.Name],
+                            newVertices[edge.Prev.Name],
+                            existingVertices[edge.Pair.Vertex.Position],
+                            newVertices[edge.Pair.Name],
+                            newVertices[edge.Pair.Prev.Name],
+                        };
+                        faceIndices.Add(edgeFace);
+                        faceRoles.Add(Roles.New);
+                        newFaceTagSet.UnionWith(FaceTags[Faces.IndexOf(edge.Face)]);
+                        newFaceTagSet.UnionWith(FaceTags[Faces.IndexOf(edge.Pair.Face)]);
+                        newFaceTags.Add(newFaceTagSet);
+                    }
+                }
+            }
+
+            edgeFaceFlags = new Dictionary<(Guid, Guid)?, bool>();
+            foreach (var edge in Halfedges)
+            {
+                if (!edgeIds.Contains(edge.PairedName)) continue;
+                if (edge.Pair == null) continue;
+
+                if (!edgeFaceFlags.ContainsKey(edge.PairedName))
+                {
+                    edgeFaceFlags[edge.PairedName] = true;
+
+                    float distance;
+
+                    var plane = new Plane();
+                    plane.Set3Points(
+                        vertexPoints[newVertices[edge.Name]],
+                        vertexPoints[newVertices[edge.Prev.Name]],
+                        vertexPoints[newVertices[edge.Pair.Name]]
+                    );
+
+                    var ray1 = new Ray(edge.Vertex.Position, edge.Vertex.Normal);
+                    plane.Raycast(ray1, out distance);
+                    vertexPoints[existingVertices[edge.Vertex.Position]] = ray1.GetPoint(distance);
+
+                    var ray2 = new Ray(edge.Pair.Vertex.Position, edge.Pair.Vertex.Normal);
+                    plane.Raycast(ray2, out distance);
+                    vertexPoints[existingVertices[edge.Pair.Vertex.Position]] = ray2.GetPoint(distance);
+                }
+            }
+
+            var poly = new PolyMesh(vertexPoints, faceIndices, faceRoles, vertexRoles, newFaceTags);
+            return poly;
+        }
+
         public PolyMesh Join(OpParams o)
         {
             var newFaceTags = new List<HashSet<string>>();
