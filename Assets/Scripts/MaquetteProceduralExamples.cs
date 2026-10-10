@@ -6,9 +6,8 @@ using UnityEngine.Rendering;
 
 /// <summary>
 /// A self-contained gallery of Polyhydra recipes for Maquette's procedural model families.
-/// Meshes are generated on opening the scene and in Play mode, never baked into the scene.
+/// Meshes are generated only in Play mode, never baked into the scene.
 /// </summary>
-[ExecuteAlways]
 public class MaquetteProceduralExamples : MonoBehaviour
 {
     [Min(3)] public int angularSegments = 24;
@@ -22,26 +21,18 @@ public class MaquetteProceduralExamples : MonoBehaviour
     private readonly List<UnityEngine.Object> ownedAssets = new List<UnityEngine.Object>();
     private readonly List<(Transform transform, PolyMesh poly)> models = new List<(Transform, PolyMesh)>();
     private GameObject generated;
-    private bool needsRebuild;
     private int sampleCount;
 
-    private void OnEnable() => needsRebuild = true;
-    private void OnValidate() => needsRebuild = true;
-    private void OnDisable() => Clear();
-
-    private void Update()
-    {
-        if (!needsRebuild) return;
-        needsRebuild = false;
-        Rebuild();
-    }
+    private void Start() => Rebuild();
+    private void OnDestroy() => Clear();
 
     [ContextMenu("Rebuild examples")]
     public void Rebuild()
     {
+        if (!Application.isPlaying) return;
         Clear();
         sampleCount = 0;
-        generated = new GameObject("Generated gallery") { hideFlags = HideFlags.DontSave };
+        generated = new GameObject("Generated gallery");
         generated.transform.SetParent(transform, false);
         var shader = Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard");
         if (shader == null)
@@ -210,7 +201,6 @@ public class MaquetteProceduralExamples : MonoBehaviour
 
     private T Own<T>(T asset) where T : UnityEngine.Object
     {
-        asset.hideFlags = HideFlags.DontSave;
         ownedAssets.Add(asset);
         return asset;
     }
@@ -225,7 +215,7 @@ public class MaquetteProceduralExamples : MonoBehaviour
 
     private static GameObject Child(string name, Transform parent)
     {
-        var child = new GameObject(name) { hideFlags = HideFlags.DontSave };
+        var child = new GameObject(name);
         child.transform.SetParent(parent, false);
         return child;
     }
@@ -244,7 +234,6 @@ public class MaquetteProceduralExamples : MonoBehaviour
     {
         var cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
         cube.name = name;
-        cube.hideFlags = HideFlags.DontSave;
         cube.transform.SetParent(parent, false);
         cube.transform.localPosition = position;
         cube.transform.localScale = scale;
@@ -306,24 +295,6 @@ public class MaquetteProceduralExamples : MonoBehaviour
 
     private void Clear()
     {
-#if UNITY_EDITOR
-        // Generated objects disappear on rebuild and assembly reload. Keep the
-        // Inspector pointed at the persistent gallery rather than a destroyed target.
-        var selection = UnityEditor.Selection.objects;
-        bool selectionChanged = false;
-        for (int index = 0; index < selection.Length; index++)
-        {
-            var selected = selection[index];
-            var selectedObject = selected as GameObject;
-            if (selected is Component component) selectedObject = component.gameObject;
-            bool inGallery = generated != null && selectedObject != null &&
-                selectedObject.transform.IsChildOf(generated.transform);
-            if (!inGallery && !ownedAssets.Contains(selected)) continue;
-            selection[index] = gameObject;
-            selectionChanged = true;
-        }
-        if (selectionChanged) UnityEditor.Selection.objects = selection;
-#endif
         if (generated != null)
         {
             generated.SetActive(false);
@@ -338,7 +309,6 @@ public class MaquetteProceduralExamples : MonoBehaviour
     private static void Release(UnityEngine.Object value)
     {
         if (value == null) return;
-        if (Application.isPlaying) Destroy(value);
-        else DestroyImmediate(value);
+        Destroy(value);
     }
 }
