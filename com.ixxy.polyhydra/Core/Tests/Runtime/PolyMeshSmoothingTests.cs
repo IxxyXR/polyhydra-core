@@ -134,5 +134,34 @@ namespace Polyhydra.Core.Tests
             Assert.That(duplicateMarkers, Is.EqualTo(1));
             Assert.That(GetPairedEdge(duplicate).IsEdgeSmooth, Is.True);
         }
+        [TestCase(0f)]
+        [TestCase(90f)]
+        [TestCase(180f)]
+        public void ConcaveFacesRenderWithCorrectAreaAndWindingInDifferentPlanes(float angle)
+        {
+            var vertices = new[]
+            {
+                new Vector3(-2f, -2f, 0f), new Vector3(2f, -2f, 0f),
+                new Vector3(2f, 2f, 0f), new Vector3(1f, 2f, 0f),
+                new Vector3(1f, -1f, 0f), new Vector3(-1f, -1f, 0f),
+                new Vector3(-1f, 2f, 0f), new Vector3(-2f, 2f, 0f)
+            };
+            var rotation = Quaternion.Euler(0f, angle, 0f);
+            var poly = new PolyMesh(vertices.Select(vertex => rotation * vertex),
+                new List<IEnumerable<int>> { Enumerable.Range(0, 8) });
+            Assert.That(poly.Faces[0].AreAllVertsVisibleFromCentroid(), Is.False);
+            var mesh = poly.BuildMeshData();
+            var area = 0f;
+            for (var index = 0; index < mesh.meshTriangles.Count; index += 3)
+            {
+                var a = mesh.meshVertices[mesh.meshTriangles[index]];
+                var b = mesh.meshVertices[mesh.meshTriangles[index + 1]];
+                var c = mesh.meshVertices[mesh.meshTriangles[index + 2]];
+                var cross = Vector3.Cross(b - a, c - a);
+                area += cross.magnitude * .5f;
+                Assert.That(Vector3.Dot(cross, poly.Faces[0].Normal), Is.GreaterThan(0f));
+            }
+            Assert.That(area, Is.EqualTo(10f).Within(.0001f));
+        }
     }
 }

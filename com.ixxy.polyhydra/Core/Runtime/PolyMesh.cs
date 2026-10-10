@@ -1278,7 +1278,7 @@ namespace Polyhydra.Core
 
                         var tessellator = new Tessellator();
                         tessellator.AddContour(positions);
-                        tessellator.Tessellate(normal: Vector3.back);
+                        tessellator.Tessellate(normal: face.Normal);
 
                         Vector3 getVec(int vi)
                         {
@@ -1320,7 +1320,6 @@ namespace Polyhydra.Core
                             miscUVs2.Add(miscUV2);
                         }
 
-                        faceTris.Reverse();
                     }
                 }
                 else
