@@ -537,7 +537,7 @@ namespace Polyhydra.Core.Tests
         {
             const int sides = 6;
             const float height = 2f;
-            var mesh = VariousSolids.Cylinder(sides, height, radiusBottom, radiusTop, sweep);
+            var mesh = VariousSolids.Cylinder(sides, height, radiusBottom: radiusBottom, radiusTop: radiusTop, sweepAngle: sweep);
             AssertClosed(mesh);
             Assert.That(mesh.Vertices.Count - mesh.Halfedges.Count / 2 + mesh.Faces.Count, Is.EqualTo(2));
             var data = mesh.BuildMeshData();
@@ -561,10 +561,9 @@ namespace Polyhydra.Core.Tests
             const int sides = 4;
             var offset = new Vector2(.3f, -.2f);
             var rotation = Quaternion.Euler(15f, 30f, 10f);
-            var lowerScale = new Vector2(2f, .5f);
-            var upperScale = new Vector2(.75f, 1.5f);
-            var mesh = VariousSolids.Cylinder(sides, 2f, 1f, .6f, 90f,
-                offset, rotation, lowerScale, upperScale, triangulateSides: triangulate);
+            var mesh = VariousSolids.Cylinder(sides, 2f,
+                radiusBottom: 2f, aspectBottom: .25f, radiusTop: .6f * .75f, aspectTop: 2f,
+                sweepAngle: 90f, topOffset: offset, topRotation: rotation, triangulateSides: triangulate);
             AssertClosed(mesh);
             var wallCount = sides * (triangulate ? 2 : 1);
             Assert.That(mesh.Faces.Count, Is.EqualTo(wallCount + 4));

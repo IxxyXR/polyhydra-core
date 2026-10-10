@@ -124,24 +124,24 @@ public class MaquetteProceduralExamples : MonoBehaviour
         {
             example.sides = 5;
             example.height = 1.8f;
-            example.radiusBottom = .7f;
-            example.radiusTop = .55f;
+            example.radiusBottom = .7f * 1.2f;
+            example.aspectBottom = .8f / 1.2f;
+            example.radiusTop = .55f * .8f;
+            example.aspectTop = 1.2f / .8f;
             example.topOffset = new Vector2(.35f, -.2f);
             example.topEulerAngles = new Vector3(18f, 45f, 10f);
-            example.bottomScale = new Vector2(1.2f, .8f);
-            example.topScale = new Vector2(.8f, 1.2f);
             example.smoothSides = false;
         });
         Sample<MaquetteCylinderExample>(0, 5, "Transformed / triangles", example =>
         {
             example.sides = 5;
             example.height = 1.8f;
-            example.radiusBottom = .7f;
-            example.radiusTop = .55f;
+            example.radiusBottom = .7f * 1.2f;
+            example.aspectBottom = .8f / 1.2f;
+            example.radiusTop = .55f * .8f;
+            example.aspectTop = 1.2f / .8f;
             example.topOffset = new Vector2(.35f, -.2f);
             example.topEulerAngles = new Vector3(18f, 45f, 10f);
-            example.bottomScale = new Vector2(1.2f, .8f);
-            example.topScale = new Vector2(.8f, 1.2f);
             example.smoothSides = false;
             example.triangulateSides = true;
         });
