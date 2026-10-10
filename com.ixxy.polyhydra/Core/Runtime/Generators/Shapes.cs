@@ -194,6 +194,8 @@ namespace Polyhydra.Core
         /// semiaxes; hyperbola uses majorAxis*sqrt(1+y*y/(minorAxis*minorAxis));
         /// parabola uses y*y/(4*majorAxis)+centerOffset before uniform scaling.
         /// Clip values are fractions of the sampling angle from 0 to PI, not of height.
+        /// Parabola offsets retain signed radial coordinates; negative offsets can create
+        /// self-intersecting profiles and folded surfaces when revolved. They are not repaired.
         /// </summary>
         public static PolyMesh ConicProfile(ConicType type, int segments = 16,
             float radius = 1f, float majorAxis = 1f, float minorAxis = 1f,

@@ -590,5 +590,34 @@ namespace Polyhydra.Core.Tests
             Assert.That(almostFull.Faces.Count, Is.EqualTo(7));
             Assert.That(VariousSolids.Cylinder(3).Faces.Count, Is.EqualTo(5));
         }
+
+        [TestCase(-.1f, -1f, Axis.Y)]
+        [TestCase(-.1f, 1f, Axis.Y)]
+        [TestCase(-.1f, -.25f, Axis.Y)]
+        [TestCase(-.1f, .25f, Axis.Y)]
+        [TestCase(-.125f, -1f, Axis.Y)]
+        [TestCase(-.125f, -.25f, Axis.Y)]
+        [TestCase(-.3f, -1f, Axis.Y)]
+        [TestCase(-.3f, -.25f, Axis.Y)]
+        [TestCase(-.1f, -.25f, Axis.X)]
+        [TestCase(-.1f, .25f, Axis.Z)]
+        public void SignedParabolaRevolvePreservesEdgePairingAndNegativeRadii(float offset, float turns, Axis axis)
+        {
+            var profile = Shapes.ConicProfile(Shapes.ConicType.Parabola, 16, radius: .5f,
+                majorAxis: 1f, centerOffset: offset);
+            Assert.That(profile.Vertices.Any(vertex => vertex.Position.x < 0f), Is.True);
+            if (offset > -.25f)
+                Assert.That(profile.Vertices.Any(vertex => vertex.Position.x > 0f), Is.True);
+            var rotation = axis == Axis.X ? new Vector3(0f, 0f, -90f)
+                : axis == Axis.Z ? new Vector3(90f, 0f, 0f) : Vector3.zero;
+            profile.Transform(Vector3.zero, rotation);
+            var before = profile.Vertices.Select(vertex => vertex.Position).ToList();
+            var solid = profile.Revolve(new OpParams(turns, 12f), axis);
+            // Edge pairing is separate from geometric self-intersection: the folded
+            // parameterization is retained, rather than silently clamping the radius.
+            AssertClosed(solid);
+            foreach (var position in before)
+                Assert.That(solid.Vertices.Any(vertex => (vertex.Position - position).sqrMagnitude < 1e-10f), Is.True);
+        }
     }
 }
