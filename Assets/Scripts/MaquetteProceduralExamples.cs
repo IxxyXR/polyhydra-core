@@ -120,7 +120,7 @@ public class MaquetteProceduralExamples : MonoBehaviour
             example.sweepAngle = 300f;
             example.smoothSides = true;
         });
-        Sample<MaquetteCylinderExample>(0, 4, "Transformed / quads", example =>
+        Sample<MaquetteCylinderExample>(0, 4, "Twisted / forward diagonal", example =>
         {
             example.sides = 5;
             example.height = 1.8f;
@@ -131,8 +131,9 @@ public class MaquetteProceduralExamples : MonoBehaviour
             example.topOffset = new Vector2(.35f, -.2f);
             example.topEulerAngles = new Vector3(18f, 45f, 10f);
             example.smoothSides = false;
+            example.sideTopology = SideTopology.ForwardDiagonal;
         });
-        Sample<MaquetteCylinderExample>(0, 5, "Transformed / triangles", example =>
+        Sample<MaquetteCylinderExample>(0, 5, "Twisted / backward diagonal", example =>
         {
             example.sides = 5;
             example.height = 1.8f;
@@ -143,7 +144,7 @@ public class MaquetteProceduralExamples : MonoBehaviour
             example.topOffset = new Vector2(.35f, -.2f);
             example.topEulerAngles = new Vector3(18f, 45f, 10f);
             example.smoothSides = false;
-            example.triangulateSides = true;
+            example.sideTopology = SideTopology.BackwardDiagonal;
         });
 
         Row(1, "ROUNDED RECTANGLE / EXTRUSION");

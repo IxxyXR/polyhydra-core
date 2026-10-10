@@ -20,6 +20,16 @@ namespace Polyhydra.Core
         WireframeBox = 11
     }
 
+    /// <summary>Wall topology in the direction of the sampled sweep.</summary>
+    public enum SideTopology
+    {
+        Quads,
+        // Bottom i to top i+1.
+        ForwardDiagonal,
+        // Top i to bottom i+1.
+        BackwardDiagonal
+    }
+
     public static class VariousSolids
     {
 
@@ -128,8 +138,9 @@ namespace Polyhydra.Core
         /// The top is rotated about its own centre before applying its XZ offset.
         /// Positive sweep runs from +X toward +Z.
         /// Sides counts strips across the entire sweep. Partial sweeps have radial cuts.
-        /// Smooth sides blend only the wall, keeping both end caps and cuts sharp.
-        /// Optional triangles split each wall quad from bottom i to top i+1.
+        /// Smooth sides blend neighbouring wall strips, keeping both end caps and cuts sharp.
+        /// Triangular strips always smooth across their internal diagonal. SideTopology
+        /// selects quads, bottom i to top i+1, or top i to bottom i+1 diagonals.
         /// Zero sweep or two zero radii produce an empty mesh. Aspect ratios must be positive.
         /// Arbitrary end transforms may produce self-intersections.
         /// </summary>
@@ -137,7 +148,7 @@ namespace Polyhydra.Core
             float radiusBottom = .5f, float aspectBottom = 1f,
             float radiusTop = .5f, float aspectTop = 1f, float sweepAngle = 360f,
             Vector2? topOffset = null, Quaternion? topRotation = null,
-            bool smoothSides = false, bool triangulateSides = false)
+            bool smoothSides = false, SideTopology sideTopology = SideTopology.Quads)
         {
             if (height <= 0f) throw new System.ArgumentOutOfRangeException(nameof(height));
             if (radiusBottom < 0f) throw new System.ArgumentOutOfRangeException(nameof(radiusBottom));
@@ -152,7 +163,7 @@ namespace Polyhydra.Core
                 new SweepSection(radiusBottom, Vector3.down * height * .5f, new Vector2(1f, aspectBottom), Quaternion.identity),
                 new SweepSection(radiusTop, new Vector3(offset.x, height * .5f, offset.y), new Vector2(1f, aspectTop),
                     topRotation ?? Quaternion.identity)
-            }, sides, sweepAngle, smoothSides, triangulateSides);
+            }, sides, sweepAngle, smoothSides, sideTopology);
         }
 
         /// <summary>
@@ -180,7 +191,8 @@ namespace Polyhydra.Core
             }
             var sections = profile.Select(point => new SweepSection(point.x,
                 new Vector3(0f, point.y, 0f), Vector2.one, Quaternion.identity)).ToList();
-            return SweepSections(sections, sides, sweepAngle, smooth, triangulateSides);
+            return SweepSections(sections, sides, sweepAngle, smooth,
+                triangulateSides ? SideTopology.ForwardDiagonal : SideTopology.Quads);
         }
 
         private readonly struct SweepSection
@@ -202,8 +214,11 @@ namespace Polyhydra.Core
         // The supplied sections run from bottom to top. Construction owns the distinction
         // between the body, end caps and sweep cuts; no intent is stored on input boundaries.
         private static PolyMesh SweepSections(IReadOnlyList<SweepSection> sections, int sides,
-            float sweepAngle, bool smoothBody, bool triangulateSides)
+            float sweepAngle, bool smoothBody, SideTopology sideTopology)
         {
+            if (sideTopology != SideTopology.Quads && sideTopology != SideTopology.ForwardDiagonal &&
+                sideTopology != SideTopology.BackwardDiagonal)
+                throw new System.ArgumentOutOfRangeException(nameof(sideTopology));
             sides = Mathf.Max(3, sides);
             var closed = Mathf.Abs(sweepAngle) == 360f;
             var ringCount = closed ? sides : sides + 1;
@@ -234,7 +249,8 @@ namespace Polyhydra.Core
 
             var faces = new List<List<int>>();
             var roles = new List<Roles>();
-            void AddFace(IEnumerable<int> points, Roles role)
+            var faceStrips = new List<int>();
+            void AddFace(IEnumerable<int> points, Roles role, int strip = -1)
             {
                 var indices = new List<int>();
                 foreach (var index in points)
@@ -245,6 +261,7 @@ namespace Polyhydra.Core
                 if (sweepAngle < 0f) indices.Reverse();
                 faces.Add(indices);
                 roles.Add(role);
+                faceStrips.Add(strip);
             }
 
             for (var row = 0; row < rings.Count - 1; row++)
@@ -255,13 +272,19 @@ namespace Polyhydra.Core
                 {
                     var next = (index + 1) % ringCount;
                     var role = (row + index) % 2 == 0 ? Roles.New : Roles.NewAlt;
-                    if (triangulateSides && sections[row].Radius != 0f && sections[row + 1].Radius != 0f)
+                    var strip = row * sides + index;
+                    if (sideTopology == SideTopology.Quads || sections[row].Radius == 0f || sections[row + 1].Radius == 0f)
+                        AddFace(new[] { lower[index], upper[index], upper[next], lower[next] }, role, strip);
+                    else if (sideTopology == SideTopology.ForwardDiagonal)
                     {
-                        AddFace(new[] { lower[index], upper[index], upper[next] }, role);
-                        AddFace(new[] { lower[index], upper[next], lower[next] }, role);
+                        AddFace(new[] { lower[index], upper[index], upper[next] }, role, strip);
+                        AddFace(new[] { lower[index], upper[next], lower[next] }, role, strip);
                     }
                     else
-                        AddFace(new[] { lower[index], upper[index], upper[next], lower[next] }, role);
+                    {
+                        AddFace(new[] { lower[index], upper[index], lower[next] }, role, strip);
+                        AddFace(new[] { upper[index], upper[next], lower[next] }, role, strip);
+                    }
                 }
             }
             var bodyFaceCount = faces.Count;
@@ -291,12 +314,13 @@ namespace Polyhydra.Core
                     .Concat(new[] { topCentre, bottomCentre }), Roles.Existing);
             }
             var mesh = new PolyMesh(vertices, faces, roles, Enumerable.Repeat(Roles.Existing, vertices.Count));
-            if (smoothBody)
-            {
-                var body = new HashSet<Face>(mesh.Faces.Take(bodyFaceCount));
-                foreach (var edge in mesh.Halfedges)
-                    edge.IsSmooth = edge.Pair != null && body.Contains(edge.Face) && body.Contains(edge.Pair.Face);
-            }
+            var bodyStrips = mesh.Faces.Take(bodyFaceCount)
+                .Select((face, index) => (face, strip: faceStrips[index]))
+                .ToDictionary(entry => entry.face, entry => entry.strip);
+            foreach (var edge in mesh.Halfedges)
+                edge.IsSmooth = edge.Pair != null && bodyStrips.TryGetValue(edge.Face, out var strip) &&
+                    bodyStrips.TryGetValue(edge.Pair.Face, out var pairedStrip) &&
+                    (smoothBody || strip == pairedStrip);
             return mesh;
         }
 
