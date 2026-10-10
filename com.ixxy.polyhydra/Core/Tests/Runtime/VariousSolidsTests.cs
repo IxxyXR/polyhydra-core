@@ -504,5 +504,91 @@ namespace Polyhydra.Core.Tests
             if (angle == -90f)
                 Assert.That(capsule.GetBounds().max.z, Is.LessThanOrEqualTo(.0001f));
         }
+
+        [TestCase(360f, 1f, .5f)]
+        [TestCase(-360f, 1f, 0f)]
+        [TestCase(300f, 0f, 1f)]
+        [TestCase(-300f, 1f, .5f)]
+        [TestCase(90f, 1f, 0f)]
+        [TestCase(-90f, 1f, 0f)]
+        public void CylinderSweepsAreClosedAndHaveCorrectRenderedVolume(float sweep,
+            float radiusBottom, float radiusTop)
+        {
+            const int sides = 6;
+            const float height = 2f;
+            var mesh = VariousSolids.Cylinder(sides, height, radiusBottom, radiusTop, sweep);
+            AssertClosed(mesh);
+            Assert.That(mesh.Vertices.Count - mesh.Halfedges.Count / 2 + mesh.Faces.Count, Is.EqualTo(2));
+            var data = mesh.BuildMeshData();
+            var volume = 0f;
+            for (var index = 0; index < data.meshTriangles.Count; index += 3)
+            {
+                var a = data.meshVertices[data.meshTriangles[index]];
+                var b = data.meshVertices[data.meshTriangles[index + 1]];
+                var c = data.meshVertices[data.meshTriangles[index + 2]];
+                volume += Vector3.Dot(a, Vector3.Cross(b, c)) / 6f;
+            }
+            var expected = sides * Mathf.Sin(Mathf.Abs(sweep) * Mathf.Deg2Rad / sides) * height / 6f *
+                (radiusBottom * radiusBottom + radiusBottom * radiusTop + radiusTop * radiusTop);
+            Assert.That(volume, Is.EqualTo(expected).Within(.0001f));
+        }
+
+        [TestCase(false)]
+        [TestCase(true)]
+        public void CylinderTransformsEndsIndependentlyWithoutShiftingTheSectorCentre(bool triangulate)
+        {
+            const int sides = 4;
+            var offset = new Vector2(.3f, -.2f);
+            var rotation = Quaternion.Euler(15f, 30f, 10f);
+            var lowerScale = new Vector2(2f, .5f);
+            var upperScale = new Vector2(.75f, 1.5f);
+            var mesh = VariousSolids.Cylinder(sides, 2f, 1f, .6f, 90f,
+                offset, rotation, lowerScale, upperScale, triangulateSides: triangulate);
+            AssertClosed(mesh);
+            var wallCount = sides * (triangulate ? 2 : 1);
+            Assert.That(mesh.Faces.Count, Is.EqualTo(wallCount + 4));
+            Assert.That(mesh.Faces.Take(wallCount).All(face => face.Sides == (triangulate ? 3 : 4)), Is.True);
+            // Neither profile rotation nor partial-sweep centroid moves the end centres.
+            Assert.That(mesh.Vertices.Any(vertex => vertex.Position == Vector3.down), Is.True);
+            Assert.That(mesh.Vertices.Any(vertex => vertex.Position == new Vector3(.3f, 1f, -.2f)), Is.True);
+            for (var index = 0; index <= sides; index++)
+            {
+                var angle = 90f * Mathf.Deg2Rad * index / sides;
+                var expectedLower = Vector3.down + new Vector3(Mathf.Cos(angle) * 2f, 0f,
+                    Mathf.Sin(angle) * .5f);
+                var expectedUpper = new Vector3(.3f, 1f, -.2f) + rotation * new Vector3(
+                    Mathf.Cos(angle) * .6f * .75f, 0f, Mathf.Sin(angle) * .6f * 1.5f);
+                Assert.That(mesh.Vertices.Any(vertex => (vertex.Position - expectedLower).sqrMagnitude < 1e-10f), Is.True);
+                Assert.That(mesh.Vertices.Any(vertex => (vertex.Position - expectedUpper).sqrMagnitude < 1e-10f), Is.True);
+            }
+        }
+
+        [TestCase(false)]
+        [TestCase(true)]
+        public void CylinderSmoothsOnlyTheWallEvenWhenCutAnglesAreSmaller(bool triangulate)
+        {
+            var mesh = VariousSolids.Cylinder(3, sweepAngle: 300f, smoothSides: true,
+                triangulateSides: triangulate);
+            AssertClosed(mesh);
+            var walls = new HashSet<Face>(mesh.Faces.Take(triangulate ? 6 : 3));
+            foreach (var edge in mesh.Halfedges)
+                Assert.That(edge.IsEdgeSmooth, Is.EqualTo(walls.Contains(edge.Face) && walls.Contains(edge.Pair.Face)));
+            Assert.That(mesh.Halfedges.Any(edge => edge.IsEdgeSmooth && edge.DihedralAngle > 99f), Is.True);
+            Assert.That(mesh.Halfedges.Any(edge => !edge.IsEdgeSmooth && edge.DihedralAngle < 41f), Is.True);
+            var faceted = VariousSolids.Cylinder(3, sweepAngle: 300f, triangulateSides: triangulate);
+            Assert.That(faceted.Halfedges.All(edge => !edge.IsEdgeSmooth), Is.True);
+        }
+
+        [Test]
+        public void CylinderKeepsSmallNonzeroAndNearFullSweepsDistinctFromTheirLimits()
+        {
+            Assert.That(VariousSolids.Cylinder(sweepAngle: 0f).Faces, Is.Empty);
+            Assert.That(VariousSolids.Cylinder(radiusBottom: 0f, radiusTop: 0f).Faces, Is.Empty);
+            var tiny = VariousSolids.Cylinder(3, sweepAngle: .01f);
+            Assert.That(tiny.GetBounds().max.z, Is.EqualTo(.5f * Mathf.Sin(.01f * Mathf.Deg2Rad)).Within(1e-7f));
+            var almostFull = VariousSolids.Cylinder(3, sweepAngle: 359.9999f);
+            Assert.That(almostFull.Faces.Count, Is.EqualTo(7));
+            Assert.That(VariousSolids.Cylinder(3).Faces.Count, Is.EqualTo(5));
+        }
     }
 }
