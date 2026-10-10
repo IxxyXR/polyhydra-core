@@ -117,6 +117,20 @@ namespace Polyhydra.Core.Tests
         }
 
         [Test]
+        public void FilledRingMatchesFullFilledArcAndExtrudesToAClosedSolid()
+        {
+            var ring = Shapes.Build(ShapeTypes.Ring, 8f, 0f);
+            var arc = Shapes.Build(ShapeTypes.Arc, 8f, 0f, 1f);
+
+            Assert.That(ring.Faces.Count, Is.EqualTo(1));
+            Assert.That(ring.Vertices.Count, Is.EqualTo(8));
+            Assert.That(ring.Vertices.Select(vertex => vertex.Position).Distinct().Count(), Is.EqualTo(8));
+            Assert.That(ring.Vertices.Select(vertex => vertex.Position),
+                Is.EqualTo(arc.Vertices.Select(vertex => vertex.Position)));
+            AssertClosed(ring.LayeredExtrude(1, 1f, Axis.Z));
+        }
+
+        [Test]
         public void TriangleUsesBaseAnglesInRadians()
         {
             var right = Shapes.Build(ShapeTypes.Triangle, 1f, Mathf.PI * .5f, Mathf.PI * .25f);
