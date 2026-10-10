@@ -12,12 +12,14 @@ public class ShapesSettings : BaseSettings
     [Range(0, 24)] public float A;
     [Range(0, 4)] public float B;
     [Range(0, 4)] public float C;
+    [Tooltip("Frame corner segments. A = height, B = border width, C = outer corner radius.")]
+    [Range(0, 128)] public float D = 4f;
     [Range(0, 16)] public int Layers;
     [Range(0, 1f)] public float LayerHeight = .25f;
 
     public override PolyMesh BuildBaseShape()
     {
-        var poly = Shapes.Build(type, A, B, C, method);
+        var poly = Shapes.Build(type, A, B, C, method, D);
         Axis axis = type switch
         {
             ShapeTypes.Polygon => Axis.Y,
@@ -31,6 +33,8 @@ public class ShapesSettings : BaseSettings
             ShapeTypes.Ring => Axis.Y,
             ShapeTypes.Triangle => Axis.Y,
             ShapeTypes.Sector => Axis.Y,
+            ShapeTypes.Rectangle => Axis.Y,
+            ShapeTypes.Frame => Axis.Y,
             _ => throw new ArgumentOutOfRangeException()
         };
         if (type == ShapeTypes.Ring)
