@@ -6,12 +6,22 @@ namespace Polyhydra.Core
 {
     public partial class PolyMesh
     {
+        public enum ZeroSweepBehavior
+        {
+            ThinWedge,
+            DoubleSidedProfile,
+            Empty
+        }
+
         /// <summary>
         /// Revolves the boundary of one selected face around a world axis.
-        /// Parameter A is a normalized turn and parameter B is the revolution segment count.
+        /// Parameter A is a signed normalized turn and parameter B is the revolution segment count.
         /// Partial revolutions are capped; a full revolution is welded at its seam by construction.
+        /// Zero sweeps retain the thin-wedge default; callers can explicitly request
+        /// a double-sided profile or an empty mesh instead.
         /// </summary>
-        public PolyMesh Revolve(OpParams o, Axis axis)
+        public PolyMesh Revolve(OpParams o, Axis axis,
+            ZeroSweepBehavior zeroSweepBehavior = ZeroSweepBehavior.ThinWedge)
         {
             var selectedFaces = Faces.Where(face => IncludeFace(face, o.filter)).ToList();
             if (selectedFaces.Count != 1)
@@ -20,11 +30,26 @@ namespace Polyhydra.Core
                 return Duplicate();
             }
 
-            var turns = Mathf.Clamp(o.OriginalParamA, .0001f, 1f);
+            if (o.OriginalParamA == 0f && zeroSweepBehavior == ZeroSweepBehavior.Empty)
+                return new PolyMesh();
+            if (o.OriginalParamA == 0f && zeroSweepBehavior == ZeroSweepBehavior.DoubleSidedProfile)
+            {
+                var selected = selectedFaces[0];
+                var points = selected.GetVertices().Select(vertex => vertex.Position).ToList();
+                var indices = Enumerable.Range(0, points.Count).ToList();
+                var reversed = indices.AsEnumerable().Reverse().ToList();
+                var sourceTags = FaceTags[Faces.IndexOf(selected)];
+                return new PolyMesh(points, new List<List<int>> { indices, reversed },
+                    new List<Roles> { Roles.Existing, Roles.Existing },
+                    Enumerable.Repeat(Roles.New, points.Count).ToList(),
+                    new List<HashSet<string>> { new HashSet<string>(sourceTags), new HashSet<string>(sourceTags) });
+            }
+            var direction = o.OriginalParamA < 0f ? -1f : 1f;
+            var turns = Mathf.Clamp(Mathf.Abs(o.OriginalParamA), .0001f, 1f);
             var segments = Mathf.Clamp(Mathf.RoundToInt(o.OriginalParamB), 1, 128);
             var closed = Mathf.Approximately(turns, 1f);
             if (closed) segments = Mathf.Max(3, segments);
-            var angle = turns * Mathf.PI * 2f;
+            var angle = direction * turns * Mathf.PI * 2f;
             var ringCount = closed ? segments : segments + 1;
             var profileFace = selectedFaces[0];
             var profile = profileFace.GetVertices().Select(vertex => vertex.Position).ToList();
@@ -127,10 +152,10 @@ namespace Polyhydra.Core
                 var startTangent = Vector3.Cross(axisVector, centroid).normalized;
                 var endTangent = Vector3.Cross(axisVector, Rotate(centroid, angle)).normalized;
                 AddFace(Enumerable.Range(0, profileCount).Select(index => ringIndices[0, index]),
-                    -startTangent, Roles.Existing);
+                    -direction * startTangent, Roles.Existing);
                 AddFace(Enumerable.Range(0, profileCount)
                         .Select(index => ringIndices[ringCount - 1, index]),
-                    endTangent, Roles.Existing);
+                    direction * endTangent, Roles.Existing);
             }
 
             return new PolyMesh(vertexPoints, faceIndices, faceRoles, vertexRoles);

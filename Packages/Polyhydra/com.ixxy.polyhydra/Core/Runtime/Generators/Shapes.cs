@@ -24,6 +24,14 @@ namespace Polyhydra.Core
 
     public class Shapes
     {
+        public enum ConicType
+        {
+            Circle,
+            Ellipse,
+            Hyperbola,
+            Parabola
+        }
+
         public enum Method
         {
             Concave,
@@ -178,6 +186,99 @@ namespace Polyhydra.Core
                 if (face.Count >= 3) faces.Add(face);
             }
             return new PolyMesh(vertices, faces);
+        }
+
+        /// <summary>
+        /// Creates a closed radial profile in the XY plane, facing +Z, for revolution about Y.
+        /// Radius uniformly scales the profile. Ellipse axes are its horizontal/vertical
+        /// semiaxes; hyperbola uses majorAxis*sqrt(1+y*y/(minorAxis*minorAxis));
+        /// parabola uses y*y/(4*majorAxis)+centerOffset before uniform scaling.
+        /// Clip values are fractions of the sampling angle from 0 to PI, not of height.
+        /// </summary>
+        public static PolyMesh ConicProfile(ConicType type, int segments = 16,
+            float radius = 1f, float majorAxis = 1f, float minorAxis = 1f,
+            float centerOffset = .2f, float bottomClip = 0f, float topClip = 1f)
+        {
+            segments = Mathf.Max(2, segments);
+            if (radius <= 0f) throw new ArgumentOutOfRangeException(nameof(radius));
+            if (type != ConicType.Circle && majorAxis <= 0f)
+                throw new ArgumentOutOfRangeException(nameof(majorAxis));
+            if ((type == ConicType.Ellipse || type == ConicType.Hyperbola) && minorAxis <= 0f)
+                throw new ArgumentOutOfRangeException(nameof(minorAxis));
+            bottomClip = Mathf.Clamp01(bottomClip);
+            topClip = Mathf.Clamp01(topClip);
+            if (topClip <= bottomClip)
+                throw new ArgumentException("The top clip must be greater than the bottom clip.");
+
+            var points = new List<Vector2>();
+            for (var row = 0; row <= segments; row++)
+            {
+                var fraction = Mathf.Lerp(bottomClip, topClip, (float)row / segments);
+                var angle = Mathf.PI * fraction;
+                var height = -Mathf.Cos(angle);
+                // Explicit poles avoid a residual radius from floating-point sin(PI).
+                var circularRadius = fraction == 0f || fraction == 1f ? 0f : Mathf.Sin(angle);
+                var radial = type switch
+                {
+                    ConicType.Circle => circularRadius,
+                    ConicType.Ellipse => majorAxis * circularRadius,
+                    ConicType.Hyperbola => majorAxis * Mathf.Sqrt(1f + height * height / (minorAxis * minorAxis)),
+                    ConicType.Parabola => height * height / (4f * majorAxis) + centerOffset,
+                    _ => throw new ArgumentOutOfRangeException(nameof(type))
+                };
+                if (type == ConicType.Ellipse) height *= minorAxis;
+                points.Add(new Vector2(radial * radius, height * radius));
+            }
+            return ProfilePolygon(points);
+        }
+
+        /// <summary>
+        /// Creates a closed half-capsule outline in the XY plane, facing +Z.
+        /// Cylinder height is the straight section; total height adds two radii.
+        /// </summary>
+        public static PolyMesh CapsuleProfile(int capSegments = 8, float cylinderHeight = 2f,
+            float radius = 1f)
+        {
+            return ProfilePolygon(CapsuleProfilePoints(capSegments, cylinderHeight, radius));
+        }
+
+        internal static List<Vector2> CapsuleProfilePoints(int capSegments, float cylinderHeight, float radius)
+        {
+            capSegments = Mathf.Max(1, capSegments);
+            cylinderHeight = Mathf.Max(0f, cylinderHeight);
+            radius = Mathf.Max(.0001f, radius);
+            var points = new List<Vector2> { new Vector2(0f, -cylinderHeight * .5f - radius) };
+            for (var segment = 1; segment <= capSegments; segment++)
+            {
+                var angle = -Mathf.PI * .5f + Mathf.PI * .5f * segment / capSegments;
+                points.Add(new Vector2(Mathf.Cos(angle) * radius,
+                    -cylinderHeight * .5f + Mathf.Sin(angle) * radius));
+            }
+            if (cylinderHeight > .000001f) points.Add(new Vector2(radius, cylinderHeight * .5f));
+            for (var segment = 1; segment < capSegments; segment++)
+            {
+                var angle = Mathf.PI * .5f * segment / capSegments;
+                points.Add(new Vector2(Mathf.Cos(angle) * radius,
+                    cylinderHeight * .5f + Mathf.Sin(angle) * radius));
+            }
+            points.Add(new Vector2(0f, cylinderHeight * .5f + radius));
+            return points;
+        }
+
+        internal static PolyMesh ProfilePolygon(IReadOnlyList<Vector2> points)
+        {
+            var vertices = new List<Vector3> { new Vector3(0f, points[0].y, 0f) };
+            foreach (var point in points)
+            {
+                var position = new Vector3(point.x, point.y, 0f);
+                if (!position.Equals(vertices[vertices.Count - 1])) vertices.Add(position);
+            }
+            var topCenter = new Vector3(0f, points[points.Count - 1].y, 0f);
+            if (!topCenter.Equals(vertices[vertices.Count - 1])) vertices.Add(topCenter);
+            return new PolyMesh(vertices, new List<List<int>>
+            {
+                Enumerable.Range(0, vertices.Count).ToList()
+            });
         }
 
         public static PolyMesh Triangle(int frequency = 1, float leftAngleRadians = .7853982f,

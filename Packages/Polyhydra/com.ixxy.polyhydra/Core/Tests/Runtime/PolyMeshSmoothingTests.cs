@@ -205,5 +205,35 @@ namespace Polyhydra.Core.Tests
                 else Assert.That(angle, Is.GreaterThan(1f));
             }
         }
+
+        [TestCase(360f, 2f)]
+        [TestCase(-360f, 2f)]
+        [TestCase(90f, 2f)]
+        [TestCase(-90f, 2f)]
+        [TestCase(360f, 0f)]
+        public void CapsuleSmoothsBodyIncludingCapJoinsButKeepsSweepCutsSharp(float sweep, float height)
+        {
+            var faceted = VariousSolids.Capsule(4, 3, height, sweepAngle: sweep);
+            var smooth = VariousSolids.Capsule(4, 3, height, sweepAngle: sweep, smooth: true);
+            Assert.That(faceted.Halfedges.All(edge => !edge.IsEdgeSmooth), Is.True);
+            Assert.That(smooth.Halfedges.Any(edge => edge.IsEdgeSmooth), Is.True);
+            var cuts = new HashSet<Face>(smooth.Faces.Where((face, index) =>
+                smooth.FaceRoles[index] == Roles.Existing));
+            Assert.That(cuts.Count, Is.EqualTo(Mathf.Abs(sweep) < 360f ? 2 : 0));
+            foreach (var edge in smooth.Halfedges)
+            {
+                Assert.That(edge.Pair, Is.Not.Null);
+                var touchesCut = cuts.Contains(edge.Face) || cuts.Contains(edge.Pair.Face);
+                Assert.That(edge.IsEdgeSmooth, Is.EqualTo(!touchesCut));
+            }
+        }
+
+        [TestCase(PolyMesh.ZeroSweepBehavior.Empty)]
+        [TestCase(PolyMesh.ZeroSweepBehavior.DoubleSidedProfile)]
+        public void CapsuleZeroSweepDoesNotSmoothOppositeProfileFaces(PolyMesh.ZeroSweepBehavior behavior)
+        {
+            var poly = VariousSolids.Capsule(sweepAngle: 0f, zeroSweepBehavior: behavior, smooth: true);
+            Assert.That(poly.Halfedges.All(edge => !edge.IsEdgeSmooth), Is.True);
+        }
     }
 }
