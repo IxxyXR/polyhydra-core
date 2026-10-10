@@ -120,7 +120,7 @@ public class MaquetteProceduralExamples : MonoBehaviour
             example.sweepAngle = 300f;
             example.smoothSides = true;
         });
-        Sample<MaquetteCylinderExample>(0, 4, "Twisted / forward diagonal", example =>
+        Sample<MaquetteCylinderExample>(0, 4, "Twisted / smooth strips", example =>
         {
             example.sides = 5;
             example.height = 1.8f;
@@ -130,10 +130,9 @@ public class MaquetteProceduralExamples : MonoBehaviour
             example.aspectTop = 1.2f / .8f;
             example.topOffset = new Vector2(.35f, -.2f);
             example.topEulerAngles = new Vector3(18f, 45f, 10f);
-            example.smoothSides = false;
-            example.sideTopology = SideTopology.ForwardDiagonal;
+            example.smoothSides = true;
         });
-        Sample<MaquetteCylinderExample>(0, 5, "Twisted / backward diagonal", example =>
+        Sample<MaquetteCylinderExample>(0, 5, "Twisted / hard strips", example =>
         {
             example.sides = 5;
             example.height = 1.8f;
@@ -144,7 +143,6 @@ public class MaquetteProceduralExamples : MonoBehaviour
             example.topOffset = new Vector2(.35f, -.2f);
             example.topEulerAngles = new Vector3(18f, 45f, 10f);
             example.smoothSides = false;
-            example.sideTopology = SideTopology.BackwardDiagonal;
         });
 
         Row(1, "ROUNDED RECTANGLE / EXTRUSION");
@@ -313,7 +311,6 @@ public class MaquetteProceduralExamples : MonoBehaviour
             example.topClip = .8f;
             example.sweepAngle = -240f;
             example.smooth = true;
-            example.triangulateSides = true;
         });
 
         Row(4, "CAPSULE");

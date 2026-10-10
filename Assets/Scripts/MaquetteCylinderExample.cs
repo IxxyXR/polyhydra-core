@@ -17,9 +17,8 @@ public class MaquetteCylinderExample : MaquetteProceduralExample
     public Vector2 topOffset;
     public Vector3 topEulerAngles;
     public bool smoothSides = true;
-    public SideTopology sideTopology = SideTopology.Quads;
 
     protected override PolyMesh Build() => VariousSolids.Cylinder(sides, height,
         radiusBottom, aspectBottom, radiusTop, aspectTop, sweepAngle,
-        topOffset, Quaternion.Euler(topEulerAngles), smoothSides, sideTopology);
+        topOffset, Quaternion.Euler(topEulerAngles), smoothSides);
 }
