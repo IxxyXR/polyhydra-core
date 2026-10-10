@@ -54,18 +54,12 @@ namespace Polyhydra.Core
             var profileFace = selectedFaces[0];
             var profile = profileFace.GetVertices().Select(vertex => vertex.Position).ToList();
             var profileCount = profile.Count;
-            var axisVector = axis switch
-            {
-                Axis.X => Vector3.right,
-                Axis.Y => Vector3.up,
-                Axis.Z => Vector3.forward,
-                _ => Vector3.up
-            };
             var vertexPoints = new List<Vector3>();
             var faceIndices = new List<List<int>>();
             var faceRoles = new List<Roles>();
             var vertexRoles = new List<Roles>();
             var ringIndices = new int[ringCount, profileCount];
+            bool? reverseFaces = null;
 
             bool IsOnAxis(Vector3 point)
             {
@@ -101,10 +95,14 @@ namespace Polyhydra.Core
                     if (face[index] == face[index - 1]) face.RemoveAt(index);
                 if (face.Count > 1 && face[0] == face[face.Count - 1]) face.RemoveAt(face.Count - 1);
                 if (face.Distinct().Count() < 3) return;
-                var a = vertexPoints[face[0]];
-                var b = vertexPoints[face[1]];
-                var c = vertexPoints[face[2]];
-                if (Vector3.Dot(Vector3.Cross(b - a, c - b), expectedNormal) < 0f) face.Reverse();
+                if (!reverseFaces.HasValue)
+                {
+                    var a = vertexPoints[face[0]];
+                    var b = vertexPoints[face[1]];
+                    var c = vertexPoints[face[2]];
+                    var orientation = Vector3.Dot(Vector3.Cross(b - a, c - b), expectedNormal);
+                    if (orientation != 0f) reverseFaces = orientation < 0f;
+                }
                 faceIndices.Add(face);
                 faceRoles.Add(role);
             }
@@ -148,16 +146,18 @@ namespace Polyhydra.Core
 
             if (!closed)
             {
-                var centroid = profile.Aggregate(Vector3.zero, (sum, point) => sum + point) / profileCount;
-                var startTangent = Vector3.Cross(axisVector, centroid).normalized;
-                var endTangent = Vector3.Cross(axisVector, Rotate(centroid, angle)).normalized;
-                AddFace(Enumerable.Range(0, profileCount).Select(index => ringIndices[0, index]),
-                    -direction * startTangent, Roles.Existing);
+                // Caps oppose their adjacent strip edges before the common winding reversal.
+                AddFace(Enumerable.Range(0, profileCount).Reverse().Select(index => ringIndices[0, index]),
+                    Vector3.zero, Roles.Existing);
                 AddFace(Enumerable.Range(0, profileCount)
                         .Select(index => ringIndices[ringCount - 1, index]),
-                    direction * endTangent, Roles.Existing);
+                    Vector3.zero, Roles.Existing);
             }
 
+            // A signed radial profile can cross the axis. Reorienting individual faces
+            // there breaks edge pairing; choose a winding once and preserve connectivity.
+            if (reverseFaces == true)
+                foreach (var face in faceIndices) face.Reverse();
             return new PolyMesh(vertexPoints, faceIndices, faceRoles, vertexRoles);
         }
     }
