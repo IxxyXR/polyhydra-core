@@ -554,16 +554,18 @@ namespace Polyhydra.Core.Tests
             Assert.That(volume, Is.EqualTo(expected).Within(.0001f));
         }
 
-        [TestCase(false)]
-        [TestCase(true)]
-        public void CylinderTransformsEndsIndependentlyWithoutShiftingTheSectorCentre(bool triangulate)
+        [TestCase(SideTopology.Quads)]
+        [TestCase(SideTopology.ForwardDiagonal)]
+        [TestCase(SideTopology.BackwardDiagonal)]
+        public void CylinderTransformsEndsIndependentlyWithoutShiftingTheSectorCentre(SideTopology sideTopology)
         {
+            bool triangulate = sideTopology != SideTopology.Quads;
             const int sides = 4;
             var offset = new Vector2(.3f, -.2f);
             var rotation = Quaternion.Euler(15f, 30f, 10f);
             var mesh = VariousSolids.Cylinder(sides, 2f,
                 radiusBottom: 2f, aspectBottom: .25f, radiusTop: .6f * .75f, aspectTop: 2f,
-                sweepAngle: 90f, topOffset: offset, topRotation: rotation, triangulateSides: triangulate);
+                sweepAngle: 90f, topOffset: offset, topRotation: rotation, sideTopology: sideTopology);
             AssertClosed(mesh);
             var wallCount = sides * (triangulate ? 2 : 1);
             Assert.That(mesh.Faces.Count, Is.EqualTo(wallCount + 4));
@@ -583,20 +585,57 @@ namespace Polyhydra.Core.Tests
             }
         }
 
-        [TestCase(false)]
-        [TestCase(true)]
-        public void CylinderSmoothsOnlyTheWallEvenWhenCutAnglesAreSmaller(bool triangulate)
+        [TestCase(SideTopology.Quads)]
+        [TestCase(SideTopology.ForwardDiagonal)]
+        [TestCase(SideTopology.BackwardDiagonal)]
+        public void CylinderSmoothsOnlyTheWallEvenWhenCutAnglesAreSmaller(SideTopology sideTopology)
         {
+            bool triangulate = sideTopology != SideTopology.Quads;
             var mesh = VariousSolids.Cylinder(3, sweepAngle: 300f, smoothSides: true,
-                triangulateSides: triangulate);
+                sideTopology: sideTopology);
             AssertClosed(mesh);
             var walls = new HashSet<Face>(mesh.Faces.Take(triangulate ? 6 : 3));
             foreach (var edge in mesh.Halfedges)
                 Assert.That(edge.IsEdgeSmooth, Is.EqualTo(walls.Contains(edge.Face) && walls.Contains(edge.Pair.Face)));
             Assert.That(mesh.Halfedges.Any(edge => edge.IsEdgeSmooth && edge.DihedralAngle > 99f), Is.True);
             Assert.That(mesh.Halfedges.Any(edge => !edge.IsEdgeSmooth && edge.DihedralAngle < 41f), Is.True);
-            var faceted = VariousSolids.Cylinder(3, sweepAngle: 300f, triangulateSides: triangulate);
-            Assert.That(faceted.Halfedges.All(edge => !edge.IsEdgeSmooth), Is.True);
+            var faceted = VariousSolids.Cylinder(3, sweepAngle: 300f, sideTopology: sideTopology);
+            foreach (var edge in faceted.Halfedges)
+            {
+                var face = faceted.Faces.IndexOf(edge.Face);
+                var pairedFace = faceted.Faces.IndexOf(edge.Pair.Face);
+                bool internalDiagonal = triangulate && face < 6 && pairedFace < 6 && face / 2 == pairedFace / 2;
+                Assert.That(edge.IsEdgeSmooth, Is.EqualTo(internalDiagonal));
+            }
+        }
+
+        [TestCase(SideTopology.ForwardDiagonal, 360f)]
+        [TestCase(SideTopology.BackwardDiagonal, 360f)]
+        [TestCase(SideTopology.ForwardDiagonal, -360f)]
+        [TestCase(SideTopology.BackwardDiagonal, -360f)]
+        [TestCase(SideTopology.ForwardDiagonal, 240f)]
+        [TestCase(SideTopology.BackwardDiagonal, 240f)]
+        [TestCase(SideTopology.ForwardDiagonal, -240f)]
+        [TestCase(SideTopology.BackwardDiagonal, -240f)]
+        public void CylinderUsesTheSelectedDiagonalOnEveryTwistedStrip(SideTopology sideTopology, float sweep)
+        {
+            const int sides = 4;
+            var mesh = VariousSolids.Cylinder(sides, height: 2f, radiusBottom: 1f, radiusTop: 1f,
+                sweepAngle: sweep, topRotation: Quaternion.Euler(0f, 45f, 0f), sideTopology: sideTopology);
+            AssertClosed(mesh);
+            int ringCount = Mathf.Abs(sweep) == 360f ? sides : sides + 1;
+            for (int index = 0; index < sides; index++)
+            {
+                int next = (index + 1) % ringCount;
+                var secondTriangle = mesh.Faces[index * 2 + 1];
+                var diagonal = mesh.Faces[index * 2].GetHalfedges()
+                    .Single(edge => edge.Pair.Face == secondTriangle);
+                var expected = sideTopology == SideTopology.ForwardDiagonal
+                    ? new[] { mesh.Vertices[index], mesh.Vertices[ringCount + next] }
+                    : new[] { mesh.Vertices[ringCount + index], mesh.Vertices[next] };
+                Assert.That(new[] { diagonal.Vertex, diagonal.Prev.Vertex }, Is.EquivalentTo(expected));
+                Assert.That(diagonal.IsEdgeSmooth, Is.True);
+            }
         }
 
         [Test]
