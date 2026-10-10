@@ -20,16 +20,6 @@ namespace Polyhydra.Core
         WireframeBox = 11
     }
 
-    /// <summary>Wall topology in the direction of the sampled sweep.</summary>
-    public enum SideTopology
-    {
-        Quads,
-        // Bottom i to top i+1.
-        ForwardDiagonal,
-        // Top i to bottom i+1.
-        BackwardDiagonal
-    }
-
     public static class VariousSolids
     {
 
@@ -139,8 +129,9 @@ namespace Polyhydra.Core
         /// Positive sweep runs from +X toward +Z.
         /// Sides counts strips across the entire sweep. Partial sweeps have radial cuts.
         /// Smooth sides blend neighbouring wall strips, keeping both end caps and cuts sharp.
-        /// Triangular strips always smooth across their internal diagonal. SideTopology
-        /// selects quads, bottom i to top i+1, or top i to bottom i+1 diagonals.
+        /// Planar strips remain quads. Nonplanar strips are triangulated, with diagonals
+        /// from bottom i to top i+1 when smooth, or top i to bottom i+1 when faceted.
+        /// Triangular strips always smooth across their internal diagonal.
         /// Zero sweep or two zero radii produce an empty mesh. Aspect ratios must be positive.
         /// Arbitrary end transforms may produce self-intersections.
         /// </summary>
@@ -148,7 +139,7 @@ namespace Polyhydra.Core
             float radiusBottom = .5f, float aspectBottom = 1f,
             float radiusTop = .5f, float aspectTop = 1f, float sweepAngle = 360f,
             Vector2? topOffset = null, Quaternion? topRotation = null,
-            bool smoothSides = false, SideTopology sideTopology = SideTopology.Quads)
+            bool smoothSides = false)
         {
             if (height <= 0f) throw new System.ArgumentOutOfRangeException(nameof(height));
             if (radiusBottom < 0f) throw new System.ArgumentOutOfRangeException(nameof(radiusBottom));
@@ -163,20 +154,20 @@ namespace Polyhydra.Core
                 new SweepSection(radiusBottom, Vector3.down * height * .5f, new Vector2(1f, aspectBottom), Quaternion.identity),
                 new SweepSection(radiusTop, new Vector3(offset.x, height * .5f, offset.y), new Vector2(1f, aspectTop),
                     topRotation ?? Quaternion.identity)
-            }, sides, sweepAngle, smoothSides, sideTopology);
+            }, sides, sweepAngle, smoothSides);
         }
 
         /// <summary>
         /// Creates a conic solid about Y from a sampled circle, ellipse, hyperbola or parabola.
         /// Positive sweep runs from +X toward +Z, matching Cylinder. Smooth blends only the
-        /// curved body; end caps and sweep cuts remain sharp. Wall quads are the default.
+        /// curved body; end caps and sweep cuts remain sharp. Planar wall strips remain quads.
         /// Signed parabola radii are retained and can produce self-intersections.
         /// Zero sweep uses the same explicit policy as Capsule and Revolve.
         /// </summary>
         public static PolyMesh Conic(Shapes.ConicType type, int sides = 24, int verticalSegments = 16,
             float radius = 1f, float majorAxis = 1f, float minorAxis = 1f, float centerOffset = .2f,
             float bottomClip = 0f, float topClip = 1f, float sweepAngle = 360f,
-            bool smooth = false, bool triangulateSides = false,
+            bool smooth = false,
             PolyMesh.ZeroSweepBehavior zeroSweepBehavior = PolyMesh.ZeroSweepBehavior.ThinWedge)
         {
             var profile = Shapes.ConicProfilePoints(type, verticalSegments, radius, majorAxis, minorAxis,
@@ -191,8 +182,7 @@ namespace Polyhydra.Core
             }
             var sections = profile.Select(point => new SweepSection(point.x,
                 new Vector3(0f, point.y, 0f), Vector2.one, Quaternion.identity)).ToList();
-            return SweepSections(sections, sides, sweepAngle, smooth,
-                triangulateSides ? SideTopology.ForwardDiagonal : SideTopology.Quads);
+            return SweepSections(sections, sides, sweepAngle, smooth);
         }
 
         private readonly struct SweepSection
@@ -214,11 +204,8 @@ namespace Polyhydra.Core
         // The supplied sections run from bottom to top. Construction owns the distinction
         // between the body, end caps and sweep cuts; no intent is stored on input boundaries.
         private static PolyMesh SweepSections(IReadOnlyList<SweepSection> sections, int sides,
-            float sweepAngle, bool smoothBody, SideTopology sideTopology)
+            float sweepAngle, bool smoothBody)
         {
-            if (sideTopology != SideTopology.Quads && sideTopology != SideTopology.ForwardDiagonal &&
-                sideTopology != SideTopology.BackwardDiagonal)
-                throw new System.ArgumentOutOfRangeException(nameof(sideTopology));
             sides = Mathf.Max(3, sides);
             var closed = Mathf.Abs(sweepAngle) == 360f;
             var ringCount = closed ? sides : sides + 1;
@@ -273,9 +260,12 @@ namespace Polyhydra.Core
                     var next = (index + 1) % ringCount;
                     var role = (row + index) % 2 == 0 ? Roles.New : Roles.NewAlt;
                     var strip = row * sides + index;
-                    if (sideTopology == SideTopology.Quads || sections[row].Radius == 0f || sections[row + 1].Radius == 0f)
+                    bool nonplanar = sections[row].Radius != 0f && sections[row + 1].Radius != 0f &&
+                        IsNonplanarQuad(vertices[lower[index]], vertices[upper[index]],
+                            vertices[upper[next]], vertices[lower[next]]);
+                    if (!nonplanar)
                         AddFace(new[] { lower[index], upper[index], upper[next], lower[next] }, role, strip);
-                    else if (sideTopology == SideTopology.ForwardDiagonal)
+                    else if (smoothBody)
                     {
                         AddFace(new[] { lower[index], upper[index], upper[next] }, role, strip);
                         AddFace(new[] { lower[index], upper[next], lower[next] }, role, strip);
@@ -322,6 +312,18 @@ namespace Polyhydra.Core
                     bodyStrips.TryGetValue(edge.Pair.Face, out var pairedStrip) &&
                     (smoothBody || strip == pairedStrip);
             return mesh;
+        }
+
+        private static bool IsNonplanarQuad(Vector3 a, Vector3 b, Vector3 c, Vector3 d)
+        {
+            var ab = b - a;
+            var ac = c - a;
+            var ad = d - a;
+            var normal = Vector3.Cross(ab, ac);
+            // Relative plane-distance tolerance avoids splitting planar faces merely
+            // because their coordinates have accumulated floating-point rounding.
+            var extent = Mathf.Max(ab.magnitude, ac.magnitude, ad.magnitude);
+            return Mathf.Abs(Vector3.Dot(normal, ad)) > 1e-5f * normal.magnitude * extent;
         }
 
         public static PolyMesh ChamferedBox(int profileSegments = 1, float profile = 1f,
