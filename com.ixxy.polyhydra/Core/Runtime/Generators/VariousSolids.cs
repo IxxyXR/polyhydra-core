@@ -124,36 +124,33 @@ namespace Polyhydra.Core
 
         /// <summary>
         /// Creates a cylinder, tapered cylinder or cone about Y, centred on its height.
-        /// Each end has independent XZ scale; the top is rotated about its own centre
-        /// before applying its XZ offset. Positive sweep runs from +X toward +Z.
+        /// Each end has an independent X radius and aspect ratio (Z radius / X radius).
+        /// The top is rotated about its own centre before applying its XZ offset.
+        /// Positive sweep runs from +X toward +Z.
         /// Sides counts strips across the entire sweep. Partial sweeps have radial cuts.
         /// Smooth sides blend only the wall, keeping both end caps and cuts sharp.
         /// Optional triangles split each wall quad from bottom i to top i+1.
-        /// Zero sweep or two zero radii produce an empty mesh. End scales must be positive.
+        /// Zero sweep or two zero radii produce an empty mesh. Aspect ratios must be positive.
         /// Arbitrary end transforms may produce self-intersections.
         /// </summary>
         public static PolyMesh Cylinder(int sides = 24, float height = 1f,
-            float radiusBottom = .5f, float radiusTop = .5f, float sweepAngle = 360f,
+            float radiusBottom = .5f, float aspectBottom = 1f,
+            float radiusTop = .5f, float aspectTop = 1f, float sweepAngle = 360f,
             Vector2? topOffset = null, Quaternion? topRotation = null,
-            Vector2? bottomScale = null, Vector2? topScale = null,
             bool smoothSides = false, bool triangulateSides = false)
         {
             if (height <= 0f) throw new System.ArgumentOutOfRangeException(nameof(height));
             if (radiusBottom < 0f) throw new System.ArgumentOutOfRangeException(nameof(radiusBottom));
             if (radiusTop < 0f) throw new System.ArgumentOutOfRangeException(nameof(radiusTop));
-            var lowerScale = bottomScale ?? Vector2.one;
-            var upperScale = topScale ?? Vector2.one;
-            if (lowerScale.x <= 0f || lowerScale.y <= 0f)
-                throw new System.ArgumentOutOfRangeException(nameof(bottomScale));
-            if (upperScale.x <= 0f || upperScale.y <= 0f)
-                throw new System.ArgumentOutOfRangeException(nameof(topScale));
+            if (aspectBottom <= 0f) throw new System.ArgumentOutOfRangeException(nameof(aspectBottom));
+            if (aspectTop <= 0f) throw new System.ArgumentOutOfRangeException(nameof(aspectTop));
             sweepAngle = Mathf.Clamp(sweepAngle, -360f, 360f);
             if (sweepAngle == 0f || (radiusBottom == 0f && radiusTop == 0f)) return new PolyMesh();
             var offset = topOffset ?? Vector2.zero;
             return SweepSections(new[]
             {
-                new SweepSection(radiusBottom, Vector3.down * height * .5f, lowerScale, Quaternion.identity),
-                new SweepSection(radiusTop, new Vector3(offset.x, height * .5f, offset.y), upperScale,
+                new SweepSection(radiusBottom, Vector3.down * height * .5f, new Vector2(1f, aspectBottom), Quaternion.identity),
+                new SweepSection(radiusTop, new Vector3(offset.x, height * .5f, offset.y), new Vector2(1f, aspectTop),
                     topRotation ?? Quaternion.identity)
             }, sides, sweepAngle, smoothSides, triangulateSides);
         }
