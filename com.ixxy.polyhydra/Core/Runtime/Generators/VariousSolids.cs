@@ -93,35 +93,33 @@ namespace Polyhydra.Core
             return BuildMesh(vertices, faces);
         }
 
+        /// <summary>
+        /// Creates a capsule with optional signed sweep in degrees, positive toward +Z.
+        /// Existing full-sweep calls retain their original lathe construction.
+        /// Optional smoothing blends the entire capsule surface, keeping sweep-cut faces sharp.
+        /// </summary>
         public static PolyMesh Capsule(int sides = 24, int capSegments = 8, float cylinderHeight = 2f,
-            float radius = 1f)
+            float radius = 1f, float sweepAngle = 360f,
+            PolyMesh.ZeroSweepBehavior zeroSweepBehavior = PolyMesh.ZeroSweepBehavior.ThinWedge,
+            bool smooth = false)
         {
             sides = Mathf.Max(3, sides);
-            capSegments = Mathf.Max(1, capSegments);
-            cylinderHeight = Mathf.Max(0f, cylinderHeight);
-            radius = Mathf.Max(.0001f, radius);
-
-            var profile = new List<Vector2> { new(0f, -cylinderHeight * .5f - radius) };
-            for (var segment = 1; segment <= capSegments; segment++)
+            var profile = Shapes.CapsuleProfilePoints(capSegments, cylinderHeight, radius);
+            sweepAngle = Mathf.Clamp(sweepAngle, -360f, 360f);
+            var result = sweepAngle == 360f
+                ? Lathe(profile, sides)
+                : Shapes.ProfilePolygon(profile).Revolve(new OpParams(-sweepAngle / 360f, sides),
+                    Axis.Y, zeroSweepBehavior);
+            if (smooth)
             {
-                var angle = -Mathf.PI * .5f + Mathf.PI * .5f * segment / capSegments;
-                profile.Add(new Vector2(
-                    Mathf.Cos(angle) * radius,
-                    -cylinderHeight * .5f + Mathf.Sin(angle) * radius
-                ));
+                // Revolve labels sweep-cut faces Existing; Lathe contains only surface faces.
+                var surfaceFaces = new HashSet<Face>(result.Faces.Where((face, index) =>
+                    result.FaceRoles[index] != Roles.Existing));
+                foreach (var edge in result.Halfedges)
+                    edge.IsSmooth = edge.Pair != null && surfaceFaces.Contains(edge.Face) &&
+                                    surfaceFaces.Contains(edge.Pair.Face);
             }
-            if (cylinderHeight > .000001f)
-                profile.Add(new Vector2(radius, cylinderHeight * .5f));
-            for (var segment = 1; segment < capSegments; segment++)
-            {
-                var angle = Mathf.PI * .5f * segment / capSegments;
-                profile.Add(new Vector2(
-                    Mathf.Cos(angle) * radius,
-                    cylinderHeight * .5f + Mathf.Sin(angle) * radius
-                ));
-            }
-            profile.Add(new Vector2(0f, cylinderHeight * .5f + radius));
-            return Lathe(profile, sides);
+            return result;
         }
 
         public static PolyMesh ChamferedBox(int profileSegments = 1, float profile = 1f,
