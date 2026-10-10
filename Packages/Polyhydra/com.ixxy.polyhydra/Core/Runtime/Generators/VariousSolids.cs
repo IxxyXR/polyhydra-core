@@ -122,6 +122,125 @@ namespace Polyhydra.Core
             return result;
         }
 
+        /// <summary>
+        /// Creates a cylinder, tapered cylinder or cone about Y, centred on its height.
+        /// Each end has independent XZ scale; the top is rotated about its own centre
+        /// before applying its XZ offset. Positive sweep runs from +X toward +Z.
+        /// Sides counts strips across the entire sweep. Partial sweeps have radial cuts.
+        /// Smooth sides blend only the wall, keeping both end caps and cuts sharp.
+        /// Optional triangles split each wall quad from bottom i to top i+1.
+        /// Zero sweep or two zero radii produce an empty mesh. End scales must be positive.
+        /// Arbitrary end transforms may produce self-intersections.
+        /// </summary>
+        public static PolyMesh Cylinder(int sides = 24, float height = 1f,
+            float radiusBottom = .5f, float radiusTop = .5f, float sweepAngle = 360f,
+            Vector2? topOffset = null, Quaternion? topRotation = null,
+            Vector2? bottomScale = null, Vector2? topScale = null,
+            bool smoothSides = false, bool triangulateSides = false)
+        {
+            if (height <= 0f) throw new System.ArgumentOutOfRangeException(nameof(height));
+            if (radiusBottom < 0f) throw new System.ArgumentOutOfRangeException(nameof(radiusBottom));
+            if (radiusTop < 0f) throw new System.ArgumentOutOfRangeException(nameof(radiusTop));
+            var lowerScale = bottomScale ?? Vector2.one;
+            var upperScale = topScale ?? Vector2.one;
+            if (lowerScale.x <= 0f || lowerScale.y <= 0f)
+                throw new System.ArgumentOutOfRangeException(nameof(bottomScale));
+            if (upperScale.x <= 0f || upperScale.y <= 0f)
+                throw new System.ArgumentOutOfRangeException(nameof(topScale));
+            sweepAngle = Mathf.Clamp(sweepAngle, -360f, 360f);
+            if (sweepAngle == 0f || (radiusBottom == 0f && radiusTop == 0f)) return new PolyMesh();
+            sides = Mathf.Max(3, sides);
+            var closed = Mathf.Abs(sweepAngle) == 360f;
+            var ringCount = closed ? sides : sides + 1;
+            var offset = topOffset ?? Vector2.zero;
+            var rotation = topRotation ?? Quaternion.identity;
+            var lowerCentre = Vector3.down * height * .5f;
+            var upperCentre = new Vector3(offset.x, height * .5f, offset.y);
+            var vertices = new List<Vector3>();
+
+            List<int> Ring(float radius, Vector2 scale, Vector3 centre, Quaternion orientation)
+            {
+                var indices = new List<int>();
+                if (radius == 0f)
+                {
+                    var apex = vertices.Count;
+                    vertices.Add(centre);
+                    indices.AddRange(Enumerable.Repeat(apex, ringCount));
+                    return indices;
+                }
+                for (var index = 0; index < ringCount; index++)
+                {
+                    var angle = sweepAngle * Mathf.Deg2Rad * index / sides;
+                    var point = new Vector3(Mathf.Cos(angle) * radius * scale.x, 0f,
+                        Mathf.Sin(angle) * radius * scale.y);
+                    indices.Add(vertices.Count);
+                    vertices.Add(centre + orientation * point);
+                }
+                return indices;
+            }
+
+            var lower = Ring(radiusBottom, lowerScale, lowerCentre, Quaternion.identity);
+            var upper = Ring(radiusTop, upperScale, upperCentre, rotation);
+            var faces = new List<List<int>>();
+            var roles = new List<Roles>();
+            void AddFace(IEnumerable<int> points, Roles role)
+            {
+                var indices = new List<int>();
+                foreach (var index in points)
+                    if (indices.Count == 0 || indices[indices.Count - 1] != index) indices.Add(index);
+                if (indices.Count > 1 && indices[0] == indices[indices.Count - 1])
+                    indices.RemoveAt(indices.Count - 1);
+                if (indices.Count < 3) return;
+                if (sweepAngle < 0f) indices.Reverse();
+                faces.Add(indices);
+                roles.Add(role);
+            }
+
+            for (var index = 0; index < sides; index++)
+            {
+                var next = (index + 1) % ringCount;
+                var role = index % 2 == 0 ? Roles.New : Roles.NewAlt;
+                if (triangulateSides && radiusBottom > 0f && radiusTop > 0f)
+                {
+                    AddFace(new[] { lower[index], upper[index], upper[next] }, role);
+                    AddFace(new[] { lower[index], upper[next], lower[next] }, role);
+                }
+                else
+                    AddFace(new[] { lower[index], upper[index], upper[next], lower[next] }, role);
+            }
+            var wallFaceCount = faces.Count;
+            if (closed)
+            {
+                AddFace(lower, Roles.Existing);
+                AddFace(upper.AsEnumerable().Reverse(), Roles.Existing);
+            }
+            else
+            {
+                int Centre(float radius, List<int> ring, Vector3 point)
+                {
+                    if (radius == 0f) return ring[0];
+                    var index = vertices.Count;
+                    vertices.Add(point);
+                    return index;
+                }
+                var lowerCentreIndex = Centre(radiusBottom, lower, lowerCentre);
+                var upperCentreIndex = Centre(radiusTop, upper, upperCentre);
+                AddFace(lower.Concat(new[] { lowerCentreIndex }), Roles.Existing);
+                AddFace(upper.Concat(new[] { upperCentreIndex }).Reverse(), Roles.Existing);
+                AddFace(new[] { lowerCentreIndex, upperCentreIndex, upper[0], lower[0] }, Roles.Existing);
+                AddFace(new[] { lower[ringCount - 1], upper[ringCount - 1], upperCentreIndex,
+                    lowerCentreIndex }, Roles.Existing);
+            }
+            var mesh = new PolyMesh(vertices, faces, roles, Enumerable.Repeat(Roles.Existing, vertices.Count));
+            if (smoothSides)
+            {
+                var walls = new HashSet<Face>(mesh.Faces.Take(wallFaceCount));
+                foreach (var edge in mesh.Halfedges)
+                    edge.IsSmooth = edge.Pair != null && walls.Contains(edge.Face) && walls.Contains(edge.Pair.Face);
+            }
+            return mesh;
+        }
+
         public static PolyMesh ChamferedBox(int profileSegments = 1, float profile = 1f,
             float chamfer = .2f)
         {
