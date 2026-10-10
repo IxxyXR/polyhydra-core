@@ -167,8 +167,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: daf139de981a4d06a60a2e58a161a3d2, type: 3}
   m_Name:
   m_EditorClassIdentifier:
-  angularSegments: 24
-  profileSegments: 12
-  cornerSegments: 4
-  smoothSurfaces: 1
   showTopology: 0

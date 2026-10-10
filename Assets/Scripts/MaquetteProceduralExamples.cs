@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using Polyhydra.Core;
 using UnityEngine;
-using UnityEngine.Rendering;
 
 /// <summary>
 /// A self-contained gallery of Polyhydra recipes for Maquette's procedural model families.
@@ -10,16 +9,12 @@ using UnityEngine.Rendering;
 /// </summary>
 public class MaquetteProceduralExamples : MonoBehaviour
 {
-    [Min(3)] public int angularSegments = 24;
-    [Min(2)] public int profileSegments = 12;
-    [Min(1)] public int cornerSegments = 4;
-    public bool smoothSurfaces = true;
     [Tooltip("Select the gallery root to see the editable face topology in Scene view.")]
     public bool showTopology;
 
     private const string LogPrefix = "[MaquetteProceduralExamples]";
     private readonly List<UnityEngine.Object> ownedAssets = new List<UnityEngine.Object>();
-    private readonly List<(Transform transform, PolyMesh poly)> models = new List<(Transform, PolyMesh)>();
+    private readonly List<MaquetteProceduralExample> models = new List<MaquetteProceduralExample>();
     private GameObject generated;
     private int sampleCount;
 
@@ -41,9 +36,6 @@ public class MaquetteProceduralExamples : MonoBehaviour
             return;
         }
 
-        int sides = Mathf.Max(3, angularSegments);
-        int profile = Mathf.Max(2, profileSegments);
-        int corners = Mathf.Max(1, cornerSegments);
         var palette = new[]
         {
             new Color(.25f, .7f, .92f), new Color(.95f, .61f, .28f),
@@ -79,124 +71,308 @@ public class MaquetteProceduralExamples : MonoBehaviour
             Text($"Family {row + 1}", title, new Vector3(10f, .02f, row * 4.5f + 1.6f),
                 48, .065f, palette[row], font);
         }
-        void Sample(int row, int column, string title, string detail, Func<PolyMesh> build)
+        void Sample<T>(int row, int column, string title, Action<T> configure)
+            where T : MaquetteProceduralExample
         {
             var cell = Child($"{row + 1}.{column + 1} {title}", generated.transform);
             cell.transform.localPosition = new Vector3(column * 4f, 0f, row * 4.5f);
             Cube("Plinth", cell.transform, new Vector3(0f, .04f, 0f),
                 new Vector3(3.2f, .08f, 2.5f), pedestalMaterial);
-            try
-            {
-                var poly = build();
-                var data = poly.BuildMeshData(useSmoothing: true);
-                var mesh = Own(new Mesh { name = title, indexFormat = IndexFormat.UInt32 });
-                mesh.SetVertices(data.meshVertices);
-                mesh.SetNormals(data.meshNormals);
-                mesh.SetTriangles(data.meshTriangles, 0);
-                mesh.SetUVs(0, data.meshUVs);
-                mesh.RecalculateBounds();
-                var model = Child("Model", cell.transform);
-                model.AddComponent<MeshFilter>().sharedMesh = mesh;
-                model.AddComponent<MeshRenderer>().sharedMaterial = rowMaterials[row];
-                model.transform.localPosition = new Vector3(-mesh.bounds.center.x,
-                    .08f - mesh.bounds.min.y, -mesh.bounds.center.z);
-                models.Add((model.transform, poly));
-                sampleCount++;
-            }
-            catch (Exception exception)
-            {
-                Debug.LogError($"{LogPrefix} {title}: {exception}", this);
-                detail = "GENERATION FAILED: see Console";
-            }
-            Text($"{title} label", $"{title}\n{detail}",
+            var example = cell.AddComponent<T>();
+            configure(example);
+            if (example.Initialize(rowMaterials[row])) sampleCount++;
+            models.Add(example);
+            Text($"{title} label", $"{title}\nSelect example to edit parameters",
                 cell.transform.localPosition + new Vector3(0f, .02f, -1.65f),
                 40, .055f, Color.white, font);
         }
 
         Row(0, "CYLINDER / CONE");
-        Sample(0, 0, "Cylinder", "Smooth wall / sharp caps", () =>
-            VariousSolids.Cylinder(sides, 1.7f, .7f, .7f, smoothSides: smoothSurfaces));
-        Sample(0, 1, "Cone", "Collapsed top ring", () =>
-            VariousSolids.Cylinder(sides, 2f, .9f, 0f, smoothSides: smoothSurfaces));
-        Sample(0, 2, "Taper", "Independent end radii", () =>
-            VariousSolids.Cylinder(sides, 1.8f, .9f, .4f, smoothSides: smoothSurfaces));
-        Sample(0, 3, "Partial cylinder", "3 sides / 300 deg / sharp cuts", () =>
-            VariousSolids.Cylinder(3, 1.7f, .9f, .9f, 300f, smoothSides: smoothSurfaces));
-        Sample(0, 4, "Transformed / quads", "Offset, tilt, twist and scale", () =>
-            VariousSolids.Cylinder(5, 1.8f, .7f, .55f, topOffset: new Vector2(.35f, -.2f),
-                topRotation: Quaternion.Euler(18f, 45f, 10f), bottomScale: new Vector2(1.2f, .8f),
-                topScale: new Vector2(.8f, 1.2f), smoothSides: false));
-        Sample(0, 5, "Transformed / triangles", "Same ends / explicit diagonal", () =>
-            VariousSolids.Cylinder(5, 1.8f, .7f, .55f, topOffset: new Vector2(.35f, -.2f),
-                topRotation: Quaternion.Euler(18f, 45f, 10f), bottomScale: new Vector2(1.2f, .8f),
-                topScale: new Vector2(.8f, 1.2f), smoothSides: false, triangulateSides: true));
-
-        Row(1, "ROUNDED RECTANGLE / EXTRUSION");
-        Sample(1, 0, "Square corners", "Radius 0 / four-vertex profile", () => Plate(Shapes.Rectangle(2.3f, 1.5f), .22f));
-        Sample(1, 1, "Rounded rectangle", "Radius .3 / sampled corners", () => Plate(Shapes.Rectangle(2.3f, 1.5f, .3f, corners), .22f));
-        Sample(1, 2, "Chamfered rectangle", "One segment per corner", () => Plate(Shapes.Rectangle(2.3f, 1.5f, .3f, 1), .22f));
-        Sample(1, 3, "Maximum rounding", "Radius = half the height", () => Plate(Shapes.Rectangle(2.3f, 1.5f, .75f, corners), .22f));
-        Sample(1, 4, "Tall rectangle", "Independent dimensions", () => Plate(Shapes.Rectangle(1.2f, 2.3f, .25f, corners), .22f));
-        Sample(1, 5, "Thick rectangle", "Shell thickness .7", () => Plate(Shapes.Rectangle(2.1f, 1.5f, .3f, corners), .7f));
-
-        Row(2, "ROUNDED FRAME / EXTRUSION");
-        Sample(2, 0, "Square frame", "Square inner and outer contours", () => Plate(Shapes.Frame(2.3f, 1.7f, .22f), .22f));
-        Sample(2, 1, "Rounded frame", "Outer .45 / inner .23 radius", () => Plate(Shapes.Frame(2.3f, 1.7f, .22f, .45f, corners), .22f));
-        Sample(2, 2, "Chamfered frame", "One segment per corner", () => Plate(Shapes.Frame(2.3f, 1.7f, .22f, .45f, 1), .22f));
-        Sample(2, 3, "Thin border", "Border .1 / outer radius .3", () => Plate(Shapes.Frame(2.3f, 1.7f, .1f, .3f, corners), .22f));
-        Sample(2, 4, "Thick border", "Border .4 / outer radius .55", () => Plate(Shapes.Frame(2.3f, 1.7f, .4f, .55f, corners), .22f));
-        Sample(2, 5, "Deep frame", "Shell thickness .7", () => Plate(Shapes.Frame(2.1f, 1.7f, .22f, .45f, corners), .7f));
-
-        Row(3, "CONIC SOLIDS");
-        Sample(3, 0, "Circle", "Full spherical surface", () =>
-            VariousSolids.Conic(Shapes.ConicType.Circle, sides, profile, radius: .9f, smooth: smoothSurfaces));
-        Sample(3, 1, "Ellipse", "Major .8 / minor 1.2", () =>
-            VariousSolids.Conic(Shapes.ConicType.Ellipse, sides, profile, radius: .9f,
-                majorAxis: .8f, minorAxis: 1.2f, smooth: smoothSurfaces));
-        Sample(3, 2, "Hyperbola", "Clipped surface / sharp caps", () =>
-            VariousSolids.Conic(Shapes.ConicType.Hyperbola, sides, profile, radius: .7f,
-                majorAxis: .8f, minorAxis: .9f, bottomClip: .15f, topClip: .85f, smooth: smoothSurfaces));
-        Sample(3, 3, "Parabola", "Major .5 / offset .4", () =>
-            VariousSolids.Conic(Shapes.ConicType.Parabola, sides, profile, radius: .9f,
-                majorAxis: .5f, centerOffset: .4f, smooth: smoothSurfaces));
-        Sample(3, 4, "Low-resolution cut", "3 sides / 2 rows / 300 deg", () =>
-            VariousSolids.Conic(Shapes.ConicType.Circle, 3, 2, radius: .9f,
-                sweepAngle: 300f, smooth: smoothSurfaces));
-        Sample(3, 5, "Clipped reverse sweep", "Ellipse / -240 deg / triangles", () =>
-            VariousSolids.Conic(Shapes.ConicType.Ellipse, sides, profile, radius: .9f,
-                majorAxis: 1.1f, minorAxis: 1f, bottomClip: .2f, topClip: .8f,
-                sweepAngle: -240f, smooth: smoothSurfaces, triangulateSides: true));
-
-        Row(4, "CAPSULE");
-        Sample(4, 0, "Capsule", "Smooth hemispheres and body", () =>
-            VariousSolids.Capsule(sides, profile, 1.2f, .6f, smooth: smoothSurfaces));
-        Sample(4, 1, "Short capsule", "Straight section .25", () =>
-            VariousSolids.Capsule(sides, profile, .25f, .8f, smooth: smoothSurfaces));
-        Sample(4, 2, "Faceted capsule", "6 sides / 3 cap segments", () =>
-            VariousSolids.Capsule(6, 3, 1.2f, .6f, smooth: false));
-        Sample(4, 3, "Partial capsule", "240 deg / sharp sweep cuts", () =>
-            VariousSolids.Capsule(sides, profile, 1.2f, .6f, 240f, smooth: smoothSurfaces));
-        Sample(4, 4, "Reverse sweep capsule", "-240 deg / same smooth body", () =>
-            VariousSolids.Capsule(sides, profile, 1.2f, .6f, -240f, smooth: smoothSurfaces));
-        Sample(4, 5, "Elliptical capsule", "Non-uniform scale", () =>
+        Sample<MaquetteCylinderExample>(0, 0, "Cylinder", example =>
         {
-            var poly = VariousSolids.Capsule(sides, profile, 1.2f, .6f, smooth: smoothSurfaces);
-            foreach (var vertex in poly.Vertices)
-                vertex.Position = Vector3.Scale(vertex.Position, new Vector3(1.5f, .8f, .75f));
-            return poly;
+            example.sides = 24;
+            example.height = 1.7f;
+            example.radiusBottom = .7f;
+            example.radiusTop = .7f;
+            example.smoothSides = true;
+        });
+        Sample<MaquetteCylinderExample>(0, 1, "Cone", example =>
+        {
+            example.sides = 24;
+            example.height = 2f;
+            example.radiusBottom = .9f;
+            example.radiusTop = 0f;
+            example.smoothSides = true;
+        });
+        Sample<MaquetteCylinderExample>(0, 2, "Taper", example =>
+        {
+            example.sides = 24;
+            example.height = 1.8f;
+            example.radiusBottom = .9f;
+            example.radiusTop = .4f;
+            example.smoothSides = true;
+        });
+        Sample<MaquetteCylinderExample>(0, 3, "Partial cylinder", example =>
+        {
+            example.sides = 3;
+            example.height = 1.7f;
+            example.radiusBottom = .9f;
+            example.radiusTop = .9f;
+            example.sweepAngle = 300f;
+            example.smoothSides = true;
+        });
+        Sample<MaquetteCylinderExample>(0, 4, "Transformed / quads", example =>
+        {
+            example.sides = 5;
+            example.height = 1.8f;
+            example.radiusBottom = .7f;
+            example.radiusTop = .55f;
+            example.topOffset = new Vector2(.35f, -.2f);
+            example.topEulerAngles = new Vector3(18f, 45f, 10f);
+            example.bottomScale = new Vector2(1.2f, .8f);
+            example.topScale = new Vector2(.8f, 1.2f);
+            example.smoothSides = false;
+        });
+        Sample<MaquetteCylinderExample>(0, 5, "Transformed / triangles", example =>
+        {
+            example.sides = 5;
+            example.height = 1.8f;
+            example.radiusBottom = .7f;
+            example.radiusTop = .55f;
+            example.topOffset = new Vector2(.35f, -.2f);
+            example.topEulerAngles = new Vector3(18f, 45f, 10f);
+            example.bottomScale = new Vector2(1.2f, .8f);
+            example.topScale = new Vector2(.8f, 1.2f);
+            example.smoothSides = false;
+            example.triangulateSides = true;
         });
 
-        Text("Instructions", "Select this gallery root and enable Show Topology to inspect faces.\nResolution and smoothing controls rebuild the gallery in Edit or Play mode.",
+        Row(1, "ROUNDED RECTANGLE / EXTRUSION");
+        Sample<MaquetteRectangleExample>(1, 0, "Square corners", example =>
+        {
+            example.width = 2.3f;
+            example.height = 1.5f;
+            example.thickness = .22f;
+            example.radius = 0f;
+        });
+        Sample<MaquetteRectangleExample>(1, 1, "Rounded rectangle", example =>
+        {
+            example.width = 2.3f;
+            example.height = 1.5f;
+            example.radius = .3f;
+            example.cornerSegments = 4;
+            example.thickness = .22f;
+        });
+        Sample<MaquetteRectangleExample>(1, 2, "Chamfered rectangle", example =>
+        {
+            example.width = 2.3f;
+            example.height = 1.5f;
+            example.radius = .3f;
+            example.cornerSegments = 1;
+            example.thickness = .22f;
+        });
+        Sample<MaquetteRectangleExample>(1, 3, "Maximum rounding", example =>
+        {
+            example.width = 2.3f;
+            example.height = 1.5f;
+            example.radius = .75f;
+            example.cornerSegments = 4;
+            example.thickness = .22f;
+        });
+        Sample<MaquetteRectangleExample>(1, 4, "Tall rectangle", example =>
+        {
+            example.width = 1.2f;
+            example.height = 2.3f;
+            example.radius = .25f;
+            example.cornerSegments = 4;
+            example.thickness = .22f;
+        });
+        Sample<MaquetteRectangleExample>(1, 5, "Thick rectangle", example =>
+        {
+            example.width = 2.1f;
+            example.height = 1.5f;
+            example.radius = .3f;
+            example.cornerSegments = 4;
+            example.thickness = .7f;
+        });
+
+        Row(2, "ROUNDED FRAME / EXTRUSION");
+        Sample<MaquetteFrameExample>(2, 0, "Square frame", example =>
+        {
+            example.width = 2.3f;
+            example.height = 1.7f;
+            example.borderWidth = .22f;
+            example.thickness = .22f;
+            example.radius = 0f;
+        });
+        Sample<MaquetteFrameExample>(2, 1, "Rounded frame", example =>
+        {
+            example.width = 2.3f;
+            example.height = 1.7f;
+            example.borderWidth = .22f;
+            example.radius = .45f;
+            example.cornerSegments = 4;
+            example.thickness = .22f;
+        });
+        Sample<MaquetteFrameExample>(2, 2, "Chamfered frame", example =>
+        {
+            example.width = 2.3f;
+            example.height = 1.7f;
+            example.borderWidth = .22f;
+            example.radius = .45f;
+            example.cornerSegments = 1;
+            example.thickness = .22f;
+        });
+        Sample<MaquetteFrameExample>(2, 3, "Thin border", example =>
+        {
+            example.width = 2.3f;
+            example.height = 1.7f;
+            example.borderWidth = .1f;
+            example.radius = .3f;
+            example.cornerSegments = 4;
+            example.thickness = .22f;
+        });
+        Sample<MaquetteFrameExample>(2, 4, "Thick border", example =>
+        {
+            example.width = 2.3f;
+            example.height = 1.7f;
+            example.borderWidth = .4f;
+            example.radius = .55f;
+            example.cornerSegments = 4;
+            example.thickness = .22f;
+        });
+        Sample<MaquetteFrameExample>(2, 5, "Deep frame", example =>
+        {
+            example.width = 2.1f;
+            example.height = 1.7f;
+            example.borderWidth = .22f;
+            example.radius = .45f;
+            example.cornerSegments = 4;
+            example.thickness = .7f;
+        });
+
+        Row(3, "CONIC SOLIDS");
+        Sample<MaquetteConicExample>(3, 0, "Circle", example =>
+        {
+            example.type = Shapes.ConicType.Circle;
+            example.sides = 24;
+            example.verticalSegments = 12;
+            example.radius = .9f;
+            example.smooth = true;
+        });
+        Sample<MaquetteConicExample>(3, 1, "Ellipse", example =>
+        {
+            example.type = Shapes.ConicType.Ellipse;
+            example.sides = 24;
+            example.verticalSegments = 12;
+            example.radius = .9f;
+            example.majorAxis = .8f;
+            example.minorAxis = 1.2f;
+            example.smooth = true;
+        });
+        Sample<MaquetteConicExample>(3, 2, "Hyperbola", example =>
+        {
+            example.type = Shapes.ConicType.Hyperbola;
+            example.sides = 24;
+            example.verticalSegments = 12;
+            example.radius = .7f;
+            example.majorAxis = .8f;
+            example.minorAxis = .9f;
+            example.bottomClip = .15f;
+            example.topClip = .85f;
+            example.smooth = true;
+        });
+        Sample<MaquetteConicExample>(3, 3, "Parabola", example =>
+        {
+            example.type = Shapes.ConicType.Parabola;
+            example.sides = 24;
+            example.verticalSegments = 12;
+            example.radius = .9f;
+            example.majorAxis = .5f;
+            example.centerOffset = .4f;
+            example.smooth = true;
+        });
+        Sample<MaquetteConicExample>(3, 4, "Low-resolution cut", example =>
+        {
+            example.type = Shapes.ConicType.Circle;
+            example.sides = 3;
+            example.verticalSegments = 2;
+            example.radius = .9f;
+            example.sweepAngle = 300f;
+            example.smooth = true;
+        });
+        Sample<MaquetteConicExample>(3, 5, "Clipped reverse sweep", example =>
+        {
+            example.type = Shapes.ConicType.Ellipse;
+            example.sides = 24;
+            example.verticalSegments = 12;
+            example.radius = .9f;
+            example.majorAxis = 1.1f;
+            example.minorAxis = 1f;
+            example.bottomClip = .2f;
+            example.topClip = .8f;
+            example.sweepAngle = -240f;
+            example.smooth = true;
+            example.triangulateSides = true;
+        });
+
+        Row(4, "CAPSULE");
+        Sample<MaquetteCapsuleExample>(4, 0, "Capsule", example =>
+        {
+            example.sides = 24;
+            example.capSegments = 12;
+            example.cylinderHeight = 1.2f;
+            example.radius = .6f;
+            example.smooth = true;
+        });
+        Sample<MaquetteCapsuleExample>(4, 1, "Short capsule", example =>
+        {
+            example.sides = 24;
+            example.capSegments = 12;
+            example.cylinderHeight = .25f;
+            example.radius = .8f;
+            example.smooth = true;
+        });
+        Sample<MaquetteCapsuleExample>(4, 2, "Faceted capsule", example =>
+        {
+            example.sides = 6;
+            example.capSegments = 3;
+            example.cylinderHeight = 1.2f;
+            example.radius = .6f;
+            example.smooth = false;
+        });
+        Sample<MaquetteCapsuleExample>(4, 3, "Partial capsule", example =>
+        {
+            example.sides = 24;
+            example.capSegments = 12;
+            example.cylinderHeight = 1.2f;
+            example.radius = .6f;
+            example.sweepAngle = 240f;
+            example.smooth = true;
+        });
+        Sample<MaquetteCapsuleExample>(4, 4, "Reverse sweep capsule", example =>
+        {
+            example.sides = 24;
+            example.capSegments = 12;
+            example.cylinderHeight = 1.2f;
+            example.radius = .6f;
+            example.sweepAngle = -240f;
+            example.smooth = true;
+        });
+        Sample<MaquetteCapsuleExample>(4, 5, "Elliptical capsule", example =>
+        {
+            example.sides = 24;
+            example.capSegments = 12;
+            example.cylinderHeight = 1.2f;
+            example.radius = .6f;
+            example.smooth = true;
+            example.scale = new Vector3(1.5f, .8f, .75f);
+        });
+
+        Text("Instructions", "Select this gallery root and enable Show Topology to inspect faces.\nSelect an example to edit its parameters during Play mode.",
             new Vector3(10f, .02f, -3.1f), 40, .05f, new Color(.7f, .76f, .84f), font);
         FrameCamera(camera);
         Debug.Log($"{LogPrefix} Generated {sampleCount}/30 examples across five model families.", this);
-    }
-
-    private PolyMesh Plate(PolyMesh profile, float thickness)
-    {
-        var solid = profile.Shell(thickness).Rotate(Vector3.right, 90f);
-        if (smoothSurfaces) solid.AutoSmooth(89f);
-        return solid;
     }
 
     private T Own<T>(T asset) where T : UnityEngine.Object
@@ -285,11 +461,11 @@ public class MaquetteProceduralExamples : MonoBehaviour
         Gizmos.color = new Color(.9f, .95f, 1f, .85f);
         foreach (var model in models)
         {
-            if (model.transform == null) continue;
-            foreach (var face in model.poly.Faces)
+            if (model == null || model.Poly == null) continue;
+            foreach (var face in model.Poly.Faces)
             foreach (var edge in face.GetHalfedges())
-                Gizmos.DrawLine(model.transform.TransformPoint(edge.Vertex.Position),
-                    model.transform.TransformPoint(edge.Prev.Vertex.Position));
+                Gizmos.DrawLine(model.ModelTransform.TransformPoint(edge.Vertex.Position),
+                    model.ModelTransform.TransformPoint(edge.Prev.Vertex.Position));
         }
     }
 
