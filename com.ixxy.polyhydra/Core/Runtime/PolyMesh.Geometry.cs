@@ -124,13 +124,13 @@ namespace Polyhydra.Core
             switch (axis)
             {
                 case 0:
-                    poly.Transform(new Vector3(o.OriginalParamA, 1, 1));
+                    poly.Transform(new Vector3(o.OriginalParamA, 0f, 0f));
                     break;
                 case 1:
-                    poly.Transform(new Vector3(1, o.OriginalParamA, 1));
+                    poly.Transform(new Vector3(0f, o.OriginalParamA, 0f));
                     break;
                 case 2:
-                    poly.Transform(new Vector3(1, 1, o.OriginalParamA));
+                    poly.Transform(new Vector3(0f, 0f, o.OriginalParamA));
                     break;
             }
 

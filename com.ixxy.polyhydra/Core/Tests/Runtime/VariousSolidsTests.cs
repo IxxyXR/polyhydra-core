@@ -217,5 +217,23 @@ namespace Polyhydra.Core.Tests
             Assert.That(polygonPipe.vef, Is.EqualTo((12 * 8, 12 * 8 * 2, 12 * 8)));
             Assert.That(starPipe.Faces.Count, Is.EqualTo(10 * 6));
         }
+
+        [TestCase(0)]
+        [TestCase(1)]
+        [TestCase(2)]
+        public void AxisTranslationLeavesOtherCoordinatesUnchanged(int axis)
+        {
+            var source = Shapes.Rectangle(4f, 2f);
+            var before = source.Vertices.Select(vertex => vertex.Position).ToList();
+            var translated = source.Translate(new OpParams(.25f), axis);
+
+            for (var index = 0; index < before.Count; index++)
+            {
+                var expected = before[index];
+                expected[axis] += .25f;
+                Assert.That((translated.Vertices[index].Position - expected).sqrMagnitude,
+                    Is.LessThan(1e-12f));
+            }
+        }
     }
 }
