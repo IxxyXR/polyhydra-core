@@ -1757,6 +1757,77 @@ namespace Polyhydra.Core
             return poly;
         }
 
+        /// <summary>
+        /// Duplicates a single face, transforms it about its centroid, and joins
+        /// corresponding vertices with quads, or two triangles per side when requested.
+        /// Triangles use the diagonal from each original vertex to the next transformed vertex.
+        /// Translation is in mesh coordinates;
+        /// scale is applied along mesh axes, followed by rotation and translation.
+        /// A duplicate collapsed to a point produces triangular sides and no end cap.
+        /// Smooth sides blend normals between side faces while keeping end caps sharp.
+        /// The input mesh is unchanged. Arbitrary transforms can produce self-intersections.
+        /// </summary>
+        public PolyMesh Loft(Vector3 translation, Quaternion rotation, Vector3 scale, bool capEnds = true,
+            bool smoothSides = false, bool triangulateSides = false)
+        {
+            if (Faces.Count != 1)
+                throw new InvalidOperationException("Transform loft requires exactly one input face.");
+
+            var face = Faces[0];
+            var profile = face.GetVertices().Select(vertex => vertex.Position).ToList();
+            var pivot = face.Centroid;
+            var transformed = profile.Select(point =>
+                pivot + translation + rotation * Vector3.Scale(point - pivot, scale)).ToList();
+            var apex = transformed.All(point => point.Equals(transformed[0]));
+            var count = profile.Count;
+            var vertices = new List<Vector3>(profile);
+            vertices.AddRange(apex ? new List<Vector3> { transformed[0] } : transformed);
+            var faces = new List<List<int>>();
+            var faceRoles = new List<Roles>();
+            var tags = new List<HashSet<string>>();
+            var reverse = Vector3.Dot(translation, face.Normal) < 0f;
+
+            void AddFace(List<int> indices, Roles role)
+            {
+                if (reverse) indices.Reverse();
+                faces.Add(indices);
+                faceRoles.Add(role);
+                tags.Add(new HashSet<string>(FaceTags[0]));
+            }
+
+            for (var index = 0; index < count; index++)
+            {
+                var next = (index + 1) % count;
+                var role = index % 2 == 0 ? Roles.New : Roles.NewAlt;
+                if (apex)
+                    AddFace(new List<int> { index, next, count }, role);
+                else if (triangulateSides)
+                {
+                    AddFace(new List<int> { index, next, count + next }, role);
+                    AddFace(new List<int> { index, count + next, count + index }, role);
+                }
+                else
+                    AddFace(new List<int> { index, next, count + next, count + index }, role);
+            }
+            var sideFaceCount = faces.Count;
+            if (capEnds)
+            {
+                AddFace(Enumerable.Range(0, count).Reverse().ToList(), Roles.Existing);
+                if (!apex) AddFace(Enumerable.Range(count, count).ToList(), Roles.Existing);
+            }
+            var vertexRoles = Enumerable.Repeat(Roles.Existing, count)
+                .Concat(Enumerable.Repeat(Roles.New, vertices.Count - count)).ToList();
+            var result = new PolyMesh(vertices, faces, faceRoles, vertexRoles, tags);
+            if (smoothSides)
+            {
+                var sideFaces = new HashSet<Face>(result.Faces.Take(sideFaceCount));
+                foreach (var edge in result.Halfedges)
+                    edge.IsSmooth = edge.Pair != null && sideFaces.Contains(edge.Face) &&
+                                    sideFaces.Contains(edge.Pair.Face);
+            }
+            return result;
+        }
+
         public PolyMesh Loft(OpParams o)
         {
             var newFaceTags = new List<HashSet<string>>();

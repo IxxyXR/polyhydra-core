@@ -163,5 +163,47 @@ namespace Polyhydra.Core.Tests
             }
             Assert.That(area, Is.EqualTo(10f).Within(.0001f));
         }
+
+        [TestCase(true, false, 1f, false)]
+        [TestCase(true, false, -1f, false)]
+        [TestCase(false, false, 1f, false)]
+        [TestCase(true, true, 1f, false)]
+        [TestCase(true, false, 1f, true)]
+        [TestCase(true, false, -1f, true)]
+        [TestCase(false, false, 1f, true)]
+        [TestCase(true, true, 1f, true)]
+        public void TransformLoftSmoothsSidesButKeepsCapsSharp(bool capEnds, bool apex, float height,
+            bool triangulateSides)
+        {
+            var profile = Shapes.Polygon(4);
+            var scale = apex ? Vector3.zero : Vector3.one;
+            var faceted = profile.Loft(Vector3.up * height, Quaternion.identity, scale, capEnds,
+                triangulateSides: triangulateSides);
+            var smooth = profile.Loft(Vector3.up * height, Quaternion.identity, scale, capEnds,
+                smoothSides: true, triangulateSides: triangulateSides);
+
+            Assert.That(faceted.Halfedges.All(edge => !edge.IsEdgeSmooth), Is.True);
+            Assert.That(profile.Halfedges.All(edge => !edge.IsSmooth), Is.True);
+            var split = triangulateSides && !apex;
+            Assert.That(smooth.Halfedges.Count(edge => edge.IsEdgeSmooth), Is.EqualTo(split ? 16 : 8));
+            var caps = new HashSet<Face>(smooth.Faces.Skip(split ? 8 : 4));
+            Assert.That(caps.SelectMany(face => face.GetHalfedges())
+                .All(edge => !edge.IsEdgeSmooth), Is.True);
+
+            // Equal-angle side and cap edges cannot be separated by AutoSmooth.
+            if (capEnds && !apex && !triangulateSides)
+                Assert.That(smooth.Halfedges.All(edge =>
+                    Mathf.Abs(edge.DihedralAngle - 90f) < .001f), Is.True);
+            var data = smooth.BuildMeshData();
+            for (var index = 0; index < data.meshNormals.Count; index++)
+            {
+                var face = smooth.Faces[Mathf.RoundToInt(data.miscUVs2[index].w)];
+                // Fan triangulation also emits face centroids, which retain the face normal.
+                if (!face.GetVertices().Any(vertex => vertex.Position == data.meshVertices[index])) continue;
+                var angle = Vector3.Angle(data.meshNormals[index], face.Normal);
+                if (caps.Contains(face)) Assert.That(angle, Is.LessThan(.001f));
+                else Assert.That(angle, Is.GreaterThan(1f));
+            }
+        }
     }
 }

@@ -297,5 +297,65 @@ namespace Polyhydra.Core.Tests
                     Is.LessThan(1e-12f));
             }
         }
+        [TestCase(false)]
+        [TestCase(true)]
+        public void TransformLoftUsesTheProfileCentroidAndPreservesItsInput(bool triangulateSides)
+        {
+            var profile = Shapes.Rectangle(4f, 2f);
+            profile.Transform(new Vector3(3f, 2f, -4f));
+            var before = profile.Vertices.Select(vertex => vertex.Position).ToList();
+            var pivot = new Vector3(3f, 2f, -4f);
+            var translation = new Vector3(.3f, 1f, -.2f);
+            var rotation = Quaternion.Euler(15f, 20f, 10f);
+            var scale = new Vector3(.5f, 1f, 1.5f);
+            var solid = profile.Loft(translation, rotation, scale, triangulateSides: triangulateSides);
+
+            AssertClosed(solid);
+            Assert.That(solid.Vertices.Count, Is.EqualTo(8));
+            var sideFaceCount = triangulateSides ? 8 : 4;
+            Assert.That(solid.Faces.Count, Is.EqualTo(sideFaceCount + 2));
+            Assert.That(solid.Faces.Take(sideFaceCount).All(face =>
+                face.Sides == (triangulateSides ? 3 : 4)), Is.True);
+            Assert.That(solid.Faces.Skip(sideFaceCount).All(face => face.Sides == 4), Is.True);
+            for (var index = 0; index < before.Count; index++)
+            {
+                Assert.That(profile.Vertices[index].Position, Is.EqualTo(before[index]));
+                var expected = pivot + translation + rotation * Vector3.Scale(before[index] - pivot, scale);
+                Assert.That(solid.Vertices.Any(vertex => (vertex.Position - expected).sqrMagnitude < 1e-10f), Is.True);
+            }
+        }
+
+        [TestCase(1f, false)]
+        [TestCase(-1f, false)]
+        [TestCase(1f, true)]
+        [TestCase(-1f, true)]
+        public void TransformLoftCapsFaceOutwardInEitherDirection(float height, bool triangulateSides)
+        {
+            var solid = Shapes.Polygon(8).Loft(Vector3.up * height, Quaternion.identity, Vector3.one,
+                triangulateSides: triangulateSides);
+            AssertClosed(solid);
+            foreach (var face in solid.Faces)
+                Assert.That(Vector3.Dot(face.Normal, face.Centroid - Vector3.up * height * .5f),
+                    Is.GreaterThan(0f));
+        }
+
+        [TestCase(false)]
+        [TestCase(true)]
+        public void TransformLoftSupportsOpenEndsAndCollapsedApex(bool triangulateSides)
+        {
+            var profile = Shapes.Polygon(8);
+            var open = profile.Loft(Vector3.up, Quaternion.identity, Vector3.one, capEnds: false,
+                triangulateSides: triangulateSides);
+            Assert.That(open.Faces.Count, Is.EqualTo(triangulateSides ? 16 : 8));
+            Assert.That(open.Faces.All(face => face.Sides == (triangulateSides ? 3 : 4)), Is.True);
+            Assert.That(open.Halfedges.Count(edge => edge.Pair == null), Is.EqualTo(16));
+
+            var cone = profile.Loft(Vector3.up, Quaternion.identity, Vector3.zero,
+                triangulateSides: triangulateSides);
+            AssertClosed(cone);
+            Assert.That(cone.Vertices.Count, Is.EqualTo(9));
+            Assert.That(cone.Faces.Count(face => face.Sides == 3), Is.EqualTo(8));
+            Assert.That(cone.Faces.Count(face => face.Sides == 8), Is.EqualTo(1));
+        }
     }
 }
