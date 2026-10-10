@@ -217,7 +217,69 @@ namespace Polyhydra.Core.Tests
             Assert.That(polygonPipe.vef, Is.EqualTo((12 * 8, 12 * 8 * 2, 12 * 8)));
             Assert.That(starPipe.Faces.Count, Is.EqualTo(10 * 6));
         }
+        [Test]
+        public void RectangularFrameHasAHoleAndUniformBorder()
+        {
+            var frame = Shapes.Frame(4f, 2f, .2f);
+            var area = frame.Faces.Sum(face =>
+            {
+                var points = face.GetVertices().Select(vertex => vertex.Position).ToList();
+                var faceArea = 0f;
+                for (var index = 1; index < points.Count - 1; index++)
+                    faceArea += Vector3.Cross(points[index] - points[0], points[index + 1] - points[0]).magnitude * .5f;
+                return faceArea;
+            });
 
+            Assert.That(area, Is.EqualTo(8f - 3.6f * 1.6f).Within(.0001f));
+            Assert.That(frame.Vertices.Count, Is.EqualTo(8));
+            Assert.That(frame.Faces.Count, Is.EqualTo(4));
+            Assert.That(frame.Faces.All(face => face.Sides == 4), Is.True);
+            Assert.That(frame.Kis(new OpParams(.1f)).Faces.Count, Is.EqualTo(16));
+            Assert.That(frame.Halfedges.Count(edge => edge.Pair == null), Is.EqualTo(8));
+            Assert.That(frame.Vertices.Count - frame.EdgeCount + frame.Faces.Count, Is.Zero);
+            Assert.That(frame.Faces.All(face => face.Normal.y > .99f), Is.True);
+            AssertClosed(frame.Shell(new OpParams(.1f)));
+        }
+
+        [TestCase(.4f, 4)]
+        [TestCase(.1f, 4)]
+        [TestCase(1f, 4)]
+        [TestCase(.4f, 0)]
+        public void RoundedFramesShellIntoClosedRims(float radius, int segments)
+        {
+            var frame = Shapes.Frame(4f, 2f, .2f, radius, segments);
+            var rim = frame.Shell(new OpParams(.1f));
+
+            AssertClosed(rim);
+            Assert.That(rim.Vertices.Count - rim.EdgeCount + rim.Faces.Count, Is.Zero);
+            Assert.That(frame.GetBounds().size.x, Is.EqualTo(4f).Within(.0001f));
+            Assert.That(frame.GetBounds().size.z, Is.EqualTo(2f).Within(.0001f));
+        }
+
+        [Test]
+        public void RoundedFrameUsesQuadsAndOnlyCollapsedCornersUseTriangles()
+        {
+            var rounded = Shapes.Frame(4f, 2f, .2f, .4f, 4);
+            Assert.That(rounded.Faces.Count, Is.EqualTo(20));
+            Assert.That(rounded.Faces.All(face => face.Sides == 4), Is.True);
+
+            var collapsed = Shapes.Frame(4f, 2f, .2f, .1f, 4);
+            Assert.That(collapsed.Faces.Count(face => face.Sides == 4), Is.EqualTo(4));
+            Assert.That(collapsed.Faces.Count(face => face.Sides == 3), Is.EqualTo(16));
+            Assert.That(collapsed.Faces.All(face => face.Normal.y > .99f), Is.True);
+        }
+
+        [Test]
+        public void FrameBuildUsesHeightBorderRadiusAndSegments()
+        {
+            var frame = Shapes.Build(ShapeTypes.Frame, .75f, .1f, .2f, d: 5f);
+
+            Assert.That(frame.GetBounds().size.x, Is.EqualTo(1f).Within(.0001f));
+            Assert.That(frame.GetBounds().size.z, Is.EqualTo(.75f).Within(.0001f));
+            Assert.That(frame.Halfedges.Count(edge => edge.Pair == null), Is.EqualTo(48));
+            Assert.That(Shapes.Frame(borderWidth: 0f).Faces.Count, Is.Zero);
+            Assert.That(Shapes.Frame(borderWidth: .5f).Faces.Count, Is.EqualTo(1));
+        }
         [TestCase(0)]
         [TestCase(1)]
         [TestCase(2)]

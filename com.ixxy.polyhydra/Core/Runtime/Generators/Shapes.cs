@@ -18,6 +18,8 @@ namespace Polyhydra.Core
         Ring,
         Triangle,
         Sector,
+        Rectangle,
+        Frame,
     }
 
     public class Shapes
@@ -28,7 +30,7 @@ namespace Polyhydra.Core
             Convex,
             Grid,
         }
-        public static PolyMesh Build(ShapeTypes type, float a=0.5f, float b=0.5f, float c=0.5f, Method method = Method.Concave)
+        public static PolyMesh Build(ShapeTypes type, float a=0.5f, float b=0.5f, float c=0.5f, Method method = Method.Concave, float d = 4f)
         {
             return type switch
             {
@@ -43,8 +45,139 @@ namespace Polyhydra.Core
                 ShapeTypes.Ring => Arc(Mathf.FloorToInt(a), 1, b, 360, true),
                 ShapeTypes.Triangle => Triangle(Mathf.FloorToInt(a), b, c),
                 ShapeTypes.Sector => Sector(Mathf.FloorToInt(a), c),
+                // Unit width: A = height, B = corner radius, C = corner segments.
+                ShapeTypes.Rectangle => Rectangle(1f, a, b, Mathf.FloorToInt(c)),
+                // Unit width: A = height, B = border width, C = outer radius, D = corner segments.
+                ShapeTypes.Frame => Frame(1f, a, b, c, Mathf.FloorToInt(d)),
                 _ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
             };
+        }
+
+        /// <summary>
+        /// Creates a centered rectangle in the XZ plane, facing up.
+        /// Radius is measured in shape units and clamped to half the shorter side.
+        /// A zero radius or zero corner segments produces square corners.
+        /// </summary>
+        public static PolyMesh Rectangle(float width = 1f, float height = 1f,
+            float radius = 0f, int cornerSegments = 4)
+        {
+            width = Mathf.Max(.0001f, width);
+            height = Mathf.Max(.0001f, height);
+            var vertices = RectangleContour(width, height, radius, cornerSegments);
+            return new PolyMesh(vertices, new List<List<int>>
+            {
+                Enumerable.Range(0, vertices.Count).ToList()
+            });
+        }
+
+        // Retaining corner samples lets Frame pair corresponding points even when
+        // an inner corner collapses to a single vertex. Rectangle removes duplicates.
+        private static List<Vector3> RectangleContour(float width, float height,
+            float radius, int cornerSegments, bool retainCornerSamples = false)
+        {
+            var halfWidth = width * .5f;
+            var halfHeight = height * .5f;
+            radius = Mathf.Clamp(radius, 0f, Mathf.Min(halfWidth, halfHeight));
+            if (cornerSegments <= 0 || (radius == 0f && !retainCornerSamples))
+                return new List<Vector3>
+                {
+                    new Vector3(-halfWidth, 0f, -halfHeight),
+                    new Vector3(-halfWidth, 0f, halfHeight),
+                    new Vector3(halfWidth, 0f, halfHeight),
+                    new Vector3(halfWidth, 0f, -halfHeight)
+                };
+
+            cornerSegments = Mathf.Clamp(cornerSegments, 1, 128);
+            var centers = new[]
+            {
+                new Vector2(halfWidth - radius, halfHeight - radius),
+                new Vector2(-halfWidth + radius, halfHeight - radius),
+                new Vector2(-halfWidth + radius, -halfHeight + radius),
+                new Vector2(halfWidth - radius, -halfHeight + radius)
+            };
+            var vertices = new List<Vector3>();
+            var tolerance = Mathf.Min(width, height) * .000001f;
+            var toleranceSquared = tolerance * tolerance;
+            for (var corner = 0; corner < centers.Length; corner++)
+            for (var segment = 0; segment <= cornerSegments; segment++)
+            {
+                var angle = (corner + (float)segment / cornerSegments) * Mathf.PI * .5f;
+                var point = new Vector3(
+                    centers[corner].x + radius * Mathf.Cos(angle), 0f,
+                    centers[corner].y + radius * Mathf.Sin(angle));
+                if (retainCornerSamples || vertices.Count == 0 ||
+                    (vertices[vertices.Count - 1] - point).sqrMagnitude > toleranceSquared)
+                    vertices.Add(point);
+            }
+            if (!retainCornerSamples &&
+                (vertices[0] - vertices[vertices.Count - 1]).sqrMagnitude <= toleranceSquared)
+                vertices.RemoveAt(vertices.Count - 1);
+            vertices.Reverse();
+            return vertices;
+        }
+
+        /// <summary>
+        /// Creates a centered rectangular frame in the XZ plane, facing up.
+        /// Border width is measured inward from the outer boundary. Radius is the
+        /// outer corner radius; the inner radius is reduced by the border width.
+        /// Corresponding contour points form quads, with triangles only where a
+        /// corner collapses. Use extrusion or Shell to give the frame thickness.
+        /// </summary>
+        public static PolyMesh Frame(float width = 1f, float height = 1f,
+            float borderWidth = .1f, float radius = 0f, int cornerSegments = 4)
+        {
+            width = Mathf.Max(.0001f, width);
+            height = Mathf.Max(.0001f, height);
+            radius = Mathf.Clamp(radius, 0f, Mathf.Min(width, height) * .5f);
+            if (borderWidth <= 0f) return new PolyMesh();
+            if (borderWidth >= Mathf.Min(width, height) * .5f)
+                return Rectangle(width, height, radius, cornerSegments);
+            if (radius == 0f) cornerSegments = 0;
+            var innerWidth = Mathf.Max(.0001f, width - borderWidth * 2f);
+            var innerHeight = Mathf.Max(.0001f, height - borderWidth * 2f);
+            var outer = RectangleContour(width, height, radius, cornerSegments, true);
+            var inner = RectangleContour(innerWidth, innerHeight,
+                Mathf.Max(0f, radius - borderWidth), cornerSegments, true);
+            var vertices = new List<Vector3>();
+            var faces = new List<List<int>>();
+
+            List<int> AddLoop(List<Vector3> points, float tolerance)
+            {
+                var indices = new List<int>();
+                var toleranceSquared = tolerance * tolerance;
+                foreach (var point in points)
+                {
+                    if (indices.Count > 0 &&
+                        (vertices[indices[indices.Count - 1]] - point).sqrMagnitude <= toleranceSquared)
+                        indices.Add(indices[indices.Count - 1]);
+                    else if (indices.Count > 0 &&
+                        (vertices[indices[0]] - point).sqrMagnitude <= toleranceSquared)
+                        indices.Add(indices[0]);
+                    else
+                    {
+                        indices.Add(vertices.Count);
+                        vertices.Add(point);
+                    }
+                }
+                return indices;
+            }
+
+            var outerIndices = AddLoop(outer, Mathf.Min(width, height) * .000001f);
+            var innerIndices = AddLoop(inner, Mathf.Min(innerWidth, innerHeight) * .000001f);
+            for (var index = 0; index < outerIndices.Count; index++)
+            {
+                var next = (index + 1) % outerIndices.Count;
+                // Both contours face up; follow the outer edge and return along the inner edge.
+                var face = new List<int>
+                {
+                    outerIndices[index], outerIndices[next], innerIndices[next], innerIndices[index]
+                };
+                for (var corner = face.Count - 1; corner > 0; corner--)
+                    if (face[corner] == face[corner - 1]) face.RemoveAt(corner);
+                if (face.Count > 1 && face[0] == face[face.Count - 1]) face.RemoveAt(face.Count - 1);
+                if (face.Count >= 3) faces.Add(face);
+            }
+            return new PolyMesh(vertices, faces);
         }
 
         public static PolyMesh Triangle(int frequency = 1, float leftAngleRadians = .7853982f,
