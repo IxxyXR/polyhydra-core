@@ -149,38 +149,92 @@ namespace Polyhydra.Core
                 throw new System.ArgumentOutOfRangeException(nameof(topScale));
             sweepAngle = Mathf.Clamp(sweepAngle, -360f, 360f);
             if (sweepAngle == 0f || (radiusBottom == 0f && radiusTop == 0f)) return new PolyMesh();
+            var offset = topOffset ?? Vector2.zero;
+            return SweepSections(new[]
+            {
+                new SweepSection(radiusBottom, Vector3.down * height * .5f, lowerScale, Quaternion.identity),
+                new SweepSection(radiusTop, new Vector3(offset.x, height * .5f, offset.y), upperScale,
+                    topRotation ?? Quaternion.identity)
+            }, sides, sweepAngle, smoothSides, triangulateSides);
+        }
+
+        /// <summary>
+        /// Creates a conic solid about Y from a sampled circle, ellipse, hyperbola or parabola.
+        /// Positive sweep runs from +X toward +Z, matching Cylinder. Smooth blends only the
+        /// curved body; end caps and sweep cuts remain sharp. Wall quads are the default.
+        /// Signed parabola radii are retained and can produce self-intersections.
+        /// Zero sweep uses the same explicit policy as Capsule and Revolve.
+        /// </summary>
+        public static PolyMesh Conic(Shapes.ConicType type, int sides = 24, int verticalSegments = 16,
+            float radius = 1f, float majorAxis = 1f, float minorAxis = 1f, float centerOffset = .2f,
+            float bottomClip = 0f, float topClip = 1f, float sweepAngle = 360f,
+            bool smooth = false, bool triangulateSides = false,
+            PolyMesh.ZeroSweepBehavior zeroSweepBehavior = PolyMesh.ZeroSweepBehavior.ThinWedge)
+        {
+            var profile = Shapes.ConicProfilePoints(type, verticalSegments, radius, majorAxis, minorAxis,
+                centerOffset, bottomClip, topClip);
+            sweepAngle = Mathf.Clamp(sweepAngle, -360f, 360f);
+            if (sweepAngle == 0f)
+            {
+                if (zeroSweepBehavior != PolyMesh.ZeroSweepBehavior.ThinWedge)
+                    return Shapes.ProfilePolygon(profile).Revolve(new OpParams(0f, sides), Axis.Y,
+                        zeroSweepBehavior);
+                sweepAngle = .036f;
+            }
+            var sections = profile.Select(point => new SweepSection(point.x,
+                new Vector3(0f, point.y, 0f), Vector2.one, Quaternion.identity)).ToList();
+            return SweepSections(sections, sides, sweepAngle, smooth, triangulateSides);
+        }
+
+        private readonly struct SweepSection
+        {
+            public readonly float Radius;
+            public readonly Vector3 Centre;
+            public readonly Vector2 Scale;
+            public readonly Quaternion Rotation;
+
+            public SweepSection(float radius, Vector3 centre, Vector2 scale, Quaternion rotation)
+            {
+                Radius = radius;
+                Centre = centre;
+                Scale = scale;
+                Rotation = rotation;
+            }
+        }
+
+        // The supplied sections run from bottom to top. Construction owns the distinction
+        // between the body, end caps and sweep cuts; no intent is stored on input boundaries.
+        private static PolyMesh SweepSections(IReadOnlyList<SweepSection> sections, int sides,
+            float sweepAngle, bool smoothBody, bool triangulateSides)
+        {
             sides = Mathf.Max(3, sides);
             var closed = Mathf.Abs(sweepAngle) == 360f;
             var ringCount = closed ? sides : sides + 1;
-            var offset = topOffset ?? Vector2.zero;
-            var rotation = topRotation ?? Quaternion.identity;
-            var lowerCentre = Vector3.down * height * .5f;
-            var upperCentre = new Vector3(offset.x, height * .5f, offset.y);
             var vertices = new List<Vector3>();
-
-            List<int> Ring(float radius, Vector2 scale, Vector3 centre, Quaternion orientation)
+            var rings = new List<List<int>>();
+            foreach (var section in sections)
             {
-                var indices = new List<int>();
-                if (radius == 0f)
+                var ring = new List<int>();
+                if (section.Radius == 0f)
                 {
                     var apex = vertices.Count;
-                    vertices.Add(centre);
-                    indices.AddRange(Enumerable.Repeat(apex, ringCount));
-                    return indices;
+                    vertices.Add(section.Centre);
+                    ring.AddRange(Enumerable.Repeat(apex, ringCount));
                 }
-                for (var index = 0; index < ringCount; index++)
+                else
                 {
-                    var angle = sweepAngle * Mathf.Deg2Rad * index / sides;
-                    var point = new Vector3(Mathf.Cos(angle) * radius * scale.x, 0f,
-                        Mathf.Sin(angle) * radius * scale.y);
-                    indices.Add(vertices.Count);
-                    vertices.Add(centre + orientation * point);
+                    for (var index = 0; index < ringCount; index++)
+                    {
+                        var angle = sweepAngle * Mathf.Deg2Rad * index / sides;
+                        var point = new Vector3(Mathf.Cos(angle) * section.Radius * section.Scale.x, 0f,
+                            Mathf.Sin(angle) * section.Radius * section.Scale.y);
+                        ring.Add(vertices.Count);
+                        vertices.Add(section.Centre + section.Rotation * point);
+                    }
                 }
-                return indices;
+                rings.Add(ring);
             }
 
-            var lower = Ring(radiusBottom, lowerScale, lowerCentre, Quaternion.identity);
-            var upper = Ring(radiusTop, upperScale, upperCentre, rotation);
             var faces = new List<List<int>>();
             var roles = new List<Roles>();
             void AddFace(IEnumerable<int> points, Roles role)
@@ -196,47 +250,55 @@ namespace Polyhydra.Core
                 roles.Add(role);
             }
 
-            for (var index = 0; index < sides; index++)
+            for (var row = 0; row < rings.Count - 1; row++)
             {
-                var next = (index + 1) % ringCount;
-                var role = index % 2 == 0 ? Roles.New : Roles.NewAlt;
-                if (triangulateSides && radiusBottom > 0f && radiusTop > 0f)
+                var lower = rings[row];
+                var upper = rings[row + 1];
+                for (var index = 0; index < sides; index++)
                 {
-                    AddFace(new[] { lower[index], upper[index], upper[next] }, role);
-                    AddFace(new[] { lower[index], upper[next], lower[next] }, role);
+                    var next = (index + 1) % ringCount;
+                    var role = (row + index) % 2 == 0 ? Roles.New : Roles.NewAlt;
+                    if (triangulateSides && sections[row].Radius != 0f && sections[row + 1].Radius != 0f)
+                    {
+                        AddFace(new[] { lower[index], upper[index], upper[next] }, role);
+                        AddFace(new[] { lower[index], upper[next], lower[next] }, role);
+                    }
+                    else
+                        AddFace(new[] { lower[index], upper[index], upper[next], lower[next] }, role);
                 }
-                else
-                    AddFace(new[] { lower[index], upper[index], upper[next], lower[next] }, role);
             }
-            var wallFaceCount = faces.Count;
+            var bodyFaceCount = faces.Count;
+            var bottom = rings[0];
+            var top = rings[rings.Count - 1];
             if (closed)
             {
-                AddFace(lower, Roles.Existing);
-                AddFace(upper.AsEnumerable().Reverse(), Roles.Existing);
+                AddFace(bottom, Roles.Existing);
+                AddFace(top.AsEnumerable().Reverse(), Roles.Existing);
             }
             else
             {
-                int Centre(float radius, List<int> ring, Vector3 point)
+                int Centre(int row)
                 {
-                    if (radius == 0f) return ring[0];
+                    if (sections[row].Radius == 0f) return rings[row][0];
                     var index = vertices.Count;
-                    vertices.Add(point);
+                    vertices.Add(sections[row].Centre);
                     return index;
                 }
-                var lowerCentreIndex = Centre(radiusBottom, lower, lowerCentre);
-                var upperCentreIndex = Centre(radiusTop, upper, upperCentre);
-                AddFace(lower.Concat(new[] { lowerCentreIndex }), Roles.Existing);
-                AddFace(upper.Concat(new[] { upperCentreIndex }).Reverse(), Roles.Existing);
-                AddFace(new[] { lowerCentreIndex, upperCentreIndex, upper[0], lower[0] }, Roles.Existing);
-                AddFace(new[] { lower[ringCount - 1], upper[ringCount - 1], upperCentreIndex,
-                    lowerCentreIndex }, Roles.Existing);
+                var bottomCentre = Centre(0);
+                var topCentre = Centre(rings.Count - 1);
+                AddFace(bottom.Concat(new[] { bottomCentre }), Roles.Existing);
+                AddFace(top.Concat(new[] { topCentre }).Reverse(), Roles.Existing);
+                AddFace(new[] { bottomCentre, topCentre }.Concat(rings.AsEnumerable().Reverse()
+                    .Select(ring => ring[0])), Roles.Existing);
+                AddFace(rings.Select(ring => ring[ringCount - 1])
+                    .Concat(new[] { topCentre, bottomCentre }), Roles.Existing);
             }
             var mesh = new PolyMesh(vertices, faces, roles, Enumerable.Repeat(Roles.Existing, vertices.Count));
-            if (smoothSides)
+            if (smoothBody)
             {
-                var walls = new HashSet<Face>(mesh.Faces.Take(wallFaceCount));
+                var body = new HashSet<Face>(mesh.Faces.Take(bodyFaceCount));
                 foreach (var edge in mesh.Halfedges)
-                    edge.IsSmooth = edge.Pair != null && walls.Contains(edge.Face) && walls.Contains(edge.Pair.Face);
+                    edge.IsSmooth = edge.Pair != null && body.Contains(edge.Face) && body.Contains(edge.Pair.Face);
             }
             return mesh;
         }

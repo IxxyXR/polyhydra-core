@@ -199,6 +199,13 @@ namespace Polyhydra.Core
             float radius = 1f, float majorAxis = 1f, float minorAxis = 1f,
             float centerOffset = .2f, float bottomClip = 0f, float topClip = 1f)
         {
+            return ProfilePolygon(ConicProfilePoints(type, segments, radius, majorAxis, minorAxis,
+                centerOffset, bottomClip, topClip));
+        }
+
+        internal static List<Vector2> ConicProfilePoints(ConicType type, int segments, float radius,
+            float majorAxis, float minorAxis, float centerOffset, float bottomClip, float topClip)
+        {
             segments = Mathf.Max(2, segments);
             if (radius <= 0f) throw new ArgumentOutOfRangeException(nameof(radius));
             if (type != ConicType.Circle && majorAxis <= 0f)
@@ -229,7 +236,7 @@ namespace Polyhydra.Core
                 if (type == ConicType.Ellipse) height *= minorAxis;
                 points.Add(new Vector2(radial * radius, height * radius));
             }
-            return ProfilePolygon(points);
+            return points;
         }
 
         /// <summary>

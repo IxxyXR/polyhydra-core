@@ -612,6 +612,53 @@ namespace Polyhydra.Core.Tests
             Assert.That(VariousSolids.Cylinder(3).Faces.Count, Is.EqualTo(5));
         }
 
+        [TestCase(Shapes.ConicType.Circle, 360f, 0f, 1f)]
+        [TestCase(Shapes.ConicType.Circle, -300f, 0f, 1f)]
+        [TestCase(Shapes.ConicType.Ellipse, 300f, .2f, .8f)]
+        [TestCase(Shapes.ConicType.Hyperbola, -360f, 0f, 1f)]
+        [TestCase(Shapes.ConicType.Parabola, 300f, 0f, 1f)]
+        public void ConicSolidMatchesProfileRevolutionAndIsClosed(Shapes.ConicType type,
+            float sweep, float bottom, float top)
+        {
+            var solid = VariousSolids.Conic(type, 12, 8, bottomClip: bottom, topClip: top,
+                sweepAngle: sweep);
+            var revolved = Shapes.ConicProfile(type, 8, bottomClip: bottom, topClip: top)
+                .Revolve(new OpParams(-sweep / 360f, 12), Axis.Y);
+
+            AssertClosed(solid);
+            // End-cap tessellation may differ; sampled surface positions must agree.
+            foreach (var vertex in solid.Vertices)
+                Assert.That(revolved.Vertices.Any(other =>
+                    Vector3.Distance(vertex.Position, other.Position) < .00001f), Is.True);
+            // Full caps use polygons rather than a fan with an extra axis vertex.
+            foreach (var vertex in revolved.Vertices.Where(vertex => Mathf.Abs(sweep) < 360f ||
+                         new Vector2(vertex.Position.x, vertex.Position.z).sqrMagnitude > .0000000001f))
+                Assert.That(solid.Vertices.Any(other =>
+                    Vector3.Distance(vertex.Position, other.Position) < .00001f), Is.True);
+        }
+
+        [TestCase(false)]
+        [TestCase(true)]
+        public void ConicSmoothsTheBodyWithoutSmoothingItsShallowerCuts(bool triangulate)
+        {
+            var solid = VariousSolids.Conic(Shapes.ConicType.Circle, 3, 2,
+                sweepAngle: 300f, smooth: true, triangulateSides: triangulate);
+            AssertClosed(solid);
+            var body = new HashSet<Face>(solid.Faces.Where((face, index) =>
+                solid.FaceRoles[index] != Roles.Existing));
+            var bodyEdges = solid.Halfedges.Where(edge => edge.Pair != null &&
+                body.Contains(edge.Face) && body.Contains(edge.Pair.Face)).ToList();
+            var cutEdges = solid.Halfedges.Where(edge => edge.Pair != null &&
+                body.Contains(edge.Face) != body.Contains(edge.Pair.Face)).ToList();
+
+            Assert.That(bodyEdges, Is.Not.Empty);
+            Assert.That(cutEdges, Is.Not.Empty);
+            Assert.That(bodyEdges.All(edge => edge.IsSmooth), Is.True);
+            Assert.That(cutEdges.All(edge => !edge.IsSmooth), Is.True);
+            Assert.That(bodyEdges.Max(edge => edge.DihedralAngle),
+                Is.GreaterThan(cutEdges.Min(edge => edge.DihedralAngle)));
+        }
+
         [TestCase(-.1f, -1f, Axis.Y)]
         [TestCase(-.1f, 1f, Axis.Y)]
         [TestCase(-.1f, -.25f, Axis.Y)]
