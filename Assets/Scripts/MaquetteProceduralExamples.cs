@@ -82,9 +82,8 @@ public class MaquetteProceduralExamples : MonoBehaviour
             configure(example);
             if (example.Initialize(rowMaterials[row])) sampleCount++;
             models.Add(example);
-            Text($"{title} label", title,
-                cell.transform.localPosition + new Vector3(0f, .02f, -1.65f),
-                40, .055f, Color.white, font);
+            Text("Label", title, new Vector3(0f, .02f, -1.65f),
+                40, .055f, Color.white, font, cell.transform);
         }
 
         Row(0, "CYLINDER / CONE");
@@ -417,9 +416,10 @@ public class MaquetteProceduralExamples : MonoBehaviour
         Release(cube.GetComponent<Collider>());
     }
 
-    private void Text(string name, string value, Vector3 position, int fontSize, float size, Color color, Font font)
+    private void Text(string name, string value, Vector3 position, int fontSize, float size,
+        Color color, Font font, Transform parent = null)
     {
-        var label = Child(name, generated.transform);
+        var label = Child(name, parent != null ? parent : generated.transform);
         label.transform.localPosition = position;
         label.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
         var text = label.AddComponent<TextMesh>();
@@ -464,8 +464,8 @@ public class MaquetteProceduralExamples : MonoBehaviour
             if (model == null || model.Poly == null) continue;
             foreach (var face in model.Poly.Faces)
             foreach (var edge in face.GetHalfedges())
-                Gizmos.DrawLine(model.ModelTransform.TransformPoint(edge.Vertex.Position),
-                    model.ModelTransform.TransformPoint(edge.Prev.Vertex.Position));
+                Gizmos.DrawLine(model.transform.TransformPoint(edge.Vertex.Position),
+                    model.transform.TransformPoint(edge.Prev.Vertex.Position));
         }
     }
 

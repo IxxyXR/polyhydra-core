@@ -10,14 +10,11 @@ public abstract class MaquetteProceduralExample : MonoBehaviour
     private Mesh mesh;
     private bool needsRebuild;
     public PolyMesh Poly { get; private set; }
-    public Transform ModelTransform => meshFilter.transform;
 
     public bool Initialize(Material material)
     {
-        var model = new GameObject("Model");
-        model.transform.SetParent(transform, false);
-        meshFilter = model.AddComponent<MeshFilter>();
-        model.AddComponent<MeshRenderer>().sharedMaterial = material;
+        meshFilter = gameObject.AddComponent<MeshFilter>();
+        gameObject.AddComponent<MeshRenderer>().sharedMaterial = material;
         return Rebuild();
     }
 
@@ -36,6 +33,15 @@ public abstract class MaquetteProceduralExample : MonoBehaviour
         try
         {
             var poly = Build();
+            // Centre the geometry above the plinth without moving the example's
+            // transform, which also anchors its label and plinth.
+            if (poly.Vertices.Count > 0)
+            {
+                var bounds = new Bounds(poly.Vertices[0].Position, Vector3.zero);
+                foreach (var vertex in poly.Vertices) bounds.Encapsulate(vertex.Position);
+                var offset = new Vector3(-bounds.center.x, .08f - bounds.min.y, -bounds.center.z);
+                foreach (var vertex in poly.Vertices) vertex.Position += offset;
+            }
             var data = poly.BuildMeshData(useSmoothing: true);
             if (mesh == null)
             {
@@ -48,8 +54,6 @@ public abstract class MaquetteProceduralExample : MonoBehaviour
             mesh.SetTriangles(data.meshTriangles, 0);
             mesh.SetUVs(0, data.meshUVs);
             mesh.RecalculateBounds();
-            meshFilter.transform.localPosition = new Vector3(-mesh.bounds.center.x,
-                .08f - mesh.bounds.min.y, -mesh.bounds.center.z);
             Poly = poly;
             return true;
         }
