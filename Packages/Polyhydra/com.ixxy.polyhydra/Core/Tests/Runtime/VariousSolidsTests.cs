@@ -86,10 +86,10 @@ namespace Polyhydra.Core.Tests
         }
 
         [Test]
-        public void TriangleAndSectorExtrudeToClosedSolids()
+        public void TriangleAndFilledArcExtrudeToClosedSolids()
         {
             var wedge = Shapes.Triangle().LayeredExtrude(1, 1f, Axis.Y);
-            var halfCylinder = Shapes.Sector(8, .5f).LayeredExtrude(1, 1f, Axis.Y);
+            var halfCylinder = Shapes.Arc(8, 1f, 0f, 180f).LayeredExtrude(1, 1f, Axis.Z);
 
             AssertClosed(wedge);
             AssertClosed(halfCylinder);
@@ -97,16 +97,23 @@ namespace Polyhydra.Core.Tests
             Assert.That(halfCylinder.Faces.Count, Is.EqualTo(8 + 4));
         }
 
-        [Test]
-        public void SectorUsesNormalizedAngleAndHalfTurnProducesASemicircle()
+        [TestCase(.25f, 10)]
+        [TestCase(.5f, 10)]
+        [TestCase(1f, 8)]
+        [TestCase(-1f, 8)]
+        public void FilledArcUsesOneFaceWithoutDuplicateVertices(float turns, int vertexCount)
         {
-            var quarter = Shapes.Build(ShapeTypes.Sector, 8f, 0f, .25f);
-            var half = Shapes.Build(ShapeTypes.Sector, 8f, 0f, .5f);
+            var arc = Shapes.Build(ShapeTypes.Arc, 8f, 0f, turns);
 
-            Assert.That(quarter.Vertices[1].Position.x, Is.EqualTo(0f).Within(.0001f));
-            Assert.That(quarter.Vertices[1].Position.z, Is.EqualTo(1f).Within(.0001f));
-            Assert.That(half.Vertices[1].Position.x, Is.EqualTo(-1f).Within(.0001f));
-            Assert.That(half.Vertices[1].Position.z, Is.EqualTo(0f).Within(.0001f));
+            Assert.That(arc.Faces.Count, Is.EqualTo(1));
+            Assert.That(arc.Vertices.Count, Is.EqualTo(vertexCount));
+            Assert.That(arc.Vertices.Select(v => v.Position).Distinct().Count(), Is.EqualTo(vertexCount));
+            if (Mathf.Abs(turns) < 1f)
+            {
+                var endpoint = arc.Vertices[vertexCount - 1].Position;
+                Assert.That(endpoint.x, Is.EqualTo(Mathf.Cos(turns * 2f * Mathf.PI)).Within(.0001f));
+                Assert.That(endpoint.y, Is.EqualTo(Mathf.Sin(turns * 2f * Mathf.PI)).Within(.0001f));
+            }
         }
 
         [Test]

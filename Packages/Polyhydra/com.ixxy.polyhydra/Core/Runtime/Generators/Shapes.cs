@@ -17,7 +17,6 @@ namespace Polyhydra.Core
         GothicArch,
         Ring,
         Triangle,
-        Sector,
         Rectangle,
         Frame,
     }
@@ -52,7 +51,6 @@ namespace Polyhydra.Core
                 ShapeTypes.GothicArch => GothicArch(sides: Mathf.FloorToInt(a), width: 1, thickness: b, height: c),
                 ShapeTypes.Ring => Arc(Mathf.FloorToInt(a), 1, b, 360, true),
                 ShapeTypes.Triangle => Triangle(Mathf.FloorToInt(a), b, c),
-                ShapeTypes.Sector => Sector(Mathf.FloorToInt(a), c),
                 // Unit width: A = height, B = corner radius, C = corner segments.
                 ShapeTypes.Rectangle => Rectangle(1f, a, b, Mathf.FloorToInt(c)),
                 // Unit width: A = height, B = border width, C = outer radius, D = corner segments.
@@ -349,25 +347,6 @@ namespace Polyhydra.Core
             return new PolyMesh(vertices, faces);
         }
 
-        public static PolyMesh Sector(int arcSegments, float turns = .5f)
-        {
-            arcSegments = Mathf.Max(2, arcSegments);
-            turns = Mathf.Clamp(turns, .0001f, 1f);
-            if (Mathf.Approximately(turns, 1f)) return Polygon(arcSegments);
-
-            var vertices = new List<Vector3> { Vector3.zero };
-            var angleRange = Mathf.PI * 2f * turns;
-            for (var segment = arcSegments; segment >= 0; segment--)
-            {
-                var angle = angleRange * segment / arcSegments;
-                vertices.Add(new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)));
-            }
-            return new PolyMesh(vertices, new List<List<int>>
-            {
-                Enumerable.Range(0, vertices.Count).ToList()
-            });
-        }
-
         public static PolyMesh Polygon(int sides, bool flip = false, float angleOffset = 0,
             float heightOffset = 0, float radius = 1, float stellate = 0)
         {
@@ -575,6 +554,27 @@ namespace Polyhydra.Core
 
         public static PolyMesh Arc(int sides, float radius, float thickness, float angle, bool joined = false)
         {
+            if (thickness == 0f)
+            {
+                angle = Mathf.Clamp(angle, -360f, 360f);
+                if (angle == 0f || radius == 0f) return new PolyMesh();
+
+                bool fullCircle = Mathf.Abs(angle) == 360f;
+                sides = Mathf.Max(fullCircle ? 3 : 2, sides);
+                var vertices = new List<Vector3>();
+                if (!fullCircle) vertices.Add(Vector3.zero);
+                int count = fullCircle ? sides : sides + 1;
+                for (int i = 0; i < count; i++)
+                {
+                    float radians = angle * Mathf.Deg2Rad * i / sides;
+                    vertices.Add(new Vector3(Mathf.Cos(radians) * radius, Mathf.Sin(radians) * radius, 0f));
+                }
+                return new PolyMesh(vertices, new List<List<int>>
+                {
+                    Enumerable.Range(0, vertices.Count).ToList()
+                });
+            }
+
             var (verts, faces) = _CalcArc(sides, radius, thickness, angle, joined);
             return new PolyMesh(verts, faces);
         }

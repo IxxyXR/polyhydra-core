@@ -32,7 +32,6 @@ public class ShapesSettings : BaseSettings
             ShapeTypes.GothicArch => Axis.Z,
             ShapeTypes.Ring => Axis.Y,
             ShapeTypes.Triangle => Axis.Y,
-            ShapeTypes.Sector => Axis.Y,
             ShapeTypes.Rectangle => Axis.Y,
             ShapeTypes.Frame => Axis.Y,
             _ => throw new ArgumentOutOfRangeException()
