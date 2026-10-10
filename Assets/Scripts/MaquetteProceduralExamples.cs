@@ -64,7 +64,7 @@ public class MaquetteProceduralExamples : MonoBehaviour
             rowMaterials[index] = Material(shader, palette[index], $"Family {index + 1}");
         var pedestalMaterial = Material(shader, new Color(.14f, .17f, .22f), "Pedestals");
         var floorMaterial = Material(shader, new Color(.075f, .09f, .12f), "Floor");
-        var font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+        var font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
 
         var cameraObject = Child("Gallery camera", generated.transform);
         var camera = cameraObject.AddComponent<Camera>();
@@ -306,6 +306,24 @@ public class MaquetteProceduralExamples : MonoBehaviour
 
     private void Clear()
     {
+#if UNITY_EDITOR
+        // Generated objects disappear on rebuild and assembly reload. Keep the
+        // Inspector pointed at the persistent gallery rather than a destroyed target.
+        var selection = UnityEditor.Selection.objects;
+        bool selectionChanged = false;
+        for (int index = 0; index < selection.Length; index++)
+        {
+            var selected = selection[index];
+            var selectedObject = selected as GameObject;
+            if (selected is Component component) selectedObject = component.gameObject;
+            bool inGallery = generated != null && selectedObject != null &&
+                selectedObject.transform.IsChildOf(generated.transform);
+            if (!inGallery && !ownedAssets.Contains(selected)) continue;
+            selection[index] = gameObject;
+            selectionChanged = true;
+        }
+        if (selectionChanged) UnityEditor.Selection.objects = selection;
+#endif
         if (generated != null)
         {
             generated.SetActive(false);
