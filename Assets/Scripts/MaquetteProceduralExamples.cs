@@ -82,7 +82,7 @@ public class MaquetteProceduralExamples : MonoBehaviour
             configure(example);
             if (example.Initialize(rowMaterials[row])) sampleCount++;
             models.Add(example);
-            Text($"{title} label", $"{title}\nSelect example to edit parameters",
+            Text($"{title} label", title,
                 cell.transform.localPosition + new Vector3(0f, .02f, -1.65f),
                 40, .055f, Color.white, font);
         }
