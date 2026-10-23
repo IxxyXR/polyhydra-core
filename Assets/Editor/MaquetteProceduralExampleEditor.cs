@@ -14,10 +14,16 @@ public class MaquetteProceduralExampleEditor : Editor
         {
             enterChildren = false;
             if (!IsRelevant(property.name)) continue;
+            var radius = serializedObject.FindProperty("cornerRadius") ?? serializedObject.FindProperty("radius");
             bool disabled = property.name == "m_Script" ||
-                (property.name == "cornerSegments" && serializedObject.FindProperty("radius").floatValue == 0f);
+                (property.name == "cornerSegments" && radius != null && radius.floatValue == 0f);
             using (new EditorGUI.DisabledScope(disabled))
-                EditorGUILayout.PropertyField(property, true);
+            {
+                if (property.name == "roundedCorners")
+                    property.intValue = (int)(RectangleCorners)EditorGUILayout.EnumFlagsField(property.displayName,
+                        (RectangleCorners)property.intValue);
+                else EditorGUILayout.PropertyField(property, true);
+            }
         }
         serializedObject.ApplyModifiedProperties();
     }

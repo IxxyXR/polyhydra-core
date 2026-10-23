@@ -7,7 +7,7 @@ namespace Polyhydra.Core
     /// <summary>
     /// Evaluates named geometry recipes without normalising their size or building
     /// Unity meshes. Dimensions are in caller-defined local units; angles are degrees.
-    /// Shape profiles use their generators' XY plane; solids are centred about Y.
+    /// Rectangle/Frame profiles use XZ; Panel uses XY with depth along Z; swept solids use Y.
     /// </summary>
     public static class GeometryRecipeEvaluator
     {
@@ -27,11 +27,17 @@ namespace Polyhydra.Core
             {
                 case "rectangle":
                     poly = Shapes.Rectangle(p.Read("width", 1f), p.Read("height", 1f),
-                        p.Read("radius", 0f), p.Read("cornerSegments", 4));
+                        p.Read("radius", 0f), p.Read("cornerSegments", 4), ReadCorners(p));
                     break;
                 case "frame":
                     poly = Shapes.Frame(p.Read("width", 1f), p.Read("height", 1f),
                         p.Read("borderWidth", .1f), p.Read("radius", 0f), p.Read("cornerSegments", 4));
+                    break;
+                case "panel":
+                    poly = VariousSolids.Panel(p.Read("width", 1f), p.Read("height", 1f), p.Read("depth", .1f),
+                        p.Read("cornerRadius", 0f), p.Read("edgeRadius", 0f), ReadCorners(p),
+                        p.Read("cornerSegments", 8), p.Read("edgeSegments", 8),
+                        p.Read("widthSegments", 1), p.Read("heightSegments", 1));
                     break;
                 case "cylinder":
                     poly = VariousSolids.Cylinder(p.Read("sides", 24), p.Read("height", 1f),
@@ -74,6 +80,14 @@ namespace Polyhydra.Core
                     // Baking a reflection into vertices must preserve outward winding.
                     if (matrix.determinant < 0f) poly.Halfedges.Flip();
                     break;
+                case "faceRemove":
+                    poly = poly.FaceRemove(Filter.FacingDirection(p.Read("direction", Vector3.back),
+                        p.Read("angle", .1f)), p.Read("invert", false));
+                    break;
+                case "bend":
+                    var reference = new Bounds(p.Require<Vector3>("referenceCenter"), p.Require<Vector3>("referenceSize"));
+                    poly = poly.Bend(p.Read("angle", 0f), ReadAxis(p.Read("axis", "x")), reference);
+                    break;
                 case "autoSmooth":
                     poly.AutoSmooth(p.Read("angle", 60f));
                     break;
@@ -85,6 +99,35 @@ namespace Polyhydra.Core
             }
             p.RequireAllRead();
             return poly;
+        }
+
+        private static RectangleCorners ReadCorners(Parameters p)
+        {
+            var names = p.Read("roundedCorners", new[] { "topRight", "topLeft", "bottomLeft", "bottomRight" });
+            var corners = RectangleCorners.None;
+            foreach (var name in names)
+            {
+                switch (name)
+                {
+                    case "topRight": corners |= RectangleCorners.TopRight; break;
+                    case "topLeft": corners |= RectangleCorners.TopLeft; break;
+                    case "bottomLeft": corners |= RectangleCorners.BottomLeft; break;
+                    case "bottomRight": corners |= RectangleCorners.BottomRight; break;
+                    default: throw new NotSupportedException($"Unknown rectangle corner '{name}'.");
+                }
+            }
+            return corners;
+        }
+
+        private static Axis ReadAxis(string axis)
+        {
+            switch (axis)
+            {
+                case "x": return Axis.X;
+                case "y": return Axis.Y;
+                case "z": return Axis.Z;
+                default: throw new NotSupportedException($"Unknown bend axis '{axis}'.");
+            }
         }
 
         private static Shapes.ConicType ReadConic(string curve)
@@ -117,6 +160,13 @@ namespace Polyhydra.Core
             private readonly HashSet<string> read = new HashSet<string>(StringComparer.Ordinal);
 
             public Parameters(GeometryStep step) => this.step = step;
+
+            public T Require<T>(string name)
+            {
+                if (!step.Parameters.ContainsKey(name))
+                    throw new ArgumentException($"Geometry step '{step.Type}' requires parameter '{name}'.");
+                return Read(name, default(T));
+            }
 
             public T Read<T>(string name, T defaultValue)
             {

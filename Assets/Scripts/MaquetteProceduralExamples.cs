@@ -40,7 +40,7 @@ public class MaquetteProceduralExamples : MonoBehaviour
         {
             new Color(.25f, .7f, .92f), new Color(.95f, .61f, .28f),
             new Color(.32f, .81f, .61f), new Color(.75f, .51f, .95f),
-            new Color(.95f, .45f, .57f)
+            new Color(.95f, .45f, .57f), new Color(.95f, .84f, .35f)
         };
         var rowMaterials = new Material[palette.Length];
         for (int index = 0; index < palette.Length; index++)
@@ -59,12 +59,10 @@ public class MaquetteProceduralExamples : MonoBehaviour
         camera.farClipPlane = 200f;
         Light("Key light", Quaternion.Euler(45f, -35f, 0f), 1.4f);
         Light("Fill light", Quaternion.Euler(65f, 145f, 0f), .55f);
-        Cube("Floor", generated.transform, new Vector3(10f, -.12f, 9f),
-            new Vector3(25f, .12f, 27f), floorMaterial);
-        Text("Title", "MAQUETTE PROCEDURAL MODELS", new Vector3(10f, .02f, 21.6f),
+        Cube("Floor", generated.transform, new Vector3(10f, -.12f, 11.25f),
+            new Vector3(25f, .12f, 31.5f), floorMaterial);
+        Text("Title", "PROCEDURAL MODEL RECIPES", new Vector3(10f, .02f, 26.1f),
             64, .08f, Color.white, font);
-        Text("Subtitle", "Polyhydra generators and modifiers / 30 live recipes", new Vector3(10f, .02f, 20.7f),
-            48, .06f, new Color(.7f, .76f, .84f), font);
 
         void Row(int row, string title)
         {
@@ -366,10 +364,47 @@ public class MaquetteProceduralExamples : MonoBehaviour
             example.scale = new Vector3(1.5f, .8f, .75f);
         });
 
+        Row(5, "PANELS AND BENDING");
+        Sample<PanelExample>(5, 0, "Mixed corners", example =>
+        {
+            example.roundedCorners = RectangleCorners.TopLeft | RectangleCorners.BottomRight;
+            example.cornerRadius = .35f;
+            example.edgeRadius = 0f;
+        });
+        Sample<PanelExample>(5, 1, "Rounded edges", example =>
+        {
+            example.edgeRadius = .1f;
+        });
+        Sample<PanelExample>(5, 2, "Chamfered edges", example =>
+        {
+            example.edgeRadius = .1f;
+            example.edgeSegments = 1;
+        });
+        Sample<PanelExample>(5, 3, "Open back", example =>
+        {
+            example.openBack = true;
+        });
+        Sample<PanelExample>(5, 4, "Two-axis bend", example =>
+        {
+            example.widthSegments = 16;
+            example.heightSegments = 16;
+            example.bendX = 13f;
+            example.bendY = 20f;
+        });
+        Sample<PanelExample>(5, 5, "Full wrap", example =>
+        {
+            example.cornerRadius = 0f;
+            example.edgeRadius = 0f;
+            example.depth = .12f;
+            example.widthSegments = 64;
+            example.heightSegments = 4;
+            example.bendY = 360f;
+        });
+
         Text("Instructions", "Select this gallery root and enable Show Topology to inspect faces.\nSelect an example to edit its parameters during Play mode.",
             new Vector3(10f, .02f, -3.1f), 40, .05f, new Color(.7f, .76f, .84f), font);
         FrameCamera(camera);
-        Debug.Log($"{LogPrefix} Generated {sampleCount}/30 examples across five model families.", this);
+        Debug.Log($"{LogPrefix} Generated {sampleCount}/36 examples across six model families.", this);
     }
 
     private T Own<T>(T asset) where T : UnityEngine.Object
