@@ -27,7 +27,7 @@ namespace Polyhydra.Core
 
     /// <summary>
     /// A stable type identifier and named parameter values, independent of CLR type names.
-    /// Evaluation uses bool, int, float, string, Vector2, Vector3 and Quaternion values.
+    /// Evaluation uses bool, int, float, string, string[], Vector2, Vector3 and Quaternion values.
     /// Unknown identifiers and parameters can be retained here, but are rejected when
     /// evaluating rather than silently changing the resulting geometry.
     /// </summary>
