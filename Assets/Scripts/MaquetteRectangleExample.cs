@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Polyhydra.Core;
 using UnityEngine;
 
@@ -11,11 +12,24 @@ public class MaquetteRectangleExample : MaquetteProceduralExample
     [Min(.001f)] public float thickness = .22f;
     public bool smooth = true;
 
-    protected override PolyMesh Build()
+    protected override GeometryRecipe CreateRecipe()
     {
-        var solid = Shapes.Rectangle(width, height, radius, cornerSegments)
-            .Shell(thickness).Rotate(Vector3.right, 90f);
-        if (smooth) solid.AutoSmooth(89f);
-        return solid;
+        var operations = new List<GeometryStep>
+        {
+            new GeometryStep("shell", new Dictionary<string, object> { { "thickness", thickness } }),
+            new GeometryStep("transform", new Dictionary<string, object>
+            {
+                { "rotation", Quaternion.Euler(90f, 0f, 0f) }
+            })
+        };
+        if (smooth)
+            operations.Add(new GeometryStep("autoSmooth", new Dictionary<string, object> { { "angle", 89f } }));
+        return new GeometryRecipe(new GeometryStep("rectangle", new Dictionary<string, object>
+        {
+            { "width", width },
+            { "height", height },
+            { "radius", radius },
+            { "cornerSegments", cornerSegments },
+        }), operations);
     }
 }

@@ -25,14 +25,25 @@ public abstract class MaquetteProceduralExample : MonoBehaviour
         if (needsRebuild && meshFilter != null) Rebuild();
     }
 
-    protected abstract PolyMesh Build();
+    protected abstract GeometryRecipe CreateRecipe();
+
+    protected static string ZeroSweepName(PolyMesh.ZeroSweepBehavior behavior)
+    {
+        switch (behavior)
+        {
+            case PolyMesh.ZeroSweepBehavior.ThinWedge: return "thinWedge";
+            case PolyMesh.ZeroSweepBehavior.Empty: return "empty";
+            case PolyMesh.ZeroSweepBehavior.DoubleSidedProfile: return "doubleSidedProfile";
+            default: throw new ArgumentOutOfRangeException(nameof(behavior));
+        }
+    }
 
     private bool Rebuild()
     {
         needsRebuild = false;
         try
         {
-            var poly = Build();
+            var poly = GeometryRecipeEvaluator.Build(CreateRecipe());
             // Centre the geometry above the plinth without moving the example's
             // transform, which also anchors its label and plinth.
             if (poly.Vertices.Count > 0)

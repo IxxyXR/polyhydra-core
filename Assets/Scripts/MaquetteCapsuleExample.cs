@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Polyhydra.Core;
 using UnityEngine;
 
@@ -12,12 +13,20 @@ public class MaquetteCapsuleExample : MaquetteProceduralExample
     public Vector3 scale = Vector3.one;
     public PolyMesh.ZeroSweepBehavior zeroSweepBehavior = PolyMesh.ZeroSweepBehavior.ThinWedge;
 
-    protected override PolyMesh Build()
+    protected override GeometryRecipe CreateRecipe()
     {
-        var poly = VariousSolids.Capsule(sides, capSegments, cylinderHeight, radius,
-            sweepAngle, zeroSweepBehavior, smooth);
-        foreach (var vertex in poly.Vertices)
-            vertex.Position = Vector3.Scale(vertex.Position, scale);
-        return poly;
+        return new GeometryRecipe(new GeometryStep("capsule", new Dictionary<string, object>
+        {
+            { "sides", sides },
+            { "capSegments", capSegments },
+            { "cylinderHeight", cylinderHeight },
+            { "radius", radius },
+            { "sweepAngle", sweepAngle },
+            { "smooth", smooth },
+            { "zeroSweep", ZeroSweepName(zeroSweepBehavior) },
+        }), new[]
+        {
+            new GeometryStep("transform", new Dictionary<string, object> { { "scale", scale } })
+        });
     }
 }

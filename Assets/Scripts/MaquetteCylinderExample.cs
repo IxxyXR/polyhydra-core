@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Polyhydra.Core;
 using UnityEngine;
 
@@ -18,7 +19,20 @@ public class MaquetteCylinderExample : MaquetteProceduralExample
     public Vector3 topEulerAngles;
     public bool smoothSides = true;
 
-    protected override PolyMesh Build() => VariousSolids.Cylinder(sides, height,
-        radiusBottom, aspectBottom, radiusTop, aspectTop, sweepAngle,
-        topOffset, Quaternion.Euler(topEulerAngles), smoothSides);
+    protected override GeometryRecipe CreateRecipe()
+    {
+        return new GeometryRecipe(new GeometryStep("cylinder", new Dictionary<string, object>
+        {
+            { "sides", sides },
+            { "height", height },
+            { "bottomRadius", radiusBottom },
+            { "bottomAspect", aspectBottom },
+            { "topRadius", radiusTop },
+            { "topAspect", aspectTop },
+            { "sweepAngle", sweepAngle },
+            { "topOffset", topOffset },
+            { "topRotation", Quaternion.Euler(topEulerAngles) },
+            { "smoothSides", smoothSides },
+        }));
+    }
 }
