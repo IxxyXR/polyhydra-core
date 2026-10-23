@@ -5,6 +5,17 @@ using UnityEngine;
 
 namespace Polyhydra.Core
 {
+    [Flags]
+    public enum RectangleCorners
+    {
+        None = 0,
+        TopRight = 1,
+        TopLeft = 2,
+        BottomLeft = 4,
+        BottomRight = 8,
+        All = TopRight | TopLeft | BottomLeft | BottomRight
+    }
+
     public enum ShapeTypes
     {
         Polygon,
@@ -65,11 +76,11 @@ namespace Polyhydra.Core
         /// A zero radius or zero corner segments produces square corners.
         /// </summary>
         public static PolyMesh Rectangle(float width = 1f, float height = 1f,
-            float radius = 0f, int cornerSegments = 4)
+            float radius = 0f, int cornerSegments = 4, RectangleCorners roundedCorners = RectangleCorners.All)
         {
             width = Mathf.Max(.0001f, width);
             height = Mathf.Max(.0001f, height);
-            var vertices = RectangleContour(width, height, radius, cornerSegments);
+            var vertices = RectangleContour(width, height, radius, cornerSegments, roundedCorners: roundedCorners);
             return new PolyMesh(vertices, new List<List<int>>
             {
                 Enumerable.Range(0, vertices.Count).ToList()
@@ -78,8 +89,9 @@ namespace Polyhydra.Core
 
         // Retaining corner samples lets Frame pair corresponding points even when
         // an inner corner collapses to a single vertex. Rectangle removes duplicates.
-        private static List<Vector3> RectangleContour(float width, float height,
-            float radius, int cornerSegments, bool retainCornerSamples = false)
+        internal static List<Vector3> RectangleContour(float width, float height,
+            float radius, int cornerSegments, bool retainCornerSamples = false,
+            RectangleCorners roundedCorners = RectangleCorners.All)
         {
             var halfWidth = width * .5f;
             var halfHeight = height * .5f;
@@ -94,26 +106,34 @@ namespace Polyhydra.Core
                 };
 
             cornerSegments = Mathf.Clamp(cornerSegments, 1, 128);
-            var centers = new[]
-            {
-                new Vector2(halfWidth - radius, halfHeight - radius),
-                new Vector2(-halfWidth + radius, halfHeight - radius),
-                new Vector2(-halfWidth + radius, -halfHeight + radius),
-                new Vector2(halfWidth - radius, -halfHeight + radius)
-            };
+            var signs = new[] { new Vector2(1f, 1f), new Vector2(-1f, 1f),
+                new Vector2(-1f, -1f), new Vector2(1f, -1f) };
             var vertices = new List<Vector3>();
             var tolerance = Mathf.Min(width, height) * .000001f;
             var toleranceSquared = tolerance * tolerance;
-            for (var corner = 0; corner < centers.Length; corner++)
-            for (var segment = 0; segment <= cornerSegments; segment++)
+            for (var corner = 0; corner < 4; corner++)
             {
-                var angle = (corner + (float)segment / cornerSegments) * Mathf.PI * .5f;
-                var point = new Vector3(
-                    centers[corner].x + radius * Mathf.Cos(angle), 0f,
-                    centers[corner].y + radius * Mathf.Sin(angle));
-                if (retainCornerSamples || vertices.Count == 0 ||
-                    (vertices[vertices.Count - 1] - point).sqrMagnitude > toleranceSquared)
-                    vertices.Add(point);
+                var r = ((int)roundedCorners & (1 << corner)) != 0 ? radius : 0f;
+                var center = new Vector2(signs[corner].x * (halfWidth - r),
+                    signs[corner].y * (halfHeight - r));
+                for (var segment = 0; segment <= cornerSegments; segment++)
+                {
+                    var angle = (corner + (float)segment / cornerSegments) * Mathf.PI * .5f;
+                    var point = new Vector3(center.x + r * Mathf.Cos(angle), 0f,
+                        center.y + r * Mathf.Sin(angle));
+                    // Exact tangencies let sampled caps and wall strips share vertices.
+                    if (segment == 0 || segment == cornerSegments)
+                    {
+                        var cardinal = (corner + (segment == 0 ? 0 : 1)) % 4;
+                        point = cardinal == 0 ? new Vector3(halfWidth, 0f, center.y) :
+                            cardinal == 1 ? new Vector3(center.x, 0f, halfHeight) :
+                            cardinal == 2 ? new Vector3(-halfWidth, 0f, center.y) :
+                            new Vector3(center.x, 0f, -halfHeight);
+                    }
+                    if (retainCornerSamples || vertices.Count == 0 ||
+                        (vertices[vertices.Count - 1] - point).sqrMagnitude > toleranceSquared)
+                        vertices.Add(point);
+                }
             }
             if (!retainCornerSamples &&
                 (vertices[0] - vertices[vertices.Count - 1]).sqrMagnitude <= toleranceSquared)
