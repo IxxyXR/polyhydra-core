@@ -20,7 +20,7 @@ namespace Polyhydra.Core
         WireframeBox = 11
     }
 
-    public static class VariousSolids
+    public static partial class VariousSolids
     {
 
         private static PolyMesh BuildMesh(List<Vector3> vertices, List<List<int>> faces)
@@ -261,7 +261,7 @@ namespace Polyhydra.Core
                     var role = (row + index) % 2 == 0 ? Roles.New : Roles.NewAlt;
                     var strip = row * sides + index;
                     bool nonplanar = sections[row].Radius != 0f && sections[row + 1].Radius != 0f &&
-                        IsNonplanarQuad(vertices[lower[index]], vertices[upper[index]],
+                        PolyMesh.IsNonplanarQuad(vertices[lower[index]], vertices[upper[index]],
                             vertices[upper[next]], vertices[lower[next]]);
                     if (!nonplanar)
                         AddFace(new[] { lower[index], upper[index], upper[next], lower[next] }, role, strip);
@@ -312,18 +312,6 @@ namespace Polyhydra.Core
                     bodyStrips.TryGetValue(edge.Pair.Face, out var pairedStrip) &&
                     (smoothBody || strip == pairedStrip);
             return mesh;
-        }
-
-        private static bool IsNonplanarQuad(Vector3 a, Vector3 b, Vector3 c, Vector3 d)
-        {
-            var ab = b - a;
-            var ac = c - a;
-            var ad = d - a;
-            var normal = Vector3.Cross(ab, ac);
-            // Relative plane-distance tolerance avoids splitting planar faces merely
-            // because their coordinates have accumulated floating-point rounding.
-            var extent = Mathf.Max(ab.magnitude, ac.magnitude, ad.magnitude);
-            return Mathf.Abs(Vector3.Dot(normal, ad)) > 1e-5f * normal.magnitude * extent;
         }
 
         public static PolyMesh ChamferedBox(int profileSegments = 1, float profile = 1f,
