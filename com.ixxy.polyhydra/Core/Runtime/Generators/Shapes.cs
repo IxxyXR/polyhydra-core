@@ -18,18 +18,18 @@ namespace Polyhydra.Core
 
     public enum ShapeTypes
     {
-        Polygon,
-        Star,
-        C_Shape,
-        L_Shape,
-        H_Shape,
-        Arc,
-        Arch,
-        GothicArch,
-        Ring,
-        Triangle,
-        Rectangle,
-        Frame,
+        Polygon = 0,
+        Star = 1,
+        C_Shape = 2,
+        L_Shape = 3,
+        H_Shape = 4,
+        Arc = 5,
+        Arch = 6,
+        GothicArch = 7,
+        Ring = 8,
+        Triangle = 9,
+        Rectangle = 10,
+        Frame = 11,
     }
 
     public class Shapes
