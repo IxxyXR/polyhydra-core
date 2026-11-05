@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Linq;
+using UnityEngine;
 using UnityEditor;
 using System.Collections.Generic;
 
@@ -35,7 +36,7 @@ public static class PolySettingsCopier
         {
             Undo.RecordObject(targetSettings, "Paste Settings");
 
-            targetSettings.Operators = new List<BaseSettings.Operator>(copiedSettings.Operators);
+            targetSettings.Operators = new List<BaseSettings.Operator>(copiedSettings.Operators.Select(op => (BaseSettings.Operator)op.Copy()));
             targetSettings.FastConicalize = copiedSettings.FastConicalize;
             targetSettings.CanonicalizeIterations = copiedSettings.CanonicalizeIterations;
             targetSettings.PlanarizeIterations = copiedSettings.PlanarizeIterations;

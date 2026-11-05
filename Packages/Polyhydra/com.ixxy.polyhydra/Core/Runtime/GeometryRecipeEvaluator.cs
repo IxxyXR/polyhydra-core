@@ -15,8 +15,9 @@ namespace Polyhydra.Core
         {
             if (recipe == null) throw new ArgumentNullException(nameof(recipe));
             var poly = Generate(recipe.Generator);
-            foreach (var operation in recipe.Operations) poly = Apply(poly, operation);
-            return poly;
+            var random = new System.Random();
+            foreach (var operation in recipe.Operations) poly = Apply(poly, operation, random);
+            return ModifierPipeline.ApplyPostProcessing(poly, recipe.PostProcessing);
         }
 
         private static PolyMesh Generate(GeometryStep step)
@@ -65,11 +66,29 @@ namespace Polyhydra.Core
             return poly;
         }
 
-        private static PolyMesh Apply(PolyMesh poly, GeometryStep step)
+        private static PolyMesh Apply(PolyMesh poly, GeometryStep step, System.Random random)
         {
             var p = new Parameters(step);
             switch (step.Type)
             {
+                case "operator":
+                    var modifier = new ModifierSettings
+                    {
+                        OpType = ReadEnum<PolyMesh.Operation>(p.Require<string>("operation")),
+                        Parameter1 = p.Read("amount", .3f),
+                        Parameter2 = p.Read("amount2", 0f),
+                        Active = p.Read("active", true),
+                        Iterations = p.Read("iterations", 1),
+                        Parameter1Randomize = p.Read("randomizeAmount", false),
+                        Parameter2Randomize = p.Read("randomizeAmount2", false),
+                        FilterType = ReadEnum<FilterTypes>(p.Read("filter", "All")),
+                        FilterParam = p.Read("filterParameter", 0f),
+                        FilterFlip = p.Read("invertFilter", false)
+                    };
+                    // Reject unfamiliar fields before executing even the first iteration.
+                    p.RequireAllRead();
+                    poly = ModifierPipeline.Apply(poly, new[] { modifier }, random);
+                    break;
                 case "shell":
                     poly = poly.Shell(p.Read("thickness", .1f), p.Read("symmetric", true));
                     break;
@@ -99,6 +118,14 @@ namespace Polyhydra.Core
             }
             p.RequireAllRead();
             return poly;
+        }
+
+        private static T ReadEnum<T>(string name) where T : struct, Enum
+        {
+            // Accept symbolic names only; numeric enum strings must not bypass validation.
+            if (Array.IndexOf(Enum.GetNames(typeof(T)), name) < 0)
+                throw new NotSupportedException($"Unknown {typeof(T).Name} '{name}'.");
+            return (T)Enum.Parse(typeof(T), name);
         }
 
         private static RectangleCorners ReadCorners(Parameters p)

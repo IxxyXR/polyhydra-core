@@ -18,12 +18,12 @@ namespace Polyhydra.Core.Tests
             var shell = new GeometryStep("shell", new Dictionary<string, object> { { "thickness", .2f } });
             var scale = new GeometryStep("transform", new Dictionary<string, object>
             {
-                { "scale", new Vector3(1f, 1f, 3f) }
+                { "scale", new Vector3(1f, 3f, 1f) }
             });
             var scaledShell = GeometryRecipeEvaluator.Build(new GeometryRecipe(generator, new[] { shell, scale }));
             var shellAfterScale = GeometryRecipeEvaluator.Build(new GeometryRecipe(generator, new[] { scale, shell }));
-            Assert.That(scaledShell.GetBounds().size.z,
-                Is.EqualTo(shellAfterScale.GetBounds().size.z * 3f).Within(.00001f));
+            Assert.That(scaledShell.GetBounds().size.y,
+                Is.EqualTo(shellAfterScale.GetBounds().size.y * 3f).Within(.00001f));
             Assert.That(scaledShell.Halfedges.All(edge => edge.Pair != null), Is.True);
         }
 
@@ -54,6 +54,97 @@ namespace Polyhydra.Core.Tests
             Assert.Throws<NotSupportedException>(() => GeometryRecipeEvaluator.Build(new GeometryRecipe(typo)));
             var unsupportedOperation = new GeometryRecipe(new GeometryStep("rectangle"), new[] { future });
             Assert.Throws<NotSupportedException>(() => GeometryRecipeEvaluator.Build(unsupportedOperation));
+        }
+
+        [Test]
+        public void SharedModifiersPreserveOrderIterationsAndDisabledState()
+        {
+            var generator = new GeometryStep("rectangle");
+            var modifiers = new[]
+            {
+                new ModifierSettings { OpType = PolyMesh.Operation.Shell, Parameter1 = .2f },
+                new ModifierSettings { OpType = PolyMesh.Operation.ScaleX, Parameter1 = 10f, Active = false },
+                new ModifierSettings { OpType = PolyMesh.Operation.TranslateX, Parameter1 = .25f, Iterations = 2 }
+            };
+            var source = GeometryRecipeEvaluator.Build(new GeometryRecipe(generator));
+            var direct = ModifierPipeline.Apply(source, modifiers);
+            var recipe = GeometryRecipeEvaluator.Build(new GeometryRecipe(generator,
+                modifiers.Select(GeometryStep.FromModifier)));
+            Assert.That(recipe.GetBounds().center.x, Is.EqualTo(.5f).Within(.00001f));
+            Assert.That(recipe.GetBounds().size.x, Is.EqualTo(1f).Within(.00001f));
+            Assert.That(recipe.GetBounds().size.y, Is.EqualTo(.2f).Within(.00001f));
+            Assert.That(recipe.vef, Is.EqualTo(direct.vef));
+            Assert.That(recipe.GetBounds(), Is.EqualTo(direct.GetBounds()));
+        }
+
+        [Test]
+        public void SharedModifiersUseTheSameFilterSemanticsAsPresetOperations()
+        {
+            var modifier = new ModifierSettings
+            {
+                OpType = PolyMesh.Operation.Kis, Parameter1 = .2f,
+                FilterType = FilterTypes.All, FilterFlip = true
+            };
+            var generator = new GeometryStep("rectangle");
+            var excluded = GeometryRecipeEvaluator.Build(new GeometryRecipe(generator,
+                new[] { GeometryStep.FromModifier(modifier) }));
+            modifier.FilterFlip = false;
+            var included = GeometryRecipeEvaluator.Build(new GeometryRecipe(generator,
+                new[] { GeometryStep.FromModifier(modifier) }));
+            Assert.That(excluded.Faces.Count, Is.EqualTo(1));
+            Assert.That(included.Faces.Count, Is.EqualTo(4));
+        }
+
+        [Test]
+        public void ModifierCopiesAndRecipeAdaptersDoNotShareMutableSettings()
+        {
+            var modifier = new ModifierSettings
+                { OpType = PolyMesh.Operation.TranslateX, Parameter1 = .25f };
+            var copy = modifier.Copy();
+            var step = GeometryStep.FromModifier(modifier);
+            modifier.Parameter1 = 10f;
+            copy.Active = false;
+            Assert.That(copy.Parameter1, Is.EqualTo(.25f));
+            Assert.That(modifier.Active, Is.True);
+            var result = GeometryRecipeEvaluator.Build(new GeometryRecipe(new GeometryStep("rectangle"),
+                new[] { step }));
+            Assert.That(result.GetBounds().center.x, Is.EqualTo(.25f).Within(.00001f));
+        }
+
+        [Test]
+        public void FinalSmoothingIsASnapshotAndRunsAfterAllGeometryOperations()
+        {
+            var generator = new GeometryStep("panel");
+            var operations = new[]
+            {
+                new GeometryStep("autoSmooth", new Dictionary<string, object> { { "angle", 180f } }),
+                GeometryStep.FromModifier(new ModifierSettings { OpType = PolyMesh.Operation.Dual })
+            };
+            var post = new GeometryPostProcessingSettings { AutoSmoothAngle = 180f };
+            var recipe = new GeometryRecipe(generator, operations, post);
+            post.AutoSmoothAngle = 0;
+            recipe.PostProcessing.AutoSmoothAngle = 0;
+            var legacy = GeometryRecipeEvaluator.Build(new GeometryRecipe(generator, operations));
+            var final = GeometryRecipeEvaluator.Build(recipe);
+            // The old named step retains its position; Dual replaces its marked halfedges.
+            Assert.That(legacy.Halfedges.Any(edge => edge.IsEdgeSmooth), Is.False);
+            Assert.That(final.Halfedges.All(edge => edge.IsEdgeSmooth), Is.True);
+        }
+
+        [Test]
+        public void SharedOperatorAdaptersRejectUnknownNamesAndParameters()
+        {
+            var generator = new GeometryStep("rectangle");
+            foreach (var name in new[] { "futureOperation", "5" })
+            {
+                var op = new GeometryStep("operator", new Dictionary<string, object> { { "operation", name } });
+                Assert.Throws<NotSupportedException>(() =>
+                    GeometryRecipeEvaluator.Build(new GeometryRecipe(generator, new[] { op })));
+            }
+            var typo = new GeometryStep("operator", new Dictionary<string, object>
+                { { "operation", "Dual" }, { "futureParameter", 1f } });
+            Assert.Throws<NotSupportedException>(() =>
+                GeometryRecipeEvaluator.Build(new GeometryRecipe(generator, new[] { typo })));
         }
     }
 }

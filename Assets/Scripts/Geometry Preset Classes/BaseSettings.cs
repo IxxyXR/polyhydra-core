@@ -1,27 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.InteropServices;
 using Polyhydra.Core;
 using UnityEngine;
-using Random = System.Random;
 
 public abstract class BaseSettings : ScriptableObject
 {
+    // Keep the nested type and serialized list so existing preset assets retain their layout.
     [Serializable]
-    public class Operator
-    {
-        public bool Active = true;
-        public PolyMesh.Operation OpType;
-        public float Parameter1 = .3f;
-        public float Parameter2 = 0;
-        public int Iterations = 1;
-        public bool Parameter1Randomize = false;
-        public bool Parameter2Randomize = false;
-        public FilterTypes FilterType;
-        public float FilterParam;
-        public bool FilterFlip;
-    }
+    public class Operator : ModifierSettings { }
 
     public List<Operator> Operators;
     public bool FastConicalize = true;
@@ -78,79 +65,26 @@ public abstract class BaseSettings : ScriptableObject
         return appearanceSettings.CalculateColors();
     }
 
+    /// <summary>Independent modifier records suitable for a runtime recipe snapshot.</summary>
+    public ModifierSettings[] GetModifierSettings()
+        => Operators?.Select(op => op.Copy()).ToArray() ?? Array.Empty<ModifierSettings>();
+
+    public GeometryPostProcessingSettings GetPostProcessingSettings()
+        => new GeometryPostProcessingSettings
+        {
+            FastConicalize = FastConicalize,
+            CanonicalizeIterations = CanonicalizeIterations,
+            PlanarizeIterations = PlanarizeIterations,
+            FaceInset = FaceInset,
+            AutoSmoothAngle = AutoSmoothAngle
+        };
+
     public virtual PolyMesh ApplyModifiers(PolyMesh poly)
     {
-        var _random = new Random();
-
-        for (var opIndex = 0; opIndex < (Operators?.Count ?? 0); opIndex++)
-        {
-            var op = Operators[opIndex];
-            if (!op.Active) continue;
-
-            var opFilter = Filter.GetFilter(
-                op.FilterType,
-                op.FilterParam,
-                Mathf.FloorToInt(op.FilterParam),
-                op.FilterFlip
-            );
-
-            var opRandomValue1 = new OpFunc(_ => Mathf.Lerp(0, op.Parameter1, (float)_random.NextDouble()));
-            var opRandomValue2 = new OpFunc(_ => Mathf.Lerp(0, op.Parameter2, (float)_random.NextDouble()));
-
-            OpParams opParams = (OpParameter1Randomize: op.Parameter1Randomize, OpParameter2Randomize: op.Parameter2Randomize) switch
-            {
-                (false, false) => new OpParams(
-                    op.Parameter1,
-                    op.Parameter2,
-                    filter: opFilter
-                ),
-                (true, false) => new OpParams(
-                    opRandomValue1,
-                    op.Parameter2,
-                    filter: opFilter
-                ),
-                (false, true) => new OpParams(
-                    op.Parameter1,
-                    opRandomValue2,
-                    filter: opFilter
-                ),
-                (true, true) => new OpParams(
-                    opRandomValue1,
-                    opRandomValue2,
-                    filter: opFilter
-                ),
-            };
-
-            for (int iteration = 0; iteration < op.Iterations; iteration++)
-            {
-                poly = poly.AppyOperation(op.OpType, opParams);
-            }
-        }
-
+        poly = ModifierPipeline.Apply(poly, Operators);
+        // Preserve the example's extension point before final geometry processing.
         poly = ModifyPostOp(poly);
-
-        if (FastConicalize)
-        {
-            if (PlanarizeIterations > 0 && CanonicalizeIterations <= 0)
-            {
-                PolyMesh.PlanarizeLeastSquares(poly, 0.001, PlanarizeIterations);
-            }
-            else if (CanonicalizeIterations > 0)
-            {
-                poly = poly.Kanonicalize(CanonicalizeIterations);
-            }
-        }
-        else
-        {
-            if (CanonicalizeIterations > 0 || PlanarizeIterations > 0)
-            {
-                poly = poly.Canonicalize(CanonicalizeIterations, PlanarizeIterations);
-            }
-        }
-
-        if (FaceInset != 0) poly = poly.FaceInset(new OpParams(FaceInset));
-        if (AutoSmoothAngle > 0f) poly.AutoSmooth(AutoSmoothAngle);
-        return poly;
+        return ModifierPipeline.ApplyPostProcessing(poly, GetPostProcessingSettings());
     }
 
     public virtual void AttachAction(Action settingsChanged, PolyhydraGenerator generator)
