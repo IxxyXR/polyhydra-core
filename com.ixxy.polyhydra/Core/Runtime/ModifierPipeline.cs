@@ -8,10 +8,12 @@ namespace Polyhydra.Core
     /// <summary>Shared execution for settings assets and runtime recipe modifier adapters.</summary>
     public static class ModifierPipeline
     {
-        public static PolyMesh Apply(PolyMesh poly, IEnumerable<ModifierSettings> modifiers)
-            => Apply(poly, modifiers, new Random());
+        public static PolyMesh Apply(PolyMesh poly, IEnumerable<ModifierSettings> modifiers,
+            bool preserveScalingFactor = false)
+            => Apply(poly, modifiers, new Random(), preserveScalingFactor);
 
-        internal static PolyMesh Apply(PolyMesh poly, IEnumerable<ModifierSettings> modifiers, Random random)
+        internal static PolyMesh Apply(PolyMesh poly, IEnumerable<ModifierSettings> modifiers, Random random,
+            bool preserveScalingFactor = false)
         {
             if (poly == null) throw new ArgumentNullException(nameof(poly));
             if (modifiers == null) return poly;
@@ -19,18 +21,22 @@ namespace Polyhydra.Core
             {
                 if (!modifier.Active) continue;
                 var filter = Filter.GetFilter(modifier.FilterType, modifier.FilterParam,
-                    Mathf.FloorToInt(modifier.FilterParam), modifier.FilterFlip);
+                    modifier.UseFilterParamInt ? modifier.FilterParamInt : Mathf.FloorToInt(modifier.FilterParam), modifier.FilterFlip);
                 var randomValue1 = new OpFunc(_ => Mathf.Lerp(0, modifier.Parameter1, (float)random.NextDouble()));
                 var randomValue2 = new OpFunc(_ => Mathf.Lerp(0, modifier.Parameter2, (float)random.NextDouble()));
                 OpParams parameters = (modifier.Parameter1Randomize, modifier.Parameter2Randomize) switch
                 {
-                    (false, false) => new OpParams(modifier.Parameter1, modifier.Parameter2, filter: filter),
-                    (true, false) => new OpParams(randomValue1, modifier.Parameter2, filter: filter),
-                    (false, true) => new OpParams(modifier.Parameter1, randomValue2, filter: filter),
-                    (true, true) => new OpParams(randomValue1, randomValue2, filter: filter)
+                    (false, false) => new OpParams(modifier.Parameter1, modifier.Parameter2, modifier.StringParameter, filter),
+                    (true, false) => new OpParams(randomValue1, modifier.Parameter2, modifier.StringParameter, filter),
+                    (false, true) => new OpParams(modifier.Parameter1, randomValue2, modifier.StringParameter, filter),
+                    (true, true) => new OpParams(randomValue1, randomValue2, modifier.StringParameter, filter)
                 };
                 for (int iteration = 0; iteration < modifier.Iterations; ++iteration)
+                {
+                    float scalingFactor = poly.ScalingFactor;
                     poly = poly.AppyOperation(modifier.OpType, parameters);
+                    if (preserveScalingFactor) poly.ScalingFactor = scalingFactor;
+                }
             }
             return poly;
         }

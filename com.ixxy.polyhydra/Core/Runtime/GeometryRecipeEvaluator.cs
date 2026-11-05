@@ -72,23 +72,7 @@ namespace Polyhydra.Core
             switch (step.Type)
             {
                 case "operator":
-                    var modifier = new ModifierSettings
-                    {
-                        OpType = ReadEnum<PolyMesh.Operation>(p.Require<string>("operation")),
-                        Parameter1 = p.Read("amount", .3f),
-                        Parameter2 = p.Read("amount2", 0f),
-                        Active = p.Read("active", true),
-                        Iterations = p.Read("iterations", 1),
-                        Parameter1Randomize = p.Read("randomizeAmount", false),
-                        Parameter2Randomize = p.Read("randomizeAmount2", false),
-                        FilterType = ReadEnum<FilterTypes>(p.Read("filter", "All")),
-                        FilterParam = p.Read("filterParameter", 0f),
-                        FilterFlip = p.Read("invertFilter", false)
-                    };
-                    // Reject unfamiliar fields before executing even the first iteration.
-                    p.RequireAllRead();
-                    poly = ModifierPipeline.Apply(poly, new[] { modifier }, random);
-                    break;
+                    return ModifierPipeline.Apply(poly, new[] { step.ToModifierSettings() }, random);
                 case "shell":
                     poly = poly.Shell(p.Read("thickness", .1f), p.Read("symmetric", true));
                     break;
@@ -118,6 +102,31 @@ namespace Polyhydra.Core
             }
             p.RequireAllRead();
             return poly;
+        }
+
+        internal static ModifierSettings ReadModifierSettings(GeometryStep step)
+        {
+            if (step == null) throw new ArgumentNullException(nameof(step));
+            if (step.Type != "operator") throw new ArgumentException("Expected an operator step.", nameof(step));
+            var p = new Parameters(step);
+            var modifier = new ModifierSettings
+            {
+                OpType = ReadEnum<PolyMesh.Operation>(p.Require<string>("operation")),
+                Parameter1 = p.Read("amount", .3f),
+                Parameter2 = p.Read("amount2", 0f),
+                StringParameter = p.Read<string>("stringParameter", null),
+                Active = p.Read("active", true),
+                Iterations = p.Read("iterations", 1),
+                Parameter1Randomize = p.Read("randomizeAmount", false),
+                Parameter2Randomize = p.Read("randomizeAmount2", false),
+                FilterType = ReadEnum<FilterTypes>(p.Read("filter", "All")),
+                FilterParam = p.Read("filterParameter", 0f),
+                UseFilterParamInt = step.Parameters.ContainsKey("filterParameterInt"),
+                FilterParamInt = p.Read("filterParameterInt", 0),
+                FilterFlip = p.Read("invertFilter", false)
+            };
+            p.RequireAllRead();
+            return modifier;
         }
 
         private static T ReadEnum<T>(string name) where T : struct, Enum
