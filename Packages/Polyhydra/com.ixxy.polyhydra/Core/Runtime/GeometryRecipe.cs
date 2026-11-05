@@ -48,7 +48,7 @@ namespace Polyhydra.Core
         public static GeometryStep FromModifier(ModifierSettings modifier)
         {
             if (modifier == null) throw new ArgumentNullException(nameof(modifier));
-            return new GeometryStep("operator", new Dictionary<string, object>
+            var parameters = new Dictionary<string, object>
             {
                 { "operation", modifier.OpType.ToString() },
                 { "amount", modifier.Parameter1 },
@@ -60,8 +60,14 @@ namespace Polyhydra.Core
                 { "filter", modifier.FilterType.ToString() },
                 { "filterParameter", modifier.FilterParam },
                 { "invertFilter", modifier.FilterFlip }
-            });
+            };
+            if (modifier.StringParameter != null) parameters.Add("stringParameter", modifier.StringParameter);
+            if (modifier.UseFilterParamInt) parameters.Add("filterParameterInt", modifier.FilterParamInt);
+            return new GeometryStep("operator", parameters);
         }
+
+        /// <summary>Read an independent, validated settings snapshot from an operator step.</summary>
+        public ModifierSettings ToModifierSettings() => GeometryRecipeEvaluator.ReadModifierSettings(this);
 
         public GeometryStep(string type, IReadOnlyDictionary<string, object> parameters = null)
         {

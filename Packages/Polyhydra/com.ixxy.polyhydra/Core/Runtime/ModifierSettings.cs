@@ -13,14 +13,19 @@ namespace Polyhydra.Core
         public PolyMesh.Operation OpType;
         public float Parameter1 = .3f;
         public float Parameter2;
+        public string StringParameter;
         public int Iterations = 1;
         public bool Parameter1Randomize;
         public bool Parameter2Randomize;
         public FilterTypes FilterType;
         public float FilterParam;
+        // The example settings derive the integer from FilterParam. Richer editors may
+        // retain an independent integer selection without losing the floating-point value.
+        public bool UseFilterParamInt;
+        public int FilterParamInt;
         public bool FilterFlip;
 
-        // Every setting is a value type. Copying also preserves a preset adapter's runtime type.
+        // Settings contain value types and immutable strings. Copying also preserves a preset adapter's runtime type.
         public ModifierSettings Copy() => (ModifierSettings)MemberwiseClone();
     }
 

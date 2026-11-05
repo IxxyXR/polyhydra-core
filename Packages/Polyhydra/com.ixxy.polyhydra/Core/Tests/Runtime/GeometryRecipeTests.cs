@@ -146,5 +146,46 @@ namespace Polyhydra.Core.Tests
             Assert.Throws<NotSupportedException>(() =>
                 GeometryRecipeEvaluator.Build(new GeometryRecipe(generator, new[] { typo })));
         }
+
+        [Test]
+        public void OperatorSnapshotsRetainTextAndIndependentIntegerFilters()
+        {
+            var source = new ModifierSettings
+            {
+                OpType = PolyMesh.Operation.AddTag, StringParameter = "#33CC77",
+                FilterType = FilterTypes.OnlyNth, FilterParam = 3.75f,
+                UseFilterParamInt = true, FilterParamInt = 1
+            };
+            var step = GeometryStep.FromModifier(source);
+            var restored = step.ToModifierSettings();
+            source.StringParameter = "changed";
+            source.FilterParamInt = 4;
+            Assert.That(restored.StringParameter, Is.EqualTo("#33CC77"));
+            Assert.That(restored.FilterParam, Is.EqualTo(3.75f));
+            Assert.That(restored.UseFilterParamInt, Is.True);
+            Assert.That(restored.FilterParamInt, Is.EqualTo(1));
+            var poly = GeometryRecipeEvaluator.Build(new GeometryRecipe(new GeometryStep("panel")));
+            poly.FaceTags = poly.FaceTags.Select(_ => new System.Collections.Generic.HashSet<string>()).ToList();
+            poly = ModifierPipeline.Apply(poly, new[] { step.ToModifierSettings() });
+            Assert.That(poly.FaceTags[1], Does.Contain("#33CC77"));
+            Assert.That(poly.FaceTags[0], Does.Not.Contain("#33CC77"));
+            Assert.That(poly.FaceTags.Count(tags => tags.Contains("#33CC77")), Is.EqualTo(1));
+        }
+
+        [Test]
+        public void HostsCanPreserveTheirScalingFactorAcrossRepeatedModifiers()
+        {
+            var source = GeometryRecipeEvaluator.Build(new GeometryRecipe(new GeometryStep("panel")));
+            source.ScalingFactor = 7f;
+            var modifier = new ModifierSettings { OpType = PolyMesh.Operation.Dual, Iterations = 2 };
+            float rawScalingFactor = source.Dual().Dual().ScalingFactor;
+            var raw = ModifierPipeline.Apply(source.Duplicate(), new[] { modifier });
+            var copy = source.Duplicate();
+            copy.ScalingFactor = 7f;
+            var preserved = ModifierPipeline.Apply(copy, new[] { modifier }, preserveScalingFactor: true);
+            Assert.That(raw.ScalingFactor, Is.EqualTo(rawScalingFactor));
+            Assert.That(preserved.ScalingFactor, Is.EqualTo(7f));
+            Assert.That(preserved.vef, Is.EqualTo(raw.vef));
+        }
     }
 }
