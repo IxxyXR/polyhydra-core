@@ -12,9 +12,14 @@ namespace Polyhydra.Core
     public static class GeometryRecipeEvaluator
     {
         public static PolyMesh Build(GeometryRecipe recipe)
+            => Build(recipe, null);
+
+        // A host can provide additional generators while sharing ordered modifier
+        // execution and final processing. Returning null selects the built-in generator.
+        public static PolyMesh Build(GeometryRecipe recipe, Func<GeometryStep, PolyMesh> generator)
         {
             if (recipe == null) throw new ArgumentNullException(nameof(recipe));
-            var poly = Generate(recipe.Generator);
+            var poly = generator?.Invoke(recipe.Generator) ?? Generate(recipe.Generator);
             var random = new System.Random();
             foreach (var operation in recipe.Operations) poly = Apply(poly, operation, random);
             return ModifierPipeline.ApplyPostProcessing(poly, recipe.PostProcessing);

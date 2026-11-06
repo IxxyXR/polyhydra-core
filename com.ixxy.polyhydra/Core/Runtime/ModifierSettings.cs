@@ -39,6 +39,8 @@ namespace Polyhydra.Core
         public float FaceInset;
         // Zero disables final automatic smoothing, as in the example app's presets.
         public float AutoSmoothAngle;
+        // Uniform output conversion after all geometry processing; one means no conversion.
+        public float OutputScale = 1f;
 
         public GeometryPostProcessingSettings Copy() => (GeometryPostProcessingSettings)MemberwiseClone();
     }
