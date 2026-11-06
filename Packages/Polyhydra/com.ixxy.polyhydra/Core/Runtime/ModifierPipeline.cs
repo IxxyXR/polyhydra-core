@@ -57,6 +57,11 @@ namespace Polyhydra.Core
 
             if (settings.FaceInset != 0) poly = poly.FaceInset(new OpParams(settings.FaceInset));
             if (settings.AutoSmoothAngle > 0) poly.AutoSmooth(settings.AutoSmoothAngle);
+            if (!(settings.OutputScale > 0f) || float.IsInfinity(settings.OutputScale))
+                throw new ArgumentOutOfRangeException(nameof(settings.OutputScale));
+            // Keep geometry and triangulation in their original local units.
+            // Mesh output applies this uniform factor after tessellation.
+            if (settings.OutputScale != 1f) poly.ScalingFactor *= settings.OutputScale;
             return poly;
         }
     }
